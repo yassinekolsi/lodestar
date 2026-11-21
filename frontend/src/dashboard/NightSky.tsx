@@ -1,6 +1,7 @@
 import { useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 
 import type { DimensionView, Registry } from '../api/types'
+import { t } from '../i18n'
 
 /** Each family of skills has a column on the map and a colour (docs/plan/13). People can drag
  * skills around; the layout they make is kept on this device. */
@@ -199,7 +200,7 @@ export function NightSky({
         ref={svg}
         viewBox={`0 0 ${String(WIDTH)} ${String(HEIGHT)}`}
         role="group"
-        aria-label="Your Brain Twin: a map of your skills"
+        aria-label={t('Your Brain Twin: a map of your skills')}
         key={pulse}
       >
         <defs>
@@ -368,10 +369,9 @@ export function NightSky({
         })}
       </svg>
       <figcaption className="twin-map__caption">
-        The number is Lodestar&apos;s estimate and the bar under it the likely range; the softer the
-        shadow, the less sure Lodestar is. Grey tags are skills not measured yet. Blue wires join
-        skills that tend to go together. Drag any skill to move it. Dashed: experimental skills.
-        Percentages use simulated norms.
+        {t(
+          "The number is Lodestar's estimate and the bar under it the likely range; the softer the shadow, the less sure Lodestar is. Grey tags are skills not measured yet. Blue wires join skills that tend to go together. Drag any skill to move it. Dashed: experimental skills. Percentages use simulated norms.",
+        )}
       </figcaption>
     </figure>
   )

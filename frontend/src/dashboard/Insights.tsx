@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { api } from '../api/client'
 import type { ForecastView, InsightsView, ProgressView, TwinView } from '../api/types'
 import { Glyph, type GlyphName } from '../app/icons'
+import { t } from '../i18n'
 
 const pct = (x: number) => `${String(Math.round(x))}%`
 const mins = (x: number) => String(Math.round(x))
@@ -95,17 +96,17 @@ export function Insights({
           <span className="insight__icon">
             <Glyph name="trend" />
           </span>
-          Where you&apos;re heading
+          {t("Where you're heading")}
         </p>
         {ahead.length === 0 ? (
           <p className="muted">
-            Lodestar needs three days of practice on a concept to forecast it.
+            {t('Lodestar needs three days of practice on a concept to forecast it.')}
           </p>
         ) : (
           <>
             <p className="insight__big">
-              In {ahead[0]?.sessions_ahead ?? 5} more sessions, your strongest concepts look like
-              this.
+              In {ahead[0]?.sessions_ahead ?? 5}{' '}
+              {t('more sessions, your strongest concepts look like this.')}
             </p>
             <ul className="heading-to">
               {ahead.map((f) => {
@@ -124,27 +125,28 @@ export function Insights({
                       <span className="heading-to__mid" style={{ left: pct(f.median) }} />
                     </span>
                     <span className="heading-to__value">
-                      likely {pct(f.low)}-{pct(f.high)}
+                      {t('likely')} {pct(f.low)}-{pct(f.high)}
                     </span>
                   </li>
                 )
               })}
             </ul>
             <p className="insight__legend">
-              <span className="legend-now" /> today <span className="legend-band" /> where you are
-              likely to be
+              <span className="legend-now" /> {t('today')} <span className="legend-band" />{' '}
+              {t('where you are likely to be')}
             </p>
           </>
         )}
         <p className="insight__how">
-          Growth forecast model, trained on 36,000 learners' practice curves; it personalises as you
-          play.
+          {t(
+            "Growth forecast model, trained on 36,000 learners' practice curves; it personalises as you play.",
+          )}
         </p>
       </section>
 
       <Insight
         icon="clock"
-        title="Your best time"
+        title={t('Your best time')}
         big={best ? `You do best in the ${best.label.toLowerCase()}.` : 'Not enough quizzes yet.'}
         how="From every answer you've given, by time of day."
       >
@@ -165,7 +167,7 @@ export function Insights({
 
       <Insight
         icon="pulse"
-        title="When you tire"
+        title={t('When you tire')}
         big={
           fat
             ? `Your answers start slowing after about ${mins(fat.median)} minutes.`
@@ -192,9 +194,9 @@ export function Insights({
             <p className="tire__axis">
               <span>0</span>
               <span>
-                likely {mins(fat.low)}-{mins(fat.high)} min
+                {t('likely')} {mins(fat.low)}-{mins(fat.high)} {t('min')}
               </span>
-              <span>30 min</span>
+              <span>{t('30 min')}</span>
             </p>
           </div>
         )}
@@ -202,7 +204,7 @@ export function Insights({
 
       <Insight
         icon="target"
-        title="How well you judge yourself"
+        title={t('How well you judge yourself')}
         big={
           cal
             ? cal.said > cal.high
@@ -221,14 +223,14 @@ export function Insights({
         {cal && (
           <ul className="bars bars--two">
             <li>
-              <span className="bars__label">You said</span>
+              <span className="bars__label">{t('You said')}</span>
               <span className="bars__track">
                 <span style={{ width: pct(cal.said * 100) }} />
               </span>
               <span className="bars__value">{pct(cal.said * 100)}</span>
             </li>
             <li className="is-best">
-              <span className="bars__label">You were right</span>
+              <span className="bars__label">{t('You were right')}</span>
               <span className="bars__track">
                 <span style={{ width: pct(cal.right * 100) }} />
               </span>
@@ -242,7 +244,7 @@ export function Insights({
 
       <Insight
         icon="calendar"
-        title="Your rhythm"
+        title={t('Your rhythm')}
         big={
           rhythm
             ? `You played on ${String(rhythm.active_7)} of the last 7 days.`
@@ -254,15 +256,15 @@ export function Insights({
           <ul className="rhythm">
             <li>
               <strong>{rhythm.active_prev_7}</strong>
-              <span>days the week before</span>
+              <span>{t('days the week before')}</span>
             </li>
             <li>
               <strong>{rhythm.sessions}</strong>
-              <span>sessions</span>
+              <span>{t('sessions')}</span>
             </li>
             <li>
               <strong>{rhythm.rounds}</strong>
-              <span>exercises done</span>
+              <span>{t('exercises done')}</span>
             </li>
           </ul>
         )}

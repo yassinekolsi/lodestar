@@ -1,5 +1,6 @@
 import type { AcsView } from '../api/types'
 import { AcsGauge } from './charts'
+import { t } from '../i18n'
 
 const TIPS: Record<string, string> = {
   V: 'Check the AI’s steps before you accept them.',
@@ -18,9 +19,10 @@ export function AcsPanel({ acs }: { acs: AcsView }) {
       {acs.pushbacks > 0 && (
         <p className="stress stress--pushback acs__pushback" data-testid="acs-pushback">
           <strong>
-            You pushed back {acs.pushbacks} time{acs.pushbacks === 1 ? '' : 's'}.
+            {t('You pushed back')} {acs.pushbacks} {t('time')}
+            {acs.pushbacks === 1 ? '' : 's'}.
           </strong>{' '}
-          Questioning a result counts toward critical verification and iteration.
+          {t('Questioning a result counts toward critical verification and iteration.')}
         </p>
       )}
       <ul className="acs__parts">

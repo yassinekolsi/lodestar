@@ -9,6 +9,7 @@ import { mulberry32 } from '../lib/rng'
 import { TrialBatcher } from './batcher'
 import { calibration } from './calibration'
 import type { GameModule, Score, TrialRecord } from './types'
+import { t } from '../i18n'
 
 export type FinishStatus = 'completed' | 'stopped' | 'eased'
 
@@ -182,6 +183,11 @@ export function TaskHost({
     }
   }, [built, spec, sessionId, game, controlsRef])
 
-  if (built.error) return <p role="alert">Something went wrong loading this game: {built.error}</p>
+  if (built.error)
+    return (
+      <p role="alert">
+        {t('Something went wrong loading this game:')} {built.error}
+      </p>
+    )
   return <div ref={stageRef} className="lodestar-taskhost" data-testid="taskhost" />
 }

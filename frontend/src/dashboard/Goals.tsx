@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import type { GoalView } from '../api/types'
+import { t } from '../i18n'
 
 /** A wide start: Lodestar's first range is about ±50 points. */
 const START = 50
@@ -15,7 +16,7 @@ export function Goals({ goals, testId = 'goals' }: { goals: GoalView[]; testId?:
   if (goals.length === 0)
     return (
       <p className="muted">
-        No goal yet. Tell Lodestar something like &ldquo;I want my memory solid before exams&rdquo;.
+        {t('No goal yet. Tell Lodestar something like “I want my memory solid before exams”.')}
       </p>
     )
   return (
@@ -36,7 +37,10 @@ export function Goals({ goals, testId = 'goals' }: { goals: GoalView[]; testId?:
             <div className="goal__top">
               <div>
                 <p className="goal__skill">{g.name}</p>
-                <p className="goal__aim">Pin it down to ±{round(g.target)} points</p>
+                <p className="goal__aim">
+                  {t('Pin it down to ±')}
+                  {round(g.target)} {t('points')}
+                </p>
               </div>
               <span className={`goal__status${g.met ? ' goal__status--met' : ''}`}>
                 {g.met ? 'Reached' : 'In progress'}
@@ -68,11 +72,11 @@ export function Goals({ goals, testId = 'goals' }: { goals: GoalView[]; testId?:
               <div className="goal__numbers">
                 <p>
                   <strong>{now === null ? '–' : `±${round(now)}`}</strong>
-                  <span className="muted"> now</span>
+                  <span className="muted"> {t('now')}</span>
                 </p>
                 <p>
                   <strong>±{round(g.target)}</strong>
-                  <span className="muted"> aim</span>
+                  <span className="muted"> {t('aim')}</span>
                 </p>
               </div>
             </div>
@@ -99,9 +103,13 @@ export function Goals({ goals, testId = 'goals' }: { goals: GoalView[]; testId?:
             </p>
             <p className="goal__foot">
               <span>
-                by {due} · {days} {days === 1 ? 'day' : 'days'} left
+                by {due} · {days} {days === 1 ? 'day' : 'days'} {t('left')}
               </span>
-              {!g.met && g.rounds_left !== null && <span>about {g.rounds_left} more rounds</span>}
+              {!g.met && g.rounds_left !== null && (
+                <span>
+                  {t('about')} {g.rounds_left} {t('more rounds')}
+                </span>
+              )}
             </p>
           </li>
         )

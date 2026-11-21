@@ -4,6 +4,7 @@ import { api } from '../api/client'
 import type { Persona } from '../api/types'
 import { Glyph } from '../app/icons'
 import { PERSONAS } from '../app/personas'
+import { t } from '../i18n'
 
 /** The four coaches (docs/plan/09, personas; UW20). They say the same facts in their own voice;
  * switching takes effect from the next reply. */
@@ -53,7 +54,7 @@ export function Coach({ onChange }: { onChange?: (persona: Persona) => void }) {
                   <h2>{p.name}</h2>
                   <p className="muted">{p.style}</p>
                 </div>
-                {mine && <span className="coach-card__badge">Your coach</span>}
+                {mine && <span className="coach-card__badge">{t('Your coach')}</span>}
               </div>
               <p className="coach-card__line" style={{ borderColor: look.strong }}>
                 &ldquo;{p.sample}&rdquo;

@@ -1,4 +1,5 @@
 import { LIBRARY_TN } from './library'
+import { SCREENS_TN } from './screens'
 
 /** Tunisian Arabic (Derja), in Arabic script. Keys are the English text (see ./index.ts).
  *
@@ -6,6 +7,7 @@ import { LIBRARY_TN } from './library'
  * terms ("notion", "quiz", "probabilité"), which is how the course is taught. Not Modern Standard
  * Arabic. Numbers and formulas stay as written. */
 export const TN: Record<string, string> = {
+  ...SCREENS_TN,
   // Shell and navigation
   Conversation: 'الحديث',
   Study: 'نقرا',

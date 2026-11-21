@@ -19,6 +19,7 @@ import type {
   SplitView,
   TwinView,
 } from '../api/types'
+import { t } from '../i18n'
 
 echarts.use([
   RadarChart,
@@ -102,7 +103,7 @@ export function Radar({
     return d.n > 0 && def && !def.style
   })
   if (dims.length < 3)
-    return <p className="muted">The radar appears after three skills are measured.</p>
+    return <p className="muted">{t('The radar appears after three skills are measured.')}</p>
   const name = (id: string) => registry.dimensions.find((x) => x.id === id)?.name ?? id
   const option: Option = {
     tooltip: { trigger: 'item' },
@@ -184,7 +185,12 @@ export function SkillCurve({
   plateauFrom?: string | undefined
 }) {
   const points = (twin.curves ?? []).filter((c) => c.dim === dim)
-  if (points.length === 0) return <p className="muted">No practice days yet for {name}.</p>
+  if (points.length === 0)
+    return (
+      <p className="muted">
+        {t('No practice days yet for')} {name}.
+      </p>
+    )
   const days = points.map((p) => p.day)
   const last = points[points.length - 1]
   const ahead = forecast ? new Date(`${String(last?.day)}T00:00:00Z`) : null
@@ -302,7 +308,7 @@ export function WeekHeatmap({
   name: (id: string) => string
 }) {
   const h = progress.by_week
-  if (h.skills.length === 0) return <p className="muted">Play a few rounds to see this.</p>
+  if (h.skills.length === 0) return <p className="muted">{t('Play a few rounds to see this.')}</p>
   const data = h.skills.flatMap((_, s) =>
     h.weeks.map((_, w) => [w, s, h.change[s]?.[w] ?? null, h.rounds[s]?.[w] ?? 0]),
   )
@@ -408,7 +414,7 @@ export function HourHeatmap({ progress }: { progress: ProgressView }) {
 /** The AI Collaboration Score as a gauge, with its 80% range shaded on the dial (chart 5). */
 export function AcsGauge({ acs }: { acs: AcsView }) {
   if (acs.score === null || acs.low === null || acs.high === null)
-    return <p className="muted">Not enough collaboration moments yet to give a score.</p>
+    return <p className="muted">{t('Not enough collaboration moments yet to give a score.')}</p>
   const option: Option = {
     series: [
       {

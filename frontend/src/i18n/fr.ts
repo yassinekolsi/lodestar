@@ -1,8 +1,10 @@
 import { LIBRARY_FR } from './library'
+import { SCREENS_FR } from './screens'
 
 /** French. Keys are the English text (see ./index.ts). Numbers keep their decimal point, like the
  * course and the coach's facts. */
 export const FR: Record<string, string> = {
+  ...SCREENS_FR,
   // Shell and navigation
   Conversation: 'Conversation',
   Study: 'Étudier',

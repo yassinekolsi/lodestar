@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react'
 
 import { api } from '../api/client'
 import { activeSignals, stopSignal, subscribe, type CueSignal } from './cues'
+import { t } from '../i18n'
 
 const TEXT: Record<CueSignal, { label: string; switchId: string }> = {
   camera: { label: 'Camera signal in use', switchId: 'camera' },
@@ -26,7 +27,7 @@ export function SignalIndicator() {
               void api.setConsent(TEXT[s].switchId, false).catch(() => undefined)
             }}
           >
-            Turn off
+            {t('Turn off')}
           </button>
         </span>
       ))}

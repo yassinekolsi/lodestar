@@ -4,6 +4,7 @@ import { api } from '../api/client'
 import type { ExperimentView } from '../api/types'
 import { Cited } from '../app/Cited'
 import { Glyph, type GlyphName } from '../app/icons'
+import { t } from '../i18n'
 
 const CONDITIONS: Record<string, { label: string; icon: GlyphName }> = {
   morning: { label: 'Morning', icon: 'sun' },
@@ -36,7 +37,8 @@ function Experiment({ e, onStop }: { e: ExperimentView; onStop: () => void }) {
         </span>
       </div>
       <p className="muted small">
-        Exercises: {e.games.join(', ')} · {e.sessions_per_condition} sessions at each time of day
+        {t('Exercises:')} {e.games.join(', ')} · {e.sessions_per_condition}{' '}
+        {t('sessions at each time of day')}
       </p>
 
       <ul className="experiment__arms">
@@ -77,14 +79,14 @@ function Experiment({ e, onStop }: { e: ExperimentView; onStop: () => void }) {
             {winner && sure !== null
               ? `Lodestar is ${pts(sure)}% sure the ${winner} is better for you. `
               : 'Neither time of day is clearly better yet. '}
-            Evening minus morning: likely {pts(e.interval[0] ?? 0)} to {pts(e.interval[1] ?? 0)}{' '}
-            points.
+            {t('Evening minus morning: likely')} {pts(e.interval[0] ?? 0)} to{' '}
+            {pts(e.interval[1] ?? 0)} {t('points.')}
           </p>
         </div>
       )}
       {e.summary && (
         <details className="experiment__how">
-          <summary>How Lodestar worked this out</summary>
+          <summary>{t('How Lodestar worked this out')}</summary>
           <p data-testid="experiment-result">
             <Cited text={e.summary} />
           </p>
@@ -92,7 +94,7 @@ function Experiment({ e, onStop }: { e: ExperimentView; onStop: () => void }) {
       )}
       {e.status === 'running' && (
         <button type="button" className="small" onClick={onStop}>
-          Stop this experiment
+          {t('Stop this experiment')}
         </button>
       )}
     </section>
@@ -111,28 +113,28 @@ export function Experiments({ onAsk }: { onAsk: () => void }) {
   }, [])
   useEffect(load, [load])
 
-  if (list === null) return <p className="muted">Loading…</p>
+  if (list === null) return <p className="muted">{t('Loading…')}</p>
   const running = list.some((e) => e.status === 'running')
   return (
     <div className="stack" data-testid="experiments">
       <section className="experiments__intro">
         <ol className="experiments__steps">
           <li>
-            <strong>Pick an idea</strong>
-            <span>&ldquo;I&apos;m sharper in the morning.&rdquo;</span>
+            <strong>{t('Pick an idea')}</strong>
+            <span>{t("“I'm sharper in the morning.”")}</span>
           </li>
           <li>
-            <strong>Play at both times</strong>
-            <span>The same quizzes, a few sessions each.</span>
+            <strong>{t('Play at both times')}</strong>
+            <span>{t('The same quizzes, a few sessions each.')}</span>
           </li>
           <li>
-            <strong>Get a verdict</strong>
-            <span>Which time wins, and how sure Lodestar is.</span>
+            <strong>{t('Get a verdict')}</strong>
+            <span>{t('Which time wins, and how sure Lodestar is.')}</span>
           </li>
         </ol>
         {!running && (
           <button type="button" className="primary" onClick={onAsk}>
-            Start one
+            {t('Start one')}
           </button>
         )}
       </section>

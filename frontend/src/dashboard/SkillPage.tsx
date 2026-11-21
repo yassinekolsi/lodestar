@@ -8,6 +8,7 @@ import type {
 } from '../api/types'
 import { PlateauNote } from '../app/StressCases'
 import { SkillCurve } from './charts'
+import { t } from '../i18n'
 
 /** One concept (docs/plan/19): what it is, the notes on it, its key ideas, the student's mastery
  * with its curve, what it builds on, and a quiz or an explain-it-back one tap away. */
@@ -44,25 +45,32 @@ export function SkillPage({
   return (
     <section className="card skill" data-testid="skill-page">
       <button type="button" className="link" onClick={onBack}>
-        ← Back to the concept map
+        {t('← Back to the concept map')}
       </button>
       <h2>{def.name}</h2>
       <p>{def.plain}.</p>
       {view ? (
         <p className={view.still_learning ? 'muted' : ''}>
-          Mastery {Math.round(view.percent)}%, likely {Math.round(view.percent_low)}-
-          {Math.round(view.percent_high)}%: the chance of getting a typical question on it right
+          {t('Mastery')} {Math.round(view.percent)}
+          {t('%, likely')} {Math.round(view.percent_low)}-{Math.round(view.percent_high)}
+          {t('%: the chance of getting a typical question on it right')}
           {view.still_learning ? '. Still learning about you.' : '.'}
         </p>
       ) : (
-        <p className="muted">Not checked yet.</p>
+        <p className="muted">{t('Not checked yet.')}</p>
       )}
       {concept && concept.requires.length > 0 && (
-        <p className="muted">Builds on {concept.requires.map(name).join(', ').toLowerCase()}.</p>
+        <p className="muted">
+          {t('Builds on')} {concept.requires.map(name).join(', ').toLowerCase()}.
+        </p>
       )}
       {concept?.mistake && (
         <p data-testid="concept-mistake">
-          <strong>Your usual mix-up ({concept.mistakes} times):</strong> {concept.mistake}
+          <strong>
+            {t('Your usual mix-up (')}
+            {concept.mistakes} {t('times):')}
+          </strong>{' '}
+          {concept.mistake}
         </p>
       )}
       {onPlay && (
@@ -74,7 +82,7 @@ export function SkillPage({
               onPlay(`play Quiz: ${def.name}`)
             }}
           >
-            Quiz me
+            {t('Quiz me')}
           </button>
           <button
             type="button"
@@ -82,7 +90,7 @@ export function SkillPage({
               onPlay(`play Explain it back: ${def.name}`)
             }}
           >
-            Explain it back
+            {t('Explain it back')}
           </button>
         </div>
       )}
@@ -97,14 +105,15 @@ export function SkillPage({
       />
       {band && (
         <p className="muted small">
-          Forecast after {band.sessions_ahead} more sessions: {Math.round(band.median)}%, likely{' '}
-          {Math.round(band.low)}-{Math.round(band.high)}%. {band.note}
+          {t('Forecast after')} {band.sessions_ahead} {t('more sessions:')}{' '}
+          {Math.round(band.median)}
+          {t('%, likely')} {Math.round(band.low)}-{Math.round(band.high)}%. {band.note}
         </p>
       )}
       {section && (
         <>
           <h3>
-            From your notes · {section.id} {section.title}
+            {t('From your notes ·')} {section.id} {section.title}
           </h3>
           <div className="lesson-passage">
             {section.text
@@ -118,7 +127,7 @@ export function SkillPage({
       )}
       {concept && (
         <>
-          <h3>Key ideas</h3>
+          <h3>{t('Key ideas')}</h3>
           <ul className="lines">
             {concept.key_ideas.map((k) => (
               <li key={k}>{k}</li>
@@ -126,7 +135,7 @@ export function SkillPage({
           </ul>
         </>
       )}
-      <h3>What can bias it</h3>
+      <h3>{t('What can bias it')}</h3>
       <p className="muted">{def.biases.join(' ')}</p>
     </section>
   )

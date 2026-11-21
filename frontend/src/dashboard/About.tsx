@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { api } from '../api/client'
 import type { ModelCard } from '../api/types'
 import { Glyph, Heading, type GlyphName } from '../app/icons'
+import { t } from '../i18n'
 
 /** The system in one picture: what talks to what (docs/plan/02). */
 const LAYERS: { title: string; items: { icon: GlyphName; name: string; what: string }[] }[] = [
@@ -90,7 +91,7 @@ export function About() {
     <div className="stack" data-testid="about">
       <section className="card">
         <Heading as="h2" icon="route">
-          How it fits together
+          {t('How it fits together')}
         </Heading>
         <ol className="arch">
           {LAYERS.map((layer) => (
@@ -114,7 +115,7 @@ export function About() {
 
       <section className="card">
         <Heading as="h2" icon="spark">
-          The models
+          {t('The models')}
         </Heading>
         <ul className="models">
           {models.map((m) => (
@@ -130,7 +131,7 @@ export function About() {
                 ))}
               </dl>
               <p className="model__version">
-                Trained{' '}
+                {t('Trained')}{' '}
                 {new Date(m.trained_at).toLocaleDateString('en-GB', {
                   day: 'numeric',
                   month: 'short',
@@ -158,18 +159,19 @@ export function About() {
 
       <section className="card">
         <Heading as="h2" icon="check">
-          Tested on 200 simulated students
+          {t('Tested on 200 simulated students')}
         </Heading>
         <p className="muted">
-          Each simulated student has a known true level on every concept. Lodestar never sees it,
-          quizzes them for 10 sessions, and is checked against the truth.
+          {t(
+            'Each simulated student has a known true level on every concept. Lodestar never sees it, quizzes them for 10 sessions, and is checked against the truth.',
+          )}
         </p>
         <table className="sim">
           <thead>
             <tr>
-              <th>What we check</th>
-              <th>Result</th>
-              <th>Target</th>
+              <th>{t('What we check')}</th>
+              <th>{t('Result')}</th>
+              <th>{t('Target')}</th>
             </tr>
           </thead>
           <tbody>
@@ -191,7 +193,7 @@ export function About() {
 
       <section className="card">
         <Heading as="h2" icon="shield">
-          Rules the code enforces
+          {t('Rules the code enforces')}
         </Heading>
         <ul className="rules">
           {RULES.map(([icon, text]) => (

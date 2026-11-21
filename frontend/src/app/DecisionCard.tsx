@@ -4,6 +4,7 @@ import { api } from '../api/client'
 import type { Decision } from '../api/types'
 import { WhyLines } from './StressCases'
 import { evidenceLines } from './stressHelpers'
+import { t } from '../i18n'
 
 const PART_NAMES: Record<string, string> = {
   uncertainty: 'how unsure I am',
@@ -41,23 +42,28 @@ export function DecisionCard({
       className="modal why"
       role="dialog"
       aria-modal="true"
-      aria-label="Why this choice"
+      aria-label={t('Why this choice')}
       data-testid="why-card"
     >
-      <p className="eyebrow">Decision</p>
-      <h2>Why this choice</h2>
-      {failed && <p role="alert">I couldn&apos;t load that choice.</p>}
+      <p className="eyebrow">{t('Decision')}</p>
+      <h2>{t('Why this choice')}</h2>
+      {failed && <p role="alert">{t("I couldn't load that choice.")}</p>}
       {decision && (
         <>
           <p>{decision.reason}</p>
           <WhyLines lines={evidenceLines(decision.evidence)} />
           {decision.candidates.length > 0 && (
             <>
-              <p className="muted">{decision.question} Top options:</p>
+              <p className="muted">
+                {decision.question} {t('Top options:')}
+              </p>
               <ol className="why__options">
                 {decision.candidates.slice(0, 3).map((c) => (
                   <li key={c.option}>
-                    <strong>{name(c.option)}</strong> <span>score {c.score.toFixed(2)}</span>
+                    <strong>{name(c.option)}</strong>{' '}
+                    <span>
+                      {t('score')} {c.score.toFixed(2)}
+                    </span>
                     <ul className="why__parts">
                       {Object.entries(c.breakdown ?? {})
                         .filter(([, v]) => Math.abs(v) > 1e-9)
@@ -75,7 +81,7 @@ export function DecisionCard({
         </>
       )}
       <button type="button" onClick={onClose} autoFocus>
-        Close
+        {t('Close')}
       </button>
     </section>
   )

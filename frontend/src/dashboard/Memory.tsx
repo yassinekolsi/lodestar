@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { api } from '../api/client'
 import type { MyData } from '../api/types'
 import { Glyph, Heading } from '../app/icons'
+import { t } from '../i18n'
 
 const day = (iso: string | null | undefined) =>
   iso ? new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'Undated'
@@ -26,7 +27,7 @@ export function Memory() {
   }
 
   if (error) return <p role="alert">{error}</p>
-  if (!data) return <p className="muted">Loading…</p>
+  if (!data) return <p className="muted">{t('Loading…')}</p>
   const moments = data.memories
     .filter((m) => m.collection === 'episodic')
     .sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''))
@@ -37,22 +38,22 @@ export function Memory() {
       <ul className="memory__stores">
         <li>
           <Glyph name="list" />
-          <strong>{data.core.length}</strong> notes in a Markdown file you can read
+          <strong>{data.core.length}</strong> {t('notes in a Markdown file you can read')}
         </li>
         <li>
           <Glyph name="database" />
-          <strong>{data.memories.length}</strong> memories it can search
+          <strong>{data.memories.length}</strong> {t('memories it can search')}
         </li>
         <li>
           <Glyph name="calendar" />
-          <strong>{data.life_context.length}</strong> things about your days
+          <strong>{data.life_context.length}</strong> {t('things about your days')}
         </li>
       </ul>
 
       <section className="panel-block">
-        <Heading icon="user">What Lodestar knows about you</Heading>
+        <Heading icon="user">{t('What Lodestar knows about you')}</Heading>
         {data.core.length === 0 ? (
-          <p className="muted">Nothing yet. Lodestar writes this after a few sessions.</p>
+          <p className="muted">{t('Nothing yet. Lodestar writes this after a few sessions.')}</p>
         ) : (
           <ul className="notes">
             {data.core.map((line) => (
@@ -65,7 +66,7 @@ export function Memory() {
                     forget(() => api.forgetCoreLine(line))
                   }}
                 >
-                  Forget
+                  {t('Forget')}
                 </button>
               </li>
             ))}
@@ -75,8 +76,8 @@ export function Memory() {
 
       <div className="memory__cols">
         <section className="panel-block">
-          <Heading icon="clock">Moments it remembers</Heading>
-          {moments.length === 0 && <p className="muted">No moments yet.</p>}
+          <Heading icon="clock">{t('Moments it remembers')}</Heading>
+          {moments.length === 0 && <p className="muted">{t('No moments yet.')}</p>}
           <ol className="timeline">
             {moments.map((m) => (
               <li key={m.id}>
@@ -91,7 +92,7 @@ export function Memory() {
                       forget(() => api.forgetMemory(m.collection, m.id))
                     }}
                   >
-                    Forget
+                    {t('Forget')}
                   </button>
                 </div>
               </li>
@@ -101,8 +102,8 @@ export function Memory() {
 
         <div className="stack">
           <section className="panel-block">
-            <Heading icon="check">Facts it has learned</Heading>
-            {facts.length === 0 && <p className="muted">No facts yet.</p>}
+            <Heading icon="check">{t('Facts it has learned')}</Heading>
+            {facts.length === 0 && <p className="muted">{t('No facts yet.')}</p>}
             <ul className="notes">
               {facts.map((m) => (
                 <li key={m.id}>
@@ -114,16 +115,16 @@ export function Memory() {
                       forget(() => api.forgetMemory(m.collection, m.id))
                     }}
                   >
-                    Forget
+                    {t('Forget')}
                   </button>
                 </li>
               ))}
             </ul>
           </section>
           <section className="panel-block">
-            <Heading icon="calendar">Your days</Heading>
+            <Heading icon="calendar">{t('Your days')}</Heading>
             {data.life_context.length === 0 && (
-              <p className="muted">Tell Lodestar things like &ldquo;I slept badly&rdquo;.</p>
+              <p className="muted">{t('Tell Lodestar things like “I slept badly”.')}</p>
             )}
             <ul className="notes">
               {data.life_context.map((c) => (
@@ -141,7 +142,7 @@ export function Memory() {
                       forget(() => api.forgetLifeContext(c.context_id))
                     }}
                   >
-                    Remove
+                    {t('Remove')}
                   </button>
                 </li>
               ))}
@@ -150,11 +151,12 @@ export function Memory() {
         </div>
       </div>
       {!data.memory_available && (
-        <p className="muted">Searchable memories can&apos;t be shown right now.</p>
+        <p className="muted">{t("Searchable memories can't be shown right now.")}</p>
       )}
       <p className="muted small">
-        Everything here stays on this server. Forget a line and it is gone; Settings can export or
-        delete all of it.
+        {t(
+          'Everything here stays on this server. Forget a line and it is gone; Settings can export or delete all of it.',
+        )}
       </p>
     </div>
   )

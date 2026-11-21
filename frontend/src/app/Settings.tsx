@@ -61,7 +61,7 @@ function Privacy() {
                 />
                 <span>
                   <strong>{t(s.title)}</strong>
-                  {s.required && <span className="muted"> (needed)</span>}
+                  {s.required && <span className="muted"> {t('(needed)')}</span>}
                   <br />
                   <span className="muted">{t(s.plain)}</span>
                 </span>
@@ -70,7 +70,11 @@ function Privacy() {
           ))}
         </ul>
       )}
-      {view && <p className="muted">Notice version {view.version}.</p>}
+      {view && (
+        <p className="muted">
+          {t('Notice version')} {view.version}.
+        </p>
+      )}
       {error && <p role="alert">{error}</p>}
     </div>
   )
@@ -115,7 +119,8 @@ function Provider({ onChange }: { onChange: () => void }) {
     }
   }
 
-  if (!overview) return error ? <p role="alert">{error}</p> : <p className="muted">Loading…</p>
+  if (!overview)
+    return error ? <p role="alert">{error}</p> : <p className="muted">{t('Loading…')}</p>
   const selection = overview.selection
   const provider = (id: string) => overview.providers.find((p) => p.id === id)
   const adder = adding ? provider(adding) : undefined
@@ -126,21 +131,21 @@ function Provider({ onChange }: { onChange: () => void }) {
       <p>
         {selection.mode === 'hosted' && cloudOn ? (
           <>
-            Using <strong>{provider(selection.provider)?.name ?? selection.provider}</strong> (
-            {selection.model}).
+            {t('Using')} <strong>{provider(selection.provider)?.name ?? selection.provider}</strong>{' '}
+            ({selection.model}).
           </>
         ) : (
           <>
             <span className="badge" data-testid="local-badge">
-              Local mode
+              {t('Local mode')}
             </span>{' '}
-            Lodestar uses the model on this server; nothing leaves it.
+            {t('Lodestar uses the model on this server; nothing leaves it.')}
           </>
         )}
       </p>
       {note && <p role="status">{note}</p>}
       {!overview.keys_enabled && (
-        <p className="muted">This server can&apos;t store keys (no master key is set).</p>
+        <p className="muted">{t("This server can't store keys (no master key is set).")}</p>
       )}
       <ul className="providers">
         {overview.providers
@@ -150,7 +155,9 @@ function Provider({ onChange }: { onChange: () => void }) {
             return (
               <li key={p.id}>
                 <strong>{p.name}</strong>{' '}
-                <span className="muted">· processes data in {p.hosting}</span>
+                <span className="muted">
+                  {t('· processes data in')} {p.hosting}
+                </span>
                 <div className="flex gap-2">
                   {saved ? (
                     <>
@@ -170,7 +177,7 @@ function Provider({ onChange }: { onChange: () => void }) {
                             })
                           }
                         >
-                          Use
+                          {t('Use')}
                         </button>
                       )}
                       <button
@@ -185,7 +192,7 @@ function Provider({ onChange }: { onChange: () => void }) {
                           })
                         }
                       >
-                        Remove key
+                        {t('Remove key')}
                       </button>
                     </>
                   ) : (
@@ -199,7 +206,7 @@ function Provider({ onChange }: { onChange: () => void }) {
                         setNote(null)
                       }}
                     >
-                      Add key
+                      {t('Add key')}
                     </button>
                   )}
                 </div>
@@ -217,7 +224,7 @@ function Provider({ onChange }: { onChange: () => void }) {
             })
           }
         >
-          Use the local model
+          {t('Use the local model')}
         </button>
       )}
 
@@ -225,13 +232,17 @@ function Provider({ onChange }: { onChange: () => void }) {
         <div
           className="confirm"
           role="dialog"
-          aria-label="Turn on Cloud AI"
+          aria-label={t('Turn on Cloud AI')}
           data-testid="cloud-consent"
         >
           <p>
-            To use {adder.name}, Lodestar will send short, de-identified summaries (no name, no raw
-            answers) to {adder.name}, which processes data in {adder.hosting}. You can turn this off
-            at any time.
+            {t('To use')} {adder.name}
+            {t(
+              ', Lodestar will send short, de-identified summaries (no name, no raw answers) to',
+            )}{' '}
+            {adder.name}
+            {t(', which processes data in')} {adder.hosting}
+            {t('. You can turn this off at any time.')}
           </p>
           <div className="flex gap-2">
             <button
@@ -243,7 +254,7 @@ function Provider({ onChange }: { onChange: () => void }) {
                 })
               }
             >
-              Turn on Cloud AI
+              {t('Turn on Cloud AI')}
             </button>
             <button
               type="button"
@@ -251,7 +262,7 @@ function Provider({ onChange }: { onChange: () => void }) {
                 setAdding(null)
               }}
             >
-              Not now
+              {t('Not now')}
             </button>
           </div>
         </div>
@@ -273,12 +284,12 @@ function Provider({ onChange }: { onChange: () => void }) {
           }}
         >
           <label htmlFor="api-key">
-            {adder.name} API key
+            {adder.name} {t('API key')}
             {adder.console_url && (
               <>
                 {' '}
                 <a href={adder.console_url} target="_blank" rel="noreferrer">
-                  (get one)
+                  {t('(get one)')}
                 </a>
               </>
             )}
@@ -302,7 +313,7 @@ function Provider({ onChange }: { onChange: () => void }) {
                 setAdding(null)
               }}
             >
-              Cancel
+              {t('Cancel')}
             </button>
           </div>
         </form>
@@ -310,7 +321,7 @@ function Provider({ onChange }: { onChange: () => void }) {
 
       {models.length > 1 && selection.mode === 'hosted' && (
         <label className="block">
-          Model{' '}
+          {t('Model')}{' '}
           <select
             value={selection.model}
             onChange={(e) =>
@@ -361,13 +372,13 @@ function Data({ onDeleted }: { onDeleted: (receipt: Receipt) => void }) {
 
   return (
     <div data-testid="my-data">
-      <Heading icon="database">What Lodestar keeps about you</Heading>
+      <Heading icon="database">{t('What Lodestar keeps about you')}</Heading>
       {data && data.core.length === 0 && data.memories.length === 0 && (
-        <p className="muted">Nothing yet.</p>
+        <p className="muted">{t('Nothing yet.')}</p>
       )}
       {data && data.core.length > 0 && (
         <>
-          <p className="muted">Your short profile (core.md)</p>
+          <p className="muted">{t('Your short profile (core.md)')}</p>
           <ul className="lines">
             {data.core.map((line) => (
               <li key={line}>
@@ -377,7 +388,7 @@ function Data({ onDeleted }: { onDeleted: (receipt: Receipt) => void }) {
                   className="link"
                   onClick={() => void forget(() => api.forgetCoreLine(line))}
                 >
-                  Forget
+                  {t('Forget')}
                 </button>
               </li>
             ))}
@@ -386,7 +397,7 @@ function Data({ onDeleted }: { onDeleted: (receipt: Receipt) => void }) {
       )}
       {data && data.life_context.length > 0 && (
         <>
-          <p className="muted">What you told Lodestar about your days</p>
+          <p className="muted">{t('What you told Lodestar about your days')}</p>
           <ul className="lines">
             {data.life_context.map((c) => (
               <li key={c.context_id}>
@@ -396,7 +407,7 @@ function Data({ onDeleted }: { onDeleted: (receipt: Receipt) => void }) {
                   className="link"
                   onClick={() => void forget(() => api.forgetLifeContext(c.context_id))}
                 >
-                  Remove
+                  {t('Remove')}
                 </button>
               </li>
             ))}
@@ -405,7 +416,7 @@ function Data({ onDeleted }: { onDeleted: (receipt: Receipt) => void }) {
       )}
       {data && data.memories.length > 0 && (
         <>
-          <p className="muted">Memories</p>
+          <p className="muted">{t('Memories')}</p>
           <ul className="lines">
             {data.memories.map((m) => (
               <li key={m.id}>
@@ -415,7 +426,7 @@ function Data({ onDeleted }: { onDeleted: (receipt: Receipt) => void }) {
                   className="link"
                   onClick={() => void forget(() => api.forgetMemory(m.collection, m.id))}
                 >
-                  Forget
+                  {t('Forget')}
                 </button>
               </li>
             ))}
@@ -423,15 +434,15 @@ function Data({ onDeleted }: { onDeleted: (receipt: Receipt) => void }) {
         </>
       )}
       {data && !data.memory_available && (
-        <p className="muted">Memories can&apos;t be shown right now.</p>
+        <p className="muted">{t("Memories can't be shown right now.")}</p>
       )}
 
-      <Heading icon="download">Take it with you</Heading>
+      <Heading icon="download">{t('Take it with you')}</Heading>
       <button type="button" onClick={() => void forget(() => api.exportData())}>
-        Export my data
+        {t('Export my data')}
       </button>
 
-      <Heading icon="trash">Delete everything</Heading>
+      <Heading icon="trash">{t('Delete everything')}</Heading>
       {!confirming ? (
         <button
           type="button"
@@ -439,18 +450,19 @@ function Data({ onDeleted }: { onDeleted: (receipt: Receipt) => void }) {
             setConfirming(true)
           }}
         >
-          Delete everything
+          {t('Delete everything')}
         </button>
       ) : (
         <div
           className="confirm"
           role="dialog"
-          aria-label="Delete everything"
+          aria-label={t('Delete everything')}
           data-testid="delete-confirm"
         >
           <p>
-            This deletes your results, profile, memories, notes and keys from Lodestar, for good. It
-            can&apos;t be undone.
+            {t(
+              "This deletes your results, profile, memories, notes and keys from Lodestar, for good. It can't be undone.",
+            )}
           </p>
           <div className="flex gap-2">
             <button
@@ -462,7 +474,7 @@ function Data({ onDeleted }: { onDeleted: (receipt: Receipt) => void }) {
                 })
               }
             >
-              Yes, delete everything
+              {t('Yes, delete everything')}
             </button>
             <button
               type="button"
@@ -470,7 +482,7 @@ function Data({ onDeleted }: { onDeleted: (receipt: Receipt) => void }) {
                 setConfirming(false)
               }}
             >
-              Cancel
+              {t('Cancel')}
             </button>
           </div>
         </div>
@@ -489,7 +501,7 @@ function WakeWord() {
   if (saved)
     return (
       <p>
-        On, with key <code>{maskedKey(saved.accessKey)}</code>.{' '}
+        {t('On, with key')} <code>{maskedKey(saved.accessKey)}</code>.{' '}
         <button
           type="button"
           onClick={() => {
@@ -497,13 +509,13 @@ function WakeWord() {
             setSaved(null)
           }}
         >
-          Turn off and forget the key
+          {t('Turn off and forget the key')}
         </button>
       </p>
     )
   return (
     <form
-      aria-label="Wake word"
+      aria-label={t('Wake word')}
       onSubmit={(e) => {
         e.preventDefault()
         if (!keyword) return
@@ -514,15 +526,19 @@ function WakeWord() {
       }}
     >
       <p className="muted">
-        Off. To say &ldquo;{WAKE_LABEL}&rdquo; instead of tapping, add your own Picovoice AccessKey
-        and a &ldquo;{WAKE_LABEL}&rdquo; keyword file for Web, both from{' '}
+        {t('Off. To say “')}
+        {WAKE_LABEL}
+        {t('” instead of tapping, add your own Picovoice AccessKey and a “')}
+        {WAKE_LABEL}
+        {t('” keyword file for Web, both from')}{' '}
         <a href="https://console.picovoice.ai/" target="_blank" rel="noreferrer">
-          the Picovoice Console
+          {t('the Picovoice Console')}
         </a>
-        . The wake word is heard on this device only; Picovoice checks the key, and Lodestar&apos;s
-        server never sees it.
+        {t(
+          ". The wake word is heard on this device only; Picovoice checks the key, and Lodestar's server never sees it.",
+        )}
       </p>
-      <label htmlFor="wake-key">Picovoice AccessKey</label>
+      <label htmlFor="wake-key">{t('Picovoice AccessKey')}</label>
       <input
         id="wake-key"
         type="password"
@@ -532,7 +548,7 @@ function WakeWord() {
           setKey(e.target.value)
         }}
       />
-      <label htmlFor="wake-file">Keyword file (.ppn, Web)</label>
+      <label htmlFor="wake-file">{t('Keyword file (.ppn, Web)')}</label>
       <input
         id="wake-file"
         type="file"
@@ -550,7 +566,7 @@ function WakeWord() {
         className="primary"
         disabled={key.trim().length < 8 || keyword === null}
       >
-        Turn on the wake word
+        {t('Turn on the wake word')}
       </button>
     </form>
   )
@@ -567,7 +583,7 @@ function Voice({ onChange }: { onChange: (speak: boolean) => void }) {
   }
   return (
     <div data-testid="voice-settings">
-      <Heading icon="mic">Listening</Heading>
+      <Heading icon="mic">{t('Listening')}</Heading>
       <ul className="switches">
         <li>
           <label className="switch">
@@ -582,10 +598,10 @@ function Voice({ onChange }: { onChange: (speak: boolean) => void }) {
               }}
             />
             <span>
-              <strong>Your browser</strong>
+              <strong>{t('Your browser')}</strong>
               <br />
               <span className="muted">
-                Fast. Chrome sends the audio to Google to turn it into text.
+                {t('Fast. Chrome sends the audio to Google to turn it into text.')}
                 {!browserRecognitionAvailable() && ' Not available in this browser.'}
               </span>
             </span>
@@ -603,11 +619,12 @@ function Voice({ onChange }: { onChange: (speak: boolean) => void }) {
               }}
             />
             <span>
-              <strong>Private</strong>
+              <strong>{t('Private')}</strong>
               <br />
               <span className="muted">
-                Turned into text on Lodestar&apos;s server; the audio is not kept. English only for
-                now.
+                {t(
+                  "Turned into text on Lodestar's server; the audio is not kept. English only for now.",
+                )}
               </span>
             </span>
           </label>
@@ -624,19 +641,20 @@ function Voice({ onChange }: { onChange: (speak: boolean) => void }) {
               }}
             />
             <span>
-              <strong>Private, on this device</strong>
+              <strong>{t('Private, on this device')}</strong>
               <br />
               <span className="muted">
-                Turned into text in this browser; the audio never leaves your device. A one-time
-                download of about 80 MB, and slower on older computers. English only for now.
+                {t(
+                  'Turned into text in this browser; the audio never leaves your device. A one-time download of about 80 MB, and slower on older computers. English only for now.',
+                )}
               </span>
             </span>
           </label>
         </li>
       </ul>
-      <Heading icon="ear">Wake word</Heading>
+      <Heading icon="ear">{t('Wake word')}</Heading>
       <WakeWord />
-      <Heading icon="volume">Speaking</Heading>
+      <Heading icon="volume">{t('Speaking')}</Heading>
       <label className="switch">
         <input
           type="checkbox"
@@ -648,11 +666,12 @@ function Voice({ onChange }: { onChange: (speak: boolean) => void }) {
           }}
         />
         <span>
-          <strong>Speak Lodestar&apos;s replies</strong>
+          <strong>{t("Speak Lodestar's replies")}</strong>
           <br />
           <span className="muted">
-            In your coach&apos;s voice, and Lodestar reads game instructions out loud. Everything
-            spoken is also shown as text.
+            {t(
+              "In your coach's voice, and Lodestar reads game instructions out loud. Everything spoken is also shown as text.",
+            )}
           </span>
         </span>
       </label>
@@ -668,9 +687,11 @@ function Voice({ onChange }: { onChange: (speak: boolean) => void }) {
               }}
             />
             <span>
-              <strong>Your browser&apos;s voices</strong>
+              <strong>{t("Your browser's voices")}</strong>
               <br />
-              <span className="muted">Ready at once; they sound different on each device.</span>
+              <span className="muted">
+                {t('Ready at once; they sound different on each device.')}
+              </span>
             </span>
           </label>
         </li>
@@ -685,11 +706,12 @@ function Voice({ onChange }: { onChange: (speak: boolean) => void }) {
               }}
             />
             <span>
-              <strong>Natural voices</strong>
+              <strong>{t('Natural voices')}</strong>
               <br />
               <span className="muted">
-                A voice for each coach, made in this browser (Kokoro). A one-time download of about
-                90 MB.
+                {t(
+                  'A voice for each coach, made in this browser (Kokoro). A one-time download of about 90 MB.',
+                )}
               </span>
             </span>
           </label>
@@ -705,11 +727,13 @@ function Terminal() {
   const [copied, setCopied] = useState(false)
   return (
     <div data-testid="terminal-settings">
-      <Heading icon="terminal">Use Lodestar in a terminal</Heading>
+      <Heading icon="terminal">{t('Use Lodestar in a terminal')}</Heading>
       <p className="muted">
-        The <code>lodestar</code> command chats with Lodestar, plays the text games and shows your
-        profile and goals, from the same data as this app. Run <code>lodestar login</code> and paste
-        your sign-in code.
+        {t('The')} <code>{t('lodestar')}</code>{' '}
+        {t(
+          'command chats with Lodestar, plays the text games and shows your profile and goals, from the same data as this app. Run',
+        )}{' '}
+        <code>{t('lodestar login')}</code> {t('and paste your sign-in code.')}
       </p>
       {code === null ? (
         <button
@@ -718,7 +742,7 @@ function Terminal() {
             setCode(signInCode() ?? '')
           }}
         >
-          Show sign-in code
+          {t('Show sign-in code')}
         </button>
       ) : (
         <div className="sign-in-code">
@@ -740,13 +764,14 @@ function Terminal() {
               setCopied(false)
             }}
           >
-            Hide
+            {t('Hide')}
           </button>
         </div>
       )}
       <p className="muted">
-        Anyone with this code can use your Lodestar account, so keep it to yourself. Deleting your
-        data in Memory &amp; data turns it off.
+        {t(
+          'Anyone with this code can use your Lodestar account, so keep it to yourself. Deleting your data in Memory & data turns it off.',
+        )}
       </p>
     </div>
   )

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { api } from '../api/client'
 import type { AgentEvent, Decision, TraceRow } from '../api/types'
 import { Glyph, Heading, type GlyphName } from '../app/icons'
+import { t } from '../i18n'
 
 /** The graph's nodes in the order a session usually visits them (docs/plan/03), with what each
  * stage does in plain words. */
@@ -79,7 +80,7 @@ function DecisionCard({
       </p>
       <p className="decision__reason">{d.reason}</p>
       {options.length > 1 && (
-        <ul className="decision__options" aria-label="Options it weighed">
+        <ul className="decision__options" aria-label={t('Options it weighed')}>
           {options.map((o) => (
             <li
               key={o.option}
@@ -102,7 +103,7 @@ function DecisionCard({
             onWhy(d.decision_id)
           }}
         >
-          See the full breakdown
+          {t('See the full breakdown')}
         </button>
       )}
     </li>
@@ -145,11 +146,11 @@ export function Agent({
       <ul className="agent__stats">
         <li>
           <strong>{decisions.length}</strong>
-          <span>decisions logged, each with its reason</span>
+          <span>{t('decisions logged, each with its reason')}</span>
         </li>
         <li>
           <strong>{LANES.reduce((n, l) => n + l.nodes.length, 0)}</strong>
-          <span>steps in Lodestar&apos;s loop</span>
+          <span>{t("steps in Lodestar's loop")}</span>
         </li>
         <li>
           <strong>{steps > 0 ? steps : weighed}</strong>
@@ -159,14 +160,14 @@ export function Agent({
 
       <section className="card">
         <Heading as="h2" icon="pulse">
-          How Lodestar thinks
+          {t('How Lodestar thinks')}
         </Heading>
         <p className="muted">
           {sessionId
             ? 'Each step lights up as Lodestar works through your session.'
             : 'Every turn runs through these five stages. Start a session to watch them light up.'}
         </p>
-        <ol className="flow" aria-label="Agent graph">
+        <ol className="flow" aria-label={t('Agent graph')}>
           {LANES.map((lane, i) => (
             <li key={lane.title} className="flow__stage">
               <div className="flow__head">
@@ -197,7 +198,7 @@ export function Agent({
         </ol>
         {degraded.length > 0 && (
           <p className="muted small">
-            Fallbacks this session:{' '}
+            {t('Fallbacks this session:')}{' '}
             {degraded.map((d) => `${d.what} ${d.from} → ${d.to}`).join('; ')}
           </p>
         )}
@@ -205,13 +206,14 @@ export function Agent({
 
       <section className="card">
         <Heading as="h2" icon="route">
-          Decisions and why
+          {t('Decisions and why')}
         </Heading>
         <p className="muted">
-          Before every game Lodestar scores each skill (how unsure it is, how long since you played,
-          your goals) and picks the best. Nothing is hidden.
+          {t(
+            'Before every game Lodestar scores each skill (how unsure it is, how long since you played, your goals) and picks the best. Nothing is hidden.',
+          )}
         </p>
-        {decisions.length === 0 && <p className="muted">No decisions yet.</p>}
+        {decisions.length === 0 && <p className="muted">{t('No decisions yet.')}</p>}
         <ul className="decisions">
           {(all ? decisions : decisions.slice(0, SHOWN)).map((d) => (
             <DecisionCard key={d.decision_id} d={d} name={name} onWhy={onWhy} />
@@ -234,15 +236,16 @@ export function Agent({
         <details className="card agent__trace">
           <summary>
             <Heading as="h2" icon="list">
-              Step-by-step trace ({trace.length} steps)
+              {t('Step-by-step trace (')}
+              {trace.length} {t('steps)')}
             </Heading>
           </summary>
           <table className="trace">
             <thead>
               <tr>
-                <th>Node</th>
-                <th>Step</th>
-                <th>Time</th>
+                <th>{t('Node')}</th>
+                <th>{t('Step')}</th>
+                <th>{t('Time')}</th>
               </tr>
             </thead>
             <tbody>

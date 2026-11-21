@@ -4,6 +4,7 @@ import { listenWithTone } from '../affect/voiceTone'
 import { api } from '../api/client'
 import { speechEngine, type Listening } from './speech'
 import { startWake, WAKE_LABEL, wakeSetup } from './wake'
+import { t } from '../i18n'
 
 type OrbState = 'idle' | 'consent' | 'listening' | 'transcribing'
 
@@ -162,14 +163,14 @@ export function Orb({ onTranscript }: { onTranscript: (text: string) => void }) 
           !caption && !error && state !== 'consent' && wake !== 'failed' && state !== 'listening'
         }
       >
-        {state === 'listening' && <p className="eyebrow">Listening</p>}
+        {state === 'listening' && <p className="eyebrow">{t('Listening')}</p>}
         <p className="orb__caption" aria-live="polite" data-testid="voice-caption">
           {caption}
         </p>
         {state === 'consent' && (
-          <div className="confirm" role="dialog" aria-label="Turn on the microphone">
+          <div className="confirm" role="dialog" aria-label={t('Turn on the microphone')}>
             <p>
-              To listen, Lodestar needs the microphone switch.{' '}
+              {t('To listen, Lodestar needs the microphone switch.')}{' '}
               {engine === 'browser'
                 ? "Your browser's speech recognition may send the audio to its maker."
                 : engine === 'device'
@@ -187,7 +188,7 @@ export function Orb({ onTranscript }: { onTranscript: (text: string) => void }) 
                   })
                 }}
               >
-                Turn on the microphone
+                {t('Turn on the microphone')}
               </button>
               <button
                 type="button"
@@ -195,14 +196,14 @@ export function Orb({ onTranscript }: { onTranscript: (text: string) => void }) 
                   setState('idle')
                 }}
               >
-                Not now
+                {t('Not now')}
               </button>
             </div>
           </div>
         )}
         {wake === 'failed' && (
           <p className="muted small" data-testid="wake-off">
-            The wake word couldn&apos;t start; check it in Settings. Tap to talk still works.
+            {t("The wake word couldn't start; check it in Settings. Tap to talk still works.")}
           </p>
         )}
         {error && <p role="alert">{error}</p>}

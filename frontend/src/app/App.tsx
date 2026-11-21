@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 
 import { SignalIndicator } from '../affect/SignalIndicator'
 import { adoptSignIn, api, forgetUser, hasUser, inDemo } from '../api/client'
@@ -148,14 +148,34 @@ function Icon({ children }: { children: ReactNode }) {
   )
 }
 
+const PANEL_KEY = 'lodestar.panel'
+
+function savedPanel(): Panel | null {
+  try {
+    const saved = window.sessionStorage.getItem(PANEL_KEY)
+    return saved && ALL.some((n) => n.id === saved) ? (saved as Panel) : null
+  } catch {
+    return null
+  }
+}
+
 export function App() {
-  useLocale()
+  const locale = useLocale()
   const session = useSession()
   const [registered, setRegistered] = useState(() => {
     adoptSignIn()
     return hasUser()
   })
-  const [panel, setPanel] = useState<Panel | null>(null)
+  // Kept for the tab, so a reload (or a language switch) stays on the same page.
+  const [panel, setPanel] = useState<Panel | null>(savedPanel)
+  useEffect(() => {
+    try {
+      if (panel) window.sessionStorage.setItem(PANEL_KEY, panel)
+      else window.sessionStorage.removeItem(PANEL_KEY)
+    } catch {
+      // storage unavailable
+    }
+  }, [panel])
   const [skill, setSkill] = useState<string | null>(null)
   const [why, setWhy] = useState<string | null>(null)
   const [receipt, setReceipt] = useState<Receipt | null>(null)
@@ -163,6 +183,14 @@ export function App() {
   /** Where the Twin page's own chat starts in the session feed. */
   const [twinFrom, setTwinFrom] = useState<number | null>(null)
   const dash = useDashboard(registered)
+  // A new language: fetch the dashboard again so server text (course, concepts) follows.
+  const firstLocale = useRef(locale)
+  const refreshDashboard = dash.refresh
+  useEffect(() => {
+    if (firstLocale.current === locale) return
+    firstLocale.current = locale
+    if (registered) refreshDashboard()
+  }, [locale, registered, refreshDashboard])
   /** A new account starts by naming a subject and importing its course files (docs/plan/20). */
   const [needsSubject, setNeedsSubject] = useState(false)
   useEffect(() => {
@@ -545,7 +573,7 @@ export function App() {
           <span className="brand__mark" aria-hidden="true" />
           <span className="brand__name">Lodestar</span>
         </p>
-        <nav aria-label="Main" className="rail__nav">
+        <nav aria-label={t('Main')} className="rail__nav">
           <button
             type="button"
             className="rail__item"
@@ -620,7 +648,9 @@ export function App() {
               </div>
               <p className="muted">{t(SUBTITLE[panel])}</p>
             </header>
-            <div className="page__body">{body ?? <p className="muted">{t('Loading…')}</p>}</div>
+            <div className="page__body" key={locale}>
+              {body ?? <p className="muted">{t('Loading…')}</p>}
+            </div>
           </section>
         )}
       </div>
