@@ -5,6 +5,7 @@ The source PDFs remain local; this command does not commit or publish course mat
 """
 
 import argparse
+import time
 from pathlib import Path
 
 import httpx
@@ -27,6 +28,9 @@ def main() -> None:
     args = parser.parse_args()
     with httpx.Client(base_url=args.url, timeout=900) as client:
         response = client.post("/demo")
+        while response.status_code == 202:
+            time.sleep(1)
+            response = client.post("/demo")
         response.raise_for_status()
         client.headers["Authorization"] = f"Bearer {response.json()['token']}"
         response = client.get("/subjects")
