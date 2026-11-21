@@ -14,9 +14,9 @@ from backend.contracts.common import (
     PlayMode,
     ProviderId,
 )
+from backend.registry.course import Course, concept_of
 
 Badge = Literal["established", "moderate", "experimental"]
-SkyGroup = Literal["attention", "control", "memory", "speed", "reasoning", "language", "style"]
 Phase = Literal["P1", "P2", "L"]
 Origin = Literal["classic", "original", "custom"]
 Scoring = Literal["binary", "hshs", "span", "continuous", "rubric", "style", "calibration", "none"]
@@ -34,7 +34,7 @@ class Dimension(Contract):
     plain: str
     badge: Badge
     in_overall: bool
-    group: SkyGroup
+    group: str = Field(description="The course chapter a concept belongs to; colours the map")
     framework: list[str]
     main_metric: str
     forecast_family: int | None = Field(
@@ -116,6 +116,15 @@ class Game(Contract):
         default=False, description="Its content can follow any theme the user asks for (UW4)"
     )
     story: Story | None = Field(default=None, description="The chapters, for a story")
+    plugin: str | None = Field(
+        default=None, description="Browser plugin that plays it, when not the game's own id"
+    )
+    chance: float = Field(
+        default=0.5, gt=0.0, lt=1.0, description="Success rate of pure guessing (4 options: 0.25)"
+    )
+    rushed_ms: float = Field(
+        default=200.0, gt=0.0, description="Median answer time below which answers are rushed"
+    )
     notes: str | None = None
 
     @model_validator(mode="after")
@@ -136,6 +145,10 @@ class Game(Contract):
         return (
             self.reliability if self.reliability is not None else DEFAULT_RELIABILITY[self.origin]
         )
+
+    @property
+    def plugin_id(self) -> str:
+        return self.plugin or self.id
 
     @property
     def primary_dims(self) -> list[str]:
@@ -240,6 +253,7 @@ class PracticeGain(Contract):
 class Registry(Contract):
     dimensions: list[Dimension]
     games: list[Game]
+    courses: list[Course] = Field(default_factory=list)
     providers: list[LlmProvider]
     batteries: dict[str, Battery]
     consent: ConsentNotice
@@ -275,6 +289,18 @@ class Registry(Contract):
 
     def dimension(self, dim_id: str) -> Dimension:
         return next(d for d in self.dimensions if d.id == dim_id)
+
+    @property
+    def course(self) -> Course:
+        """The course being studied. One course per deployment for now (docs/plan/19)."""
+        return self.courses[0]
+
+    def course_of(self, dim_id: str) -> Course | None:
+        return next((c for c in self.courses if any(k.id == dim_id for k in c.concepts)), None)
+
+    def concept_for_game(self, game_id: str) -> str | None:
+        concept = concept_of(game_id)
+        return concept if concept and self.course_of(concept) else None
 
     def game(self, game_id: str) -> Game:
         return next(g for g in self.games if g.id == game_id)

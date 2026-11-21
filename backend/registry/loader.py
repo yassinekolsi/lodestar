@@ -7,6 +7,7 @@ from typing import Any
 import yaml
 
 from backend.config import get_settings
+from backend.registry.course import Course
 from backend.registry.models import Registry
 
 
@@ -17,10 +18,17 @@ def _read(path: Path) -> Any:
 
 def load_registry_from(root: Path) -> Registry:
     games = [_read(p) for p in sorted((root / "games").glob("*.yaml"))]
+    dimensions = _read(root / "dimensions.yaml") or []
+    courses = [Course.model_validate(_read(p)) for p in sorted((root / "courses").glob("*.yaml"))]
+    for course in courses:
+        # Concepts are dimensions, and each concept has a quiz and an explain-it-back.
+        dimensions += course.dimension_entries()
+        games += course.game_entries()
     return Registry.model_validate(
         {
-            "dimensions": _read(root / "dimensions.yaml"),
+            "dimensions": dimensions,
             "games": games,
+            "courses": courses,
             "providers": _read(root / "llm_providers.yaml"),
             "batteries": _read(root / "batteries.yaml"),
             "consent": _read(root / "consent.yaml"),

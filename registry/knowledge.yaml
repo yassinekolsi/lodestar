@@ -1,39 +1,64 @@
-# Coaching tips written by the team (docs/plan/09, "Coaching content beyond numbers"). Loaded into
-# the shared Qdrant `knowledge` collection. General practice and wellbeing advice only, never
-# medical advice. Each tip names its source; check new ones before adding them.
+# Study tips written by the team (docs/plan/09, "Coaching content beyond numbers"; docs/plan/19).
+# Loaded into the shared Qdrant `knowledge` collection. Advice on how to study, never medical
+# advice. Each tip names its source; check new ones before adding them. `dim` ties a tip to a
+# concept of the course, or null for any concept.
 
-- id: K-chunking
-  dim: working_memory
-  text: Grouping items into small chunks, like reading a phone number as 3 parts, helps you hold longer lists in mind.
-  source: Cowan (2001), The magical number 4 in short-term memory, Behavioral and Brain Sciences
+- id: K-retrieval
+  dim: null
+  text: Testing yourself, even when you get it wrong, makes things stick better than reading your notes again.
+  source: Roediger & Karpicke (2006), Test-enhanced learning, Psychological Science
   evidence_level: established
 
 - id: K-spacing
   dim: null
-  text: Short practice spread over several days usually sticks better than one long session.
+  text: Short sessions spread over several days usually stick better than one long session the night before.
   source: Cepeda et al. (2006), Distributed practice in verbal recall tasks, Psychological Bulletin
   evidence_level: established
 
-- id: K-retrieval
-  dim: short_term_memory
-  text: Trying to recall something, rather than just re-reading it, strengthens memory for it.
-  source: Roediger & Karpicke (2006), Test-enhanced learning, Psychological Science
+- id: K-interleaving
+  dim: null
+  text: Mixing different kinds of problems in one session helps you learn which method each problem needs.
+  source: Rohrer & Taylor (2007), The shuffling of mathematics problems improves learning, Instructional Science
+  evidence_level: established
+
+- id: K-self-explanation
+  dim: null
+  text: Explaining a solution to yourself, step by step and in your own words, helps you understand it rather than memorise it.
+  source: Chi et al. (1994), Eliciting self-explanations improves understanding, Cognitive Science
+  evidence_level: established
+
+- id: K-hypercorrection
+  dim: null
+  text: A mistake you were sure about is often the easiest one to fix once you see why it was wrong, so it is worth reading the fix.
+  source: Butterfield & Metcalfe (2001), Errors committed with high confidence are hypercorrected, Journal of Experimental Psychology
+  evidence_level: established
+
+- id: K-worked-examples
+  dim: null
+  text: When a topic is new, studying a worked example before trying a problem yourself is usually faster than starting from scratch.
+  source: Sweller & Cooper (1985), The use of worked examples as a substitute for problem solving, Cognition and Instruction
   evidence_level: established
 
 - id: K-sleep
   dim: null
-  text: A good night's sleep after practising helps what you practised settle in.
+  text: A good night's sleep after studying helps what you studied settle in.
   source: Diekelmann & Born (2010), The memory function of sleep, Nature Reviews Neuroscience
   evidence_level: established
 
-- id: K-breaks
-  dim: sustained_attention
-  text: Brief breaks during a long task can help you stay focused for longer.
-  source: Ariga & Lleras (2011), Brief and rare mental breaks keep you focused, Cognition
+- id: K-natural-frequencies
+  dim: bayes
+  text: Bayes questions get much easier when you turn the percentages into counts, like 1,000 people, and count each group.
+  source: Gigerenzer & Hoffrage (1995), How to improve Bayesian reasoning without instruction, Psychological Review
+  evidence_level: established
+
+- id: K-two-way-table
+  dim: conditional
+  text: A two-way table makes it clear which group you are dividing by, which is most of conditional probability.
+  source: Gigerenzer & Hoffrage (1995), How to improve Bayesian reasoning without instruction, Psychological Review
   evidence_level: moderate
 
-- id: K-speed-accuracy
-  dim: inhibition
-  text: When mistakes start piling up in a fast game, slowing down slightly often brings accuracy back.
-  source: Heitz (2014), The speed-accuracy tradeoff, Frontiers in Neuroscience
-  evidence_level: established
+- id: K-list-outcomes
+  dim: counting
+  text: Writing out a small version of the list of outcomes shows whether order matters before you pick a formula.
+  source: Lockwood (2013), A model of students' combinatorial thinking, Journal of Mathematical Behavior
+  evidence_level: moderate

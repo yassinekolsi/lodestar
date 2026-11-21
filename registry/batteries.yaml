@@ -1,13 +1,14 @@
-# Fixed game sequences. The onboarding battery defines the "core skills": every dimension one of
-# these games loads on with a primary loading (docs/plan/07, UW1).
+# Fixed exercise sequences. The onboarding battery defines the "core concepts": every concept one
+# of these exercises loads on with a primary loading (docs/plan/07, UW1). For a course it is a
+# short placement check: one quiz per chapter, from the foundations up.
 
 onboarding:
-  seconds_each: 50
+  seconds_each: 180
   mode: assess
-  games: [quick_draw, ink_clash, arrow_storm, echo, turn_it, pattern_gap]
+  games: [quiz_sample_space, quiz_equally_likely, quiz_conditional, quiz_random_variables]
 
 checkup:
-  # After a long break (UW15): the drifted skills are picked by the policy from these games.
-  seconds_each: 45
+  # After a long break (UW15): the concepts that drifted most are picked by the policy from these.
+  seconds_each: 150
   mode: assess
-  games: [quick_draw, arrow_storm, echo, market_list, switch, turn_it, number_line]
+  games: [quiz_counting, quiz_addition_rule, quiz_independence, quiz_expectation]

@@ -109,6 +109,14 @@
       "title": "Available",
       "type": "boolean"
     },
+    "chance": {
+      "default": 0.5,
+      "description": "Success rate of pure guessing (4 options: 0.25)",
+      "exclusiveMaximum": 1.0,
+      "exclusiveMinimum": 0.0,
+      "title": "Chance",
+      "type": "number"
+    },
     "code_source": {
       "title": "Code Source",
       "type": "string"
@@ -248,6 +256,19 @@
       "title": "Phase",
       "type": "string"
     },
+    "plugin": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Browser plugin that plays it, when not the game's own id",
+      "title": "Plugin"
+    },
     "practice_trials": {
       "minimum": 0,
       "title": "Practice Trials",
@@ -266,6 +287,13 @@
       ],
       "default": null,
       "title": "Reliability"
+    },
+    "rushed_ms": {
+      "default": 200.0,
+      "description": "Median answer time below which answers are rushed",
+      "exclusiveMinimum": 0.0,
+      "title": "Rushed Ms",
+      "type": "number"
     },
     "scoring": {
       "enum": [

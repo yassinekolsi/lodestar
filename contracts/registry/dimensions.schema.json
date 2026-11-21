@@ -40,15 +40,7 @@
           "type": "array"
         },
         "group": {
-          "enum": [
-            "attention",
-            "control",
-            "memory",
-            "speed",
-            "reasoning",
-            "language",
-            "style"
-          ],
+          "description": "The course chapter a concept belongs to; colours the map",
           "title": "Group",
           "type": "string"
         },

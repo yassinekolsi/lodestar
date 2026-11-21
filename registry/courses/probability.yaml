@@ -1,0 +1,1195 @@
+# Probability 1, the demo course (docs/plan/19). In a real deployment this file is what Lodestar
+# builds from a course a student or teacher uploads; here it is written by the team so every
+# question, explanation and misconception has been checked by hand.
+#
+# - sections: the course notes, split the way a student would cite them ("Notes, 3.2").
+# - concepts: what the profile tracks. `requires` makes the prerequisite map. `key_ideas` drive
+#   the explain-it-back rubric. Each misconception has a short fix written by the team.
+# - questions: multiple choice. Every wrong option that matches a known misconception is tagged,
+#   so a wrong answer says *how* it was wrong, not only that it was.
+#
+# Levels go from 0 (easy) to 1 (hard) and map onto the same difficulty scale as every other
+# exercise (backend/scoring/levels.py).
+
+id: probability
+name: Probability 1
+audience: First-year university
+source:
+  title: Written by the team, following the order of OpenStax Introductory Statistics 2e, chapters 3 and 4
+  url: https://openstax.org/details/books/introductory-statistics-2e
+  license: CC BY 4.0 (OpenStax); notes and questions are the team's own
+
+sections:
+  - id: "1.1"
+    title: Sample spaces and events
+    text: |
+      An experiment is anything with an uncertain result: flipping a coin, rolling a die, drawing a card.
+      The sample space S is the set of every possible outcome. For one die, S = {1, 2, 3, 4, 5, 6}.
+      For two coin flips, S = {HH, HT, TH, TT}: HT and TH are different outcomes, because the first flip and the second flip are different flips.
+      An event is any subset of S, so an event can hold one outcome, several, all of them, or none.
+      "A or B" (the union, A ∪ B) holds every outcome in A, in B, or in both. In probability, "or" always includes "both".
+      "A and B" (the intersection, A ∩ B) holds only the outcomes in both.
+      "Not A" (the complement) holds every outcome of S that is not in A.
+      "At least one" means one or more; it is not the same as "exactly one".
+  - id: "1.2"
+    title: Counting outcomes
+    text: |
+      Multiplication principle: if one choice can be made in m ways and a second in n ways, the pair can be made in m × n ways. You multiply choices made one after another; you only add when you choose one option or another.
+      Arranging n different objects in a row: n! = n × (n − 1) × … × 1 ways.
+      Choosing k of n objects when order matters (a president, then a treasurer): n × (n − 1) × … × (n − k + 1) = n! / (n − k)!.
+      Choosing k of n objects when order does not matter (a committee): C(n, k) = n! / (k! (n − k)!). Each committee was counted k! times in the ordered count, so you divide by k!.
+      With replacement (digits of a PIN can repeat), every choice has all n options again: n^k.
+      Ask two questions every time: does order matter, and can things repeat?
+  - id: "1.3"
+    title: Equally likely outcomes
+    text: |
+      When every outcome in S is equally likely, P(A) = (number of outcomes in A) / (number of outcomes in S).
+      This only works when the outcomes really are equally likely. "Red or blue" is two possibilities, but with 3 red and 7 blue marbles, red has probability 3/10, not 1/2.
+      Count outcomes, not categories. With two dice there are 36 equally likely ordered outcomes. A total of 7 comes from 6 of them (1-6, 2-5, 3-4, 4-3, 5-2, 6-1); a total of 2 comes from only 1 (1-1). The 11 possible totals are not equally likely.
+      Every probability is between 0 and 1. Odds (3 to 7) are not a probability (3/10).
+  - id: "1.4"
+    title: Complement and addition rules
+    text: |
+      Complement rule: P(not A) = 1 − P(A).
+      Addition rule: P(A or B) = P(A) + P(B) − P(A and B). The outcomes in both A and B are counted once in P(A) and once in P(B), so you subtract them once.
+      If A and B are mutually exclusive (they can't happen together), P(A and B) = 0 and P(A or B) = P(A) + P(B).
+      "At least one" is usually easiest through the complement: P(at least one six in 3 rolls) = 1 − P(no six in 3 rolls) = 1 − (5/6)³ ≈ 0.42. Adding 1/6 + 1/6 + 1/6 counts the rolls with two or three sixes more than once, and with enough rolls it would pass 1.
+  - id: "2.1"
+    title: Conditional probability
+    text: |
+      P(A | B) is the probability of A once we know B happened. Knowing B shrinks the sample space to B.
+      P(A | B) = P(A and B) / P(B), for P(B) > 0. The denominator is P(B), not the whole sample space.
+      With a two-way table: P(physics | maths) = (students doing both) / (students doing maths).
+      P(A | B) and P(B | A) are different numbers. Most people with a cold sneeze; most people who sneeze do not have a cold. Swapping them is the most common mistake in probability.
+      The multiplication rule comes from the same formula: P(A and B) = P(B) × P(A | B).
+      Drawing without replacement changes the conditional: after one ace, 3 aces remain in 51 cards, so P(second ace | first ace) = 3/51.
+  - id: "2.2"
+    title: Independence
+    text: |
+      A and B are independent when knowing one doesn't change the probability of the other: P(A | B) = P(A). Equivalently, P(A and B) = P(A) × P(B).
+      Check independence with numbers, never with intuition about whether the events "are related".
+      Independent is not the same as mutually exclusive. If A and B are mutually exclusive and both possible, knowing A happened tells you B didn't, so they are dependent.
+      A fair coin has no memory. After five heads in a row, the next flip is still heads with probability 1/2; tails is not "due".
+      For dependent events, multiply by the conditional, not the plain probability: two red balls in a row from 3 red and 2 blue, without replacement, is 3/5 × 2/4.
+  - id: "2.3"
+    title: Law of total probability
+    text: |
+      Split the sample space into cases that don't overlap and together cover everything (rainy day / dry day, machine A / machine B).
+      Then P(A) = P(A | case 1) P(case 1) + P(A | case 2) P(case 2) + …
+      On a tree diagram: multiply along each path that ends in A, then add those paths.
+      This is a weighted average of the conditional probabilities, weighted by how common each case is. A plain average is only right when the cases are equally common.
+  - id: "2.4"
+    title: Bayes' theorem
+    text: |
+      Bayes' theorem reverses a conditional: P(A | B) = P(B | A) P(A) / P(B), where P(B) usually comes from the law of total probability.
+      The base rate P(A) matters. If fires happen on 0.1% of days, an alarm that rings for 99% of fires and on 2% of days without a fire is right only about 5% of the time it rings: false alarms on the many fire-free days outnumber the few real fires.
+      To check your answer, imagine 10,000 days or 1,000 emails and count each group.
+  - id: "3.1"
+    title: Discrete random variables
+    text: |
+      A random variable X gives a number to each outcome, like the number of heads in two flips.
+      Its distribution lists each value x with its probability P(X = x). The values are numbers; the outcomes (HH, HT, …) are not values.
+      Every P(X = x) is between 0 and 1, and they add up to exactly 1.
+      P(X ≤ x) adds up the probabilities of every value up to and including x.
+      For two fair flips, P(X = 0) = 1/4, P(X = 1) = 2/4, P(X = 2) = 1/4: one head can happen two ways (HT and TH).
+  - id: "3.2"
+    title: Expected value
+    text: |
+      The expected value is the long-run average: E[X] = Σ x · P(X = x), each value weighted by its probability.
+      It is not the most likely value, and it doesn't have to be a value X can take: a fair die has E[X] = 3.5.
+      A plain average of the values is only right when they are equally likely.
+      For a game, include what you pay: expected gain = expected winnings − cost.
+      Linearity: E[aX + b] = a E[X] + b, and E[X + Y] = E[X] + E[Y] always.
+  - id: "3.3"
+    title: Variance and standard deviation
+    text: |
+      Variance measures how spread out X is around its mean μ = E[X]: Var(X) = E[(X − μ)²] = E[X²] − (E[X])².
+      E[X²] is the average of the squares; (E[X])² is the square of the average. They are different.
+      The standard deviation is √Var(X), in the same units as X.
+      Var(aX + b) = a² Var(X): adding a constant shifts X without changing its spread, and multiplying by a multiplies the spread by a, so the variance by a².
+      A constant has variance 0. For independent X and Y, Var(X + Y) = Var(X) + Var(Y) and also Var(X − Y) = Var(X) + Var(Y): variances never subtract.
+  - id: "3.4"
+    title: The binomial distribution
+    text: |
+      X ~ Bin(n, p) counts successes in n independent trials, each with the same success probability p.
+      P(X = k) = C(n, k) p^k (1 − p)^(n − k). The term p^k (1 − p)^(n − k) is the probability of one particular order; C(n, k) counts how many orders there are.
+      E[X] = np and Var(X) = np(1 − p).
+      Draws without replacement are not independent, so they are not binomial.
+      Example: 3 fair flips, P(exactly 2 heads) = C(3, 2) (1/2)² (1/2) = 3/8 (HHT, HTH, THH).
+
+concepts:
+  - id: sample_space
+    name: Sample spaces and events
+    plain: Listing every outcome, and combining events with or, and, not
+    aliases: ["sample space", "sample spaces", "events", "union", "intersection", "outcomes"]
+    section: "1.1"
+    requires: []
+    key_ideas:
+      - the sample space is the set of all possible outcomes
+      - an event is a subset of the sample space
+      - "or (union) includes outcomes in both events"
+      - and (intersection) keeps only outcomes in both
+      - the complement is everything not in the event
+    misconceptions:
+      - id: union_intersection_swap
+        text: Mixing up "or" (union) and "and" (intersection)
+        fix: "\"And\" keeps only what is in both events; \"or\" keeps everything in either one."
+      - id: or_exclusive
+        text: Reading "A or B" as "A or B but not both"
+        fix: In probability, "or" always includes the outcomes in both events.
+      - id: merged_outcomes
+        text: Merging different outcomes into one, like counting HT and TH as the same
+        fix: Keep track of order when the experiment has an order; HT and TH are two outcomes.
+      - id: at_least_exactly
+        text: Reading "at least one" as "exactly one"
+        fix: "\"At least one\" means one or more, so it includes the outcome where everything happens."
+    questions:
+      - id: ss1
+        level: 0.15
+        stem: You roll one six-sided die. What is the sample space?
+        options:
+          - text: "{1, 2, 3, 4, 5, 6}"
+            correct: true
+          - text: "{1, 6}"
+          - text: "{0, 1, 2, 3, 4, 5, 6}"
+          - text: "{6}"
+        explain: The sample space lists every possible result of one roll, and a die shows 1 to 6.
+      - id: ss2
+        level: 0.3
+        stem: "On one die, A = \"the roll is even\" = {2, 4, 6} and B = \"the roll is greater than 3\" = {4, 5, 6}. What is A and B (A ∩ B)?"
+        options:
+          - text: "{4, 6}"
+            correct: true
+          - text: "{2, 4, 5, 6}"
+            misconception: union_intersection_swap
+          - text: "{4, 5, 6}"
+          - text: "{2}"
+        explain: "\"And\" keeps the outcomes in both lists: 4 and 6 are even and greater than 3."
+      - id: ss3
+        level: 0.4
+        stem: "Same events: A = {2, 4, 6} and B = {4, 5, 6}. What is A or B (A ∪ B)?"
+        options:
+          - text: "{2, 4, 5, 6}"
+            correct: true
+          - text: "{4, 6}"
+            misconception: union_intersection_swap
+          - text: "{2, 5}"
+            misconception: or_exclusive
+          - text: "{1, 3}"
+        explain: "\"Or\" keeps everything in A, in B, or in both: 2, 4, 5 and 6."
+      - id: ss4
+        level: 0.5
+        stem: On one die, A = "the roll is even". What is the complement of A?
+        options:
+          - text: "{1, 3, 5}"
+            correct: true
+          - text: "{2, 4, 6}"
+          - text: "{ } (the empty set)"
+          - text: "{1, 2, 3}"
+        explain: The complement holds every outcome not in A, so the odd rolls.
+      - id: ss5
+        level: 0.65
+        stem: You flip a coin twice. How many outcomes are in the sample space?
+        options:
+          - text: "4"
+            correct: true
+          - text: "3"
+            misconception: merged_outcomes
+          - text: "2"
+          - text: "6"
+        explain: HH, HT, TH and TT. HT and TH are different outcomes because the first and second flips are different flips.
+      - id: ss6
+        level: 0.8
+        stem: You flip a coin twice. Which set is the event "at least one head"?
+        options:
+          - text: "{HH, HT, TH}"
+            correct: true
+          - text: "{HT, TH}"
+            misconception: at_least_exactly
+          - text: "{HH}"
+          - text: "{HH, HT, TH, TT}"
+        explain: At least one head means one or two heads, so HH belongs too. Only TT is left out.
+
+  - id: counting
+    name: Counting outcomes
+    plain: Multiplying choices, and knowing when order matters or things repeat
+    aliases: ["counting", "combinations", "combination", "permutations", "permutation", "arrangements", "choose", "factorial"]
+    section: "1.2"
+    requires: [sample_space]
+    key_ideas:
+      - multiply the number of ways for choices made one after another
+      - use permutations when order matters
+      - use combinations when order does not matter
+      - with replacement each choice has all options again
+    misconceptions:
+      - id: add_instead_multiply
+        text: Adding the number of options when the choices are made one after another
+        fix: Choices made in a row multiply. You add only when you pick one option or another.
+      - id: order_confusion
+        text: Counting ordered arrangements when order doesn't matter, or the reverse
+        fix: "Ask whether swapping two picks gives a different result. A president and a treasurer: yes. A committee: no, so divide by k!."
+      - id: replacement_confusion
+        text: Allowing repeats when they aren't allowed, or forbidding them when they are
+        fix: "Ask whether the same item can be picked twice. PIN digits can repeat (n^k); people on a committee can't."
+    questions:
+      - id: co1
+        level: 0.15
+        stem: A menu has 3 starters and 4 main courses. How many different meals of one starter and one main are there?
+        options:
+          - text: "12"
+            correct: true
+          - text: "7"
+            misconception: add_instead_multiply
+          - text: "81"
+          - text: "3"
+        explain: Each of the 3 starters goes with each of the 4 mains, so 3 × 4 = 12.
+      - id: co2
+        level: 0.3
+        stem: In how many ways can the letters A, B and C be arranged in a row?
+        options:
+          - text: "6"
+            correct: true
+          - text: "27"
+            misconception: replacement_confusion
+          - text: "3"
+          - text: "9"
+        explain: 3 choices for the first place, 2 for the second, 1 for the last, so 3! = 6. Letters can't repeat, so it isn't 3³ = 27.
+      - id: co3
+        level: 0.45
+        stem: A club of 10 people picks a president and a treasurer, who must be different people. How many ways are there?
+        options:
+          - text: "90"
+            correct: true
+          - text: "45"
+            misconception: order_confusion
+          - text: "100"
+            misconception: replacement_confusion
+          - text: "19"
+            misconception: add_instead_multiply
+        explain: The roles are different, so order matters. 10 choices for president, then 9 for treasurer, so 10 × 9 = 90.
+      - id: co4
+        level: 0.55
+        stem: The same club of 10 people picks a committee of 2. How many different committees are there?
+        options:
+          - text: "45"
+            correct: true
+          - text: "90"
+            misconception: order_confusion
+          - text: "100"
+            misconception: replacement_confusion
+          - text: "20"
+        explain: A committee of Amira and Sami is the same as Sami and Amira, so order doesn't matter. C(10, 2) = 90 / 2 = 45.
+      - id: co5
+        level: 0.7
+        stem: A 4-digit PIN uses the digits 0 to 9, and digits may repeat. How many PINs are possible?
+        options:
+          - text: "10,000"
+            correct: true
+          - text: "5,040"
+            misconception: replacement_confusion
+          - text: "210"
+            misconception: order_confusion
+          - text: "40"
+            misconception: add_instead_multiply
+        explain: Each of the 4 places has all 10 digits available, so 10⁴ = 10,000. 5,040 = 10 × 9 × 8 × 7 would forbid repeats.
+      - id: co6
+        level: 0.85
+        stem: A team of 2 men and 2 women is chosen from 6 men and 5 women. How many teams are possible?
+        options:
+          - text: "150"
+            correct: true
+          - text: "25"
+            misconception: add_instead_multiply
+          - text: "600"
+            misconception: order_confusion
+          - text: "330"
+        explain: C(6, 2) = 15 ways to pick the men and C(5, 2) = 10 ways to pick the women. Both happen, so 15 × 10 = 150.
+
+  - id: equally_likely
+    name: Equally likely outcomes
+    plain: Probability as favourable outcomes over all outcomes, when that is allowed
+    aliases: ["equally likely", "classical probability", "favourable outcomes", "dice", "marbles"]
+    section: "1.3"
+    requires: [sample_space, counting]
+    key_ideas:
+      - probability is favourable outcomes divided by all outcomes
+      - only when every outcome is equally likely
+      - count outcomes not categories
+      - a probability is between 0 and 1
+    misconceptions:
+      - id: equiprobability_bias
+        text: Treating possibilities as equally likely when they aren't, like the totals of two dice
+        fix: Go back to outcomes that really are equally likely (36 for two dice), then count.
+      - id: merged_outcomes
+        text: Merging different outcomes into one, like counting HT and TH as the same
+        fix: Keep track of order when the experiment has an order; HT and TH are two outcomes.
+      - id: odds_confusion
+        text: Giving odds (favourable to unfavourable) instead of a probability
+        fix: A probability divides by all outcomes. 3 red and 7 blue is 3/10, not 3/7.
+    questions:
+      - id: el1
+        level: 0.15
+        stem: You roll a fair die. What is the probability of rolling a 5?
+        options:
+          - text: 1/6
+            correct: true
+          - text: 1/5
+          - text: 5/6
+          - text: 1/2
+            misconception: equiprobability_bias
+        explain: One favourable outcome out of 6 equally likely outcomes.
+      - id: el2
+        level: 0.3
+        stem: A bag holds 3 red and 7 blue marbles. You draw one at random. What is P(red)?
+        options:
+          - text: 3/10
+            correct: true
+          - text: 3/7
+            misconception: odds_confusion
+          - text: 1/2
+            misconception: equiprobability_bias
+          - text: 7/10
+        explain: 3 red marbles out of 10 marbles in total. Two colours doesn't mean each has probability 1/2.
+      - id: el3
+        level: 0.45
+        stem: You roll a fair die. What is the probability that the roll is greater than 4?
+        options:
+          - text: 1/3
+            correct: true
+          - text: 1/2
+            misconception: equiprobability_bias
+          - text: 2/3
+          - text: 1/6
+        explain: 5 and 6 are greater than 4, so 2 outcomes out of 6, which is 1/3.
+      - id: el4
+        level: 0.6
+        stem: You flip two fair coins. What is the probability of exactly one head?
+        options:
+          - text: 1/2
+            correct: true
+          - text: 1/3
+            misconception: merged_outcomes
+          - text: 1/4
+          - text: 3/4
+        explain: HT and TH out of HH, HT, TH, TT, so 2/4 = 1/2. "One of each" is two outcomes, not one.
+      - id: el5
+        level: 0.75
+        stem: You roll two fair dice. Which is more likely, a total of 7 or a total of 2?
+        options:
+          - text: 7 is six times as likely as 2
+            correct: true
+          - text: They are equally likely, each total is one result
+            misconception: equiprobability_bias
+          - text: 2 is more likely
+          - text: 7 is twice as likely as 2
+        explain: Of the 36 equally likely outcomes, 6 give a total of 7 and only 1 (1-1) gives 2.
+      - id: el6
+        level: 0.85
+        stem: You roll two fair dice. What is the probability that the total is 8?
+        options:
+          - text: 5/36
+            correct: true
+          - text: 1/11
+            misconception: equiprobability_bias
+          - text: 3/21
+            misconception: merged_outcomes
+          - text: 1/6
+        explain: 2-6, 3-5, 4-4, 5-3 and 6-2 are 5 of the 36 equally likely ordered outcomes.
+
+  - id: addition_rule
+    name: Complement and addition rules
+    plain: P(not A), P(A or B), and "at least one"
+    aliases: ["addition rule", "complement", "complements", "at least one", "mutually exclusive", "or rule"]
+    section: "1.4"
+    requires: [equally_likely]
+    key_ideas:
+      - the complement rule P(not A) = 1 − P(A)
+      - add the probabilities then subtract the overlap P(A and B)
+      - mutually exclusive events have no overlap
+      - at least one is easiest through the complement
+    misconceptions:
+      - id: double_count_union
+        text: Adding P(A) and P(B) without subtracting the overlap
+        fix: Outcomes in both events are counted twice by P(A) + P(B), so subtract P(A and B) once.
+      - id: at_least_one_sum
+        text: Adding the chances of each try to get "at least one"
+        fix: Use 1 − P(none). Adding counts the cases with two or more successes several times.
+      - id: assumes_independence
+        text: Multiplying probabilities of events that aren't independent
+        fix: P(A and B) = P(A) × P(B) only for independent events. In general use P(B) × P(A | B), or the addition rule.
+    questions:
+      - id: ad1
+        level: 0.15
+        stem: The probability of rain tomorrow is 0.3. What is the probability of no rain?
+        options:
+          - text: "0.7"
+            correct: true
+          - text: "0.3"
+          - text: "0.03"
+          - text: "1.3"
+        explain: Rain and no rain cover everything without overlap, so P(no rain) = 1 − 0.3 = 0.7.
+      - id: ad2
+        level: 0.35
+        stem: In a class, P(plays football) = 0.4, P(plays basketball) = 0.3 and P(plays both) = 0.1. What is P(plays football or basketball)?
+        options:
+          - text: "0.6"
+            correct: true
+          - text: "0.7"
+            misconception: double_count_union
+          - text: "0.12"
+          - text: "0.5"
+        explain: 0.4 + 0.3 − 0.1 = 0.6. The students who play both were counted in both 0.4 and 0.3.
+      - id: ad3
+        level: 0.5
+        stem: You draw one card from a standard 52-card deck. What is P(heart or king)?
+        options:
+          - text: 16/52
+            correct: true
+          - text: 17/52
+            misconception: double_count_union
+          - text: 4/52
+          - text: 1/52
+        explain: 13 hearts + 4 kings − 1 king of hearts (counted twice) = 16 cards.
+      - id: ad4
+        level: 0.6
+        stem: A and B are mutually exclusive, with P(A) = 0.2 and P(B) = 0.5. What is P(A or B)?
+        options:
+          - text: "0.7"
+            correct: true
+          - text: "0.6"
+            misconception: assumes_independence
+          - text: "0.1"
+          - text: "0.5"
+        explain: Mutually exclusive events have no overlap, so P(A and B) = 0 and P(A or B) = 0.2 + 0.5.
+      - id: ad5
+        level: 0.75
+        stem: You roll a fair die 3 times. What is the probability of at least one six?
+        options:
+          - text: About 0.42
+            correct: true
+          - text: "0.5"
+            misconception: at_least_one_sum
+          - text: About 0.005
+          - text: About 0.17
+        explain: 1 − P(no six) = 1 − (5/6)³ ≈ 1 − 0.58 = 0.42. Adding 1/6 three times counts double sixes twice.
+      - id: ad6
+        level: 0.85
+        stem: P(A) = 0.6, P(B) = 0.4 and P(A or B) = 0.7. What is P(A and B)?
+        options:
+          - text: "0.3"
+            correct: true
+          - text: "0.24"
+            misconception: assumes_independence
+          - text: "1.0"
+            misconception: double_count_union
+          - text: "0.1"
+        explain: From the addition rule, P(A and B) = P(A) + P(B) − P(A or B) = 0.6 + 0.4 − 0.7 = 0.3. Multiplying 0.6 × 0.4 assumes independence, which nothing says.
+
+  - id: conditional
+    name: Conditional probability
+    plain: P(A | B), the probability of A once you know B happened
+    aliases: ["conditional probability", "conditional", "given that", "p(a|b)", "p(a | b)", "two-way table"]
+    section: "2.1"
+    requires: [sample_space, equally_likely]
+    key_ideas:
+      - knowing B shrinks the sample space to B
+      - P(A | B) = P(A and B) divided by P(B)
+      - the denominator is P(B) not the whole sample space
+      - P(A | B) is not the same as P(B | A)
+    misconceptions:
+      - id: inverse_conditional
+        text: Swapping P(A | B) and P(B | A)
+        fix: "Say it in words: \"of the people who sneeze, how many have a cold\" is a different question from \"of the people with a cold, how many sneeze\". The denominator is the group you are told about."
+      - id: conditional_as_joint
+        text: Using P(A and B) as if it were P(A | B)
+        fix: P(A | B) divides P(A and B) by P(B). Without dividing, you get the share of everyone, not the share of B.
+      - id: ignores_condition
+        text: Ignoring the condition and giving the plain probability
+        fix: The condition changes what is possible. Shrink the sample space to what you are told happened, then count.
+    questions:
+      - id: cd1
+        level: 0.2
+        stem: You roll a fair die and are told the roll is even. What is the probability it is a 6?
+        options:
+          - text: 1/3
+            correct: true
+          - text: 1/6
+            misconception: ignores_condition
+          - text: 1/2
+          - text: 6/6
+        explain: Knowing the roll is even leaves {2, 4, 6}, and 6 is one of those 3.
+      - id: cd2
+        level: 0.35
+        stem: "Of 100 students, 40 study maths, 50 study physics and 30 study both. A student studies maths. What is P(physics | maths)?"
+        options:
+          - text: "0.75"
+            correct: true
+          - text: "0.6"
+            misconception: inverse_conditional
+          - text: "0.3"
+            misconception: conditional_as_joint
+          - text: "0.5"
+            misconception: ignores_condition
+        explain: Only the 40 maths students count now, and 30 of them study physics, so 30/40 = 0.75.
+      - id: cd3
+        level: 0.5
+        stem: P(A and B) = 0.12 and P(B) = 0.4. What is P(A | B)?
+        options:
+          - text: "0.3"
+            correct: true
+          - text: "0.12"
+            misconception: conditional_as_joint
+          - text: "0.048"
+          - text: "0.52"
+        explain: P(A | B) = P(A and B) / P(B) = 0.12 / 0.4 = 0.3.
+      - id: cd4
+        level: 0.6
+        stem: "Same 100 students: 40 study maths, 50 physics, 30 both. A student studies physics. What is P(maths | physics)?"
+        options:
+          - text: "0.6"
+            correct: true
+          - text: "0.75"
+            misconception: inverse_conditional
+          - text: "0.3"
+            misconception: conditional_as_joint
+          - text: "0.4"
+            misconception: ignores_condition
+        explain: Now the group is the 50 physics students, and 30 of them study maths, so 30/50 = 0.6. It isn't the same as P(physics | maths) = 0.75.
+      - id: cd5
+        level: 0.75
+        stem: Most people who have a cold sneeze. Does that mean most people who sneeze have a cold?
+        options:
+          - text: No. P(sneeze | cold) and P(cold | sneeze) are different numbers
+            correct: true
+          - text: Yes, the two say the same thing
+            misconception: inverse_conditional
+          - text: Yes, as long as colds are common
+          - text: No, because the two always add up to 1
+        explain: Many people sneeze for other reasons (dust, pollen), so the people who sneeze are a much bigger group than the people with a cold.
+      - id: cd6
+        level: 0.85
+        stem: You draw two cards from a 52-card deck without putting the first back. What is P(second card is an ace | first card is an ace)?
+        options:
+          - text: 3/51
+            correct: true
+          - text: 4/52
+            misconception: ignores_condition
+          - text: 4/51
+          - text: 3/52
+        explain: After one ace is gone, 3 aces are left among 51 cards.
+
+  - id: independence
+    name: Independence
+    plain: When knowing one event changes nothing about the other
+    aliases: ["independence", "independent", "gambler's fallacy", "gamblers fallacy"]
+    section: "2.2"
+    requires: [conditional]
+    key_ideas:
+      - independent means P(A | B) = P(A)
+      - for independent events P(A and B) = P(A) times P(B)
+      - independent is not the same as mutually exclusive
+      - a fair coin has no memory
+    misconceptions:
+      - id: gamblers_fallacy
+        text: Thinking that after a streak, the other outcome is "due"
+        fix: Independent trials have no memory. The next flip of a fair coin is 1/2 whatever came before.
+      - id: exclusive_independent
+        text: Thinking that mutually exclusive events are independent
+        fix: If A and B can't happen together, knowing A tells you B didn't happen, so they depend on each other.
+      - id: assumes_independence
+        text: Multiplying probabilities of events that aren't independent
+        fix: P(A and B) = P(A) × P(B) only for independent events. In general use P(B) × P(A | B), or the addition rule.
+      - id: and_or_swap
+        text: Adding probabilities for "and", or multiplying for "or"
+        fix: "\"And\" for independent events multiplies. \"Or\" uses the addition rule."
+    questions:
+      - id: in1
+        level: 0.2
+        stem: A fair coin lands heads 5 times in a row. What is the probability of heads on the next flip?
+        options:
+          - text: 1/2
+            correct: true
+          - text: Less than 1/2, tails is due
+            misconception: gamblers_fallacy
+          - text: More than 1/2, the coin is on a streak
+            misconception: gamblers_fallacy
+          - text: 1/32
+        explain: The coin has no memory. Each flip is independent, so heads is still 1/2.
+      - id: in2
+        level: 0.35
+        stem: A and B are independent, with P(A) = 0.5 and P(B) = 0.4. What is P(A and B)?
+        options:
+          - text: "0.2"
+            correct: true
+          - text: "0.9"
+            misconception: and_or_swap
+          - text: "0.1"
+          - text: "0"
+            misconception: exclusive_independent
+        explain: For independent events, P(A and B) = 0.5 × 0.4 = 0.2.
+      - id: in3
+        level: 0.5
+        stem: A and B are mutually exclusive and both have a probability above 0. Are they independent?
+        options:
+          - text: No. If A happens, B can't, so knowing A changes P(B)
+            correct: true
+          - text: Yes, they have nothing to do with each other
+            misconception: exclusive_independent
+          - text: Yes, always
+            misconception: exclusive_independent
+          - text: Only if P(A) = P(B)
+        explain: P(B | A) = 0 but P(B) > 0, so P(B | A) ≠ P(B).
+      - id: in4
+        level: 0.6
+        stem: P(A) = 0.3, P(B) = 0.5 and P(A and B) = 0.15. Are A and B independent?
+        options:
+          - text: Yes, because 0.3 × 0.5 = 0.15
+            correct: true
+          - text: No, because they overlap
+            misconception: exclusive_independent
+          - text: No, because 0.3 + 0.5 is not 0.15
+            misconception: and_or_swap
+          - text: You can't tell without P(A or B)
+        explain: Independence is checked with numbers. P(A) × P(B) = 0.15 = P(A and B), so yes.
+      - id: in5
+        level: 0.75
+        stem: A bag holds 3 red and 2 blue balls. You draw two without putting the first back. What is P(both red)?
+        options:
+          - text: "0.3"
+            correct: true
+          - text: "0.36"
+            misconception: assumes_independence
+          - text: "0.6"
+          - text: "0.5"
+        explain: 3/5 for the first red, then 2/4 because one red is gone, so 3/5 × 2/4 = 0.3. Using 3/5 twice treats the draws as independent.
+      - id: in6
+        level: 0.85
+        stem: In a class, 60% of students revise and 50% pass. P(pass | revised) = 0.7. Are revising and passing independent?
+        options:
+          - text: No, P(pass | revised) = 0.7 is not P(pass) = 0.5
+            correct: true
+          - text: Yes, because 0.6 × 0.5 = 0.3
+            misconception: assumes_independence
+          - text: Yes, nothing links them
+          - text: You can't tell
+        explain: Knowing a student revised raises their chance of passing from 0.5 to 0.7, so the events are dependent.
+
+  - id: total_probability
+    name: Law of total probability
+    plain: Getting P(A) by splitting into cases and weighting each one
+    aliases: ["total probability", "law of total probability", "tree diagram", "tree diagrams"]
+    section: "2.3"
+    requires: [conditional]
+    key_ideas:
+      - split into cases that don't overlap and cover everything
+      - multiply each conditional by the probability of its case
+      - add the cases
+      - it is a weighted average not a plain average
+    misconceptions:
+      - id: average_unweighted
+        text: Taking a plain average of the conditional probabilities
+        fix: Weight each case by how common it is. A plain average is only right when the cases are equally likely.
+      - id: forgets_branch
+        text: Leaving out one of the cases
+        fix: List every case first and check their probabilities add to 1.
+      - id: tree_swap
+        text: Adding along a path and multiplying across paths
+        fix: On a tree, multiply along each path, then add the paths that end where you want.
+    questions:
+      - id: tp1
+        level: 0.25
+        stem: 30% of days are rainy. P(late | rainy) = 0.5 and P(late | dry) = 0.1. What is P(late)?
+        options:
+          - text: "0.22"
+            correct: true
+          - text: "0.3"
+            misconception: average_unweighted
+          - text: "0.15"
+            misconception: forgets_branch
+          - text: "0.6"
+        explain: 0.3 × 0.5 + 0.7 × 0.1 = 0.15 + 0.07 = 0.22. Dry days are more common, so they weigh more.
+      - id: tp2
+        level: 0.4
+        stem: Machine A makes 60% of the parts and machine B makes 40%. 2% of A's parts and 5% of B's parts are defective. What share of all parts is defective?
+        options:
+          - text: "3.2%"
+            correct: true
+          - text: "3.5%"
+            misconception: average_unweighted
+          - text: "1.2%"
+            misconception: forgets_branch
+          - text: "7%"
+        explain: 0.6 × 0.02 + 0.4 × 0.05 = 0.012 + 0.020 = 0.032.
+      - id: tp3
+        level: 0.55
+        stem: On a tree diagram, how do you get P(A)?
+        options:
+          - text: Multiply along each path that ends in A, then add those paths
+            correct: true
+          - text: Add along each path, then multiply the paths
+            misconception: tree_swap
+          - text: Average the probabilities at the ends of the branches
+            misconception: average_unweighted
+          - text: Take the most likely path
+        explain: Each path is "this case and then A", which multiplies. The paths don't overlap, so they add.
+      - id: tp4
+        level: 0.7
+        stem: Three suppliers deliver 50%, 30% and 20% of the stock. Their deliveries are late with probability 0.1, 0.2 and 0.5. What is the probability a delivery is late?
+        options:
+          - text: "0.21"
+            correct: true
+          - text: About 0.27
+            misconception: average_unweighted
+          - text: "0.10"
+            misconception: forgets_branch
+          - text: "0.8"
+        explain: 0.5 × 0.1 + 0.3 × 0.2 + 0.2 × 0.5 = 0.05 + 0.06 + 0.10 = 0.21.
+      - id: tp5
+        level: 0.85
+        stem: 70% of the students in an exam come from group 1, where 80% pass. The rest come from group 2, where 50% pass. What is the probability a random student passes?
+        options:
+          - text: "0.71"
+            correct: true
+          - text: "0.65"
+            misconception: average_unweighted
+          - text: "0.56"
+            misconception: forgets_branch
+          - text: "1.3"
+        explain: 0.7 × 0.8 + 0.3 × 0.5 = 0.56 + 0.15 = 0.71.
+
+  - id: bayes
+    name: Bayes' theorem
+    plain: Reversing a conditional, without forgetting how common things are
+    aliases: ["bayes", "bayes' theorem", "bayes theorem", "base rate", "base rates"]
+    section: "2.4"
+    requires: [conditional, total_probability]
+    key_ideas:
+      - P(A | B) = P(B | A) times P(A) divided by P(B)
+      - P(B) comes from the law of total probability
+      - the base rate P(A) matters
+      - check by imagining a concrete number of cases
+    misconceptions:
+      - id: inverse_conditional
+        text: Swapping P(A | B) and P(B | A)
+        fix: "Say it in words: \"of the flagged emails, how many are spam\" is a different question from \"of the spam emails, how many get flagged\"."
+      - id: base_rate_neglect
+        text: Ignoring how common A is to begin with
+        fix: Imagine 10,000 cases. When A is rare, even a small error rate on the many non-A cases can outnumber the true A cases.
+      - id: ignores_evidence
+        text: Giving the starting probability P(A) and ignoring what was observed
+        fix: The evidence B changes the probability. Use P(B | A) and P(B) to update P(A).
+      - id: forgets_denominator
+        text: Stopping at P(A and B) without dividing by P(B)
+        fix: P(A | B) = P(A and B) / P(B). Find P(B) with the law of total probability.
+      - id: assumes_independence
+        text: Multiplying probabilities of events that aren't independent
+        fix: P(A and B) = P(A) × P(B) only for independent events. In general use P(B) × P(A | B).
+    questions:
+      - id: by1
+        level: 0.3
+        stem: A spam filter flags 90% of spam emails. Does that mean 90% of flagged emails are spam?
+        options:
+          - text: Not necessarily. It depends on how much mail is spam and how often regular mail gets flagged
+            correct: true
+          - text: Yes, the two are the same
+            misconception: inverse_conditional
+          - text: Yes, if the filter is good
+            misconception: inverse_conditional
+          - text: No, it is always 10%
+        explain: P(flagged | spam) is not P(spam | flagged). To reverse it you need the base rate and the false flags.
+      - id: by2
+        level: 0.45
+        stem: 10% of emails are spam. The filter flags 90% of spam and 10% of regular emails. An email is flagged. What is P(spam | flagged)?
+        options:
+          - text: "0.5"
+            correct: true
+          - text: "0.9"
+            misconception: inverse_conditional
+          - text: "0.1"
+            misconception: ignores_evidence
+          - text: "0.09"
+            misconception: forgets_denominator
+        explain: Out of 1,000 emails, 100 are spam and 90 of those get flagged; 900 are regular and 90 of those get flagged too. 90 of the 180 flagged emails are spam.
+      - id: by3
+        level: 0.6
+        stem: A fire alarm rings for 99% of real fires, and on 2% of days with no fire. Fires happen on 0.1% of days. The alarm rings. How likely is a fire?
+        options:
+          - text: About 5%
+            correct: true
+          - text: About 99%
+            misconception: inverse_conditional
+          - text: About 98%
+            misconception: base_rate_neglect
+          - text: About 0.1%
+            misconception: ignores_evidence
+        explain: In 100,000 days there are about 100 fires (99 alarms) and 99,900 quiet days (about 1,998 false alarms). 99 of about 2,097 alarms are real, roughly 5%.
+      - id: by4
+        level: 0.7
+        stem: Machine A makes 60% of the parts with 2% defective; machine B makes 40% with 5% defective. A part is defective. What is the probability it came from B?
+        options:
+          - text: "0.625"
+            correct: true
+          - text: "0.4"
+            misconception: ignores_evidence
+          - text: "0.05"
+            misconception: inverse_conditional
+          - text: "0.02"
+            misconception: forgets_denominator
+        explain: P(defective) = 0.012 + 0.020 = 0.032, and P(B and defective) = 0.020, so P(B | defective) = 0.020 / 0.032 = 0.625.
+      - id: by5
+        level: 0.85
+        stem: Which formula is Bayes' theorem?
+        options:
+          - text: P(A | B) = P(B | A) P(A) / P(B)
+            correct: true
+          - text: P(A | B) = P(B | A) P(B) / P(A)
+            misconception: inverse_conditional
+          - text: P(A | B) = P(A) P(B)
+            misconception: assumes_independence
+          - text: P(A | B) = P(B | A)
+            misconception: inverse_conditional
+        explain: Multiply the reversed conditional by the base rate of A, and divide by the probability of what you observed.
+
+  - id: random_variables
+    name: Discrete random variables
+    plain: A number for each outcome, and the probability of each number
+    aliases: ["random variable", "random variables", "distribution", "distributions", "pmf"]
+    section: "3.1"
+    requires: [equally_likely]
+    key_ideas:
+      - a random variable gives a number to each outcome
+      - the distribution lists each value with its probability
+      - the probabilities add up to 1
+      - P(X ≤ x) adds the probabilities up to x
+    misconceptions:
+      - id: probs_not_sum_one
+        text: Forgetting that the probabilities of a distribution add up to 1 and can't be negative
+        fix: Check every distribution. Each probability is between 0 and 1 and together they make exactly 1.
+      - id: outcome_vs_value
+        text: Listing outcomes (HH, HT…) instead of values of X
+        fix: X is a number. List the numbers X can be, then the outcomes that give each one.
+      - id: equiprobability_bias
+        text: Treating the values of X as equally likely when they aren't
+        fix: Go back to outcomes that really are equally likely and count how many give each value.
+      - id: cumulative_confusion
+        text: Giving P(X = x) when the question asks P(X ≤ x)
+        fix: "\"At most x\" adds every value up to x, not just x itself."
+    questions:
+      - id: rv1
+        level: 0.2
+        stem: X is the number of heads in 2 fair coin flips. What values can X take?
+        options:
+          - text: 0, 1 and 2
+            correct: true
+          - text: HH, HT, TH and TT
+            misconception: outcome_vs_value
+          - text: 1 and 2
+          - text: 0 and 1
+        explain: Two flips can give no heads, one head or two heads.
+      - id: rv2
+        level: 0.35
+        stem: X is the number of heads in 2 fair coin flips. What is P(X = 1)?
+        options:
+          - text: 1/2
+            correct: true
+          - text: 1/3
+            misconception: equiprobability_bias
+          - text: 1/4
+          - text: "1"
+        explain: HT and TH both give one head, so 2 of the 4 outcomes.
+      - id: rv3
+        level: 0.5
+        stem: P(X = 0) = 0.2, P(X = 1) = 0.5 and P(X = 2) = k, and X takes no other values. What is k?
+        options:
+          - text: "0.3"
+            correct: true
+          - text: "0.7"
+            misconception: probs_not_sum_one
+          - text: "0.5"
+          - text: "2"
+        explain: The probabilities add up to 1, so k = 1 − 0.2 − 0.5 = 0.3.
+      - id: rv4
+        level: 0.65
+        stem: P(X = 0) = 0.2, P(X = 1) = 0.5 and P(X = 2) = 0.3. What is P(X ≤ 1)?
+        options:
+          - text: "0.7"
+            correct: true
+          - text: "0.5"
+            misconception: cumulative_confusion
+          - text: "0.2"
+          - text: "1"
+        explain: X ≤ 1 means X = 0 or X = 1, so 0.2 + 0.5 = 0.7.
+      - id: rv5
+        level: 0.8
+        stem: Which of these is a valid probability distribution for X?
+        options:
+          - text: P(0) = 0.1, P(1) = 0.6, P(2) = 0.3
+            correct: true
+          - text: P(0) = 0.5, P(1) = 0.6, P(2) = −0.1
+            misconception: probs_not_sum_one
+          - text: P(0) = 0.3, P(1) = 0.3, P(2) = 0.3
+            misconception: probs_not_sum_one
+          - text: P(0) = 0.6, P(1) = 0.6, P(2) = 0.6
+            misconception: probs_not_sum_one
+        explain: Only the first has every probability between 0 and 1 and a total of exactly 1.
+
+  - id: expectation
+    name: Expected value
+    plain: The long-run average of a random variable
+    aliases: ["expected value", "expectation", "expected gain", "mean of x"]
+    section: "3.2"
+    requires: [random_variables]
+    key_ideas:
+      - E[X] is the sum of each value times its probability
+      - it is a weighted average
+      - it is not the most likely value
+      - E[aX + b] = a E[X] + b
+    misconceptions:
+      - id: expectation_most_likely
+        text: Taking the most likely value as the expected value
+        fix: E[X] weights every value by its probability. The most likely value is a different thing (the mode).
+      - id: expectation_must_occur
+        text: Thinking the expected value has to be a value X can take
+        fix: E[X] is an average. A fair die averages 3.5 over many rolls even though no single roll is 3.5.
+      - id: average_unweighted
+        text: Averaging the values without weighting them by their probabilities
+        fix: A plain average is only right when every value is equally likely.
+      - id: linearity_error
+        text: Getting E[aX + b] wrong, often by dropping the + b
+        fix: E[aX + b] = a E[X] + b. Multiply the mean, then add the constant.
+    questions:
+      - id: ex1
+        level: 0.2
+        stem: What is the expected value of one roll of a fair die?
+        options:
+          - text: "3.5"
+            correct: true
+          - text: There isn't one, because 3.5 can't be rolled
+            misconception: expectation_must_occur
+          - text: "3"
+          - text: "6"
+        explain: (1 + 2 + 3 + 4 + 5 + 6) / 6 = 3.5. It is a long-run average, not a roll.
+      - id: ex2
+        level: 0.35
+        stem: P(X = 0) = 0.7 and P(X = 10) = 0.3. What is E[X]?
+        options:
+          - text: "3"
+            correct: true
+          - text: "0"
+            misconception: expectation_most_likely
+          - text: "5"
+            misconception: average_unweighted
+          - text: "10"
+        explain: 0 × 0.7 + 10 × 0.3 = 3.
+      - id: ex3
+        level: 0.5
+        stem: A game costs 2 dinars to play. You win 10 dinars with probability 0.1 and nothing otherwise. What is your expected gain per game?
+        options:
+          - text: −1 dinar
+            correct: true
+          - text: −2 dinars
+            misconception: expectation_most_likely
+          - text: +1 dinar
+          - text: +8 dinars
+        explain: Expected winnings are 0.1 × 10 = 1 dinar, minus the 2 dinars it costs, so −1 dinar a game on average.
+      - id: ex4
+        level: 0.65
+        stem: E[X] = 4. What is E[3X + 2]?
+        options:
+          - text: "14"
+            correct: true
+          - text: "12"
+            misconception: linearity_error
+          - text: "18"
+            misconception: linearity_error
+          - text: "6"
+        explain: E[3X + 2] = 3 × 4 + 2 = 14.
+      - id: ex5
+        level: 0.8
+        stem: P(X = 1) = 0.2, P(X = 2) = 0.5 and P(X = 9) = 0.3. What is E[X]?
+        options:
+          - text: "3.9"
+            correct: true
+          - text: "4"
+            misconception: average_unweighted
+          - text: "2"
+            misconception: expectation_most_likely
+          - text: "9"
+        explain: 1 × 0.2 + 2 × 0.5 + 9 × 0.3 = 0.2 + 1.0 + 2.7 = 3.9.
+
+  - id: variance
+    name: Variance and standard deviation
+    plain: How spread out a random variable is around its mean
+    aliases: ["variance", "standard deviation", "spread"]
+    section: "3.3"
+    requires: [expectation]
+    key_ideas:
+      - variance measures spread around the mean
+      - Var(X) = E[X²] − (E[X])²
+      - the standard deviation is the square root of the variance
+      - adding a constant doesn't change the variance
+      - multiplying by a multiplies the variance by a squared
+    misconceptions:
+      - id: variance_linear
+        text: Treating variance like the mean, as in Var(3X) = 3 Var(X) or Var(X − Y) = Var(X) − Var(Y)
+        fix: Var(aX) = a² Var(X), and for independent X and Y variances always add.
+      - id: shift_changes_spread
+        text: Thinking that adding a constant changes the variance
+        fix: Adding a constant moves every value the same amount, so the spread stays the same.
+      - id: variance_sd_confusion
+        text: Mixing up the variance and the standard deviation
+        fix: The standard deviation is the square root of the variance.
+      - id: ex2_vs_ex_squared
+        text: Mixing up E[X²] and (E[X])²
+        fix: E[X²] averages the squares; (E[X])² squares the average. Var(X) is the first minus the second.
+    questions:
+      - id: va1
+        level: 0.25
+        stem: X is always equal to 5. What is Var(X)?
+        options:
+          - text: "0"
+            correct: true
+          - text: "5"
+          - text: "25"
+          - text: "1"
+        explain: X never moves away from its mean, so there is no spread.
+      - id: va2
+        level: 0.4
+        stem: Var(X) = 4. What is Var(X + 10)?
+        options:
+          - text: "4"
+            correct: true
+          - text: "14"
+            misconception: shift_changes_spread
+          - text: "40"
+          - text: "104"
+        explain: Adding 10 shifts every value by the same amount, so the spread doesn't change.
+      - id: va3
+        level: 0.55
+        stem: Var(X) = 4. What is Var(3X)?
+        options:
+          - text: "36"
+            correct: true
+          - text: "12"
+            misconception: variance_linear
+          - text: "7"
+          - text: "4"
+        explain: Var(3X) = 3² × 4 = 36.
+      - id: va4
+        level: 0.65
+        stem: Var(X) = 9. What is the standard deviation of X?
+        options:
+          - text: "3"
+            correct: true
+          - text: "81"
+            misconception: variance_sd_confusion
+          - text: "9"
+            misconception: variance_sd_confusion
+          - text: "4.5"
+        explain: The standard deviation is √9 = 3.
+      - id: va5
+        level: 0.8
+        stem: E[X] = 2 and E[X²] = 7. What is Var(X)?
+        options:
+          - text: "3"
+            correct: true
+          - text: "5"
+            misconception: ex2_vs_ex_squared
+          - text: "7"
+          - text: "11"
+        explain: Var(X) = E[X²] − (E[X])² = 7 − 4 = 3.
+      - id: va6
+        level: 0.85
+        stem: X and Y are independent, with Var(X) = 2 and Var(Y) = 3. What is Var(X − Y)?
+        options:
+          - text: "5"
+            correct: true
+          - text: "−1"
+            misconception: variance_linear
+          - text: "1"
+            misconception: variance_linear
+          - text: "6"
+        explain: Var(X − Y) = Var(X) + (−1)² Var(Y) = 2 + 3 = 5. Variances never subtract.
+
+  - id: binomial
+    name: The binomial distribution
+    plain: Counting successes in independent tries with the same chance
+    aliases: ["binomial", "bin(n, p)", "binomial distribution"]
+    section: "3.4"
+    requires: [independence, counting, expectation]
+    key_ideas:
+      - n independent trials with the same success probability p
+      - P(X = k) = C(n, k) p^k (1 − p)^(n − k)
+      - C(n, k) counts the orders the successes can come in
+      - the mean is np and the variance is np(1 − p)
+    misconceptions:
+      - id: binomial_no_choose
+        text: Forgetting the C(n, k) factor
+        fix: p^k (1 − p)^(n − k) is the chance of one particular order. Multiply by C(n, k), the number of orders.
+      - id: binomial_not_independent
+        text: Using the binomial for trials that aren't independent, like draws without replacement
+        fix: The binomial needs the same p on every trial. Without replacement, p changes after each draw.
+      - id: expectation_most_likely
+        text: Thinking the mean np is certain to happen, or is the only likely value
+        fix: np is the long-run average. Other values have real probability too.
+      - id: variance_sd_confusion
+        text: Mixing up the variance np(1 − p), the standard deviation and the mean
+        fix: Mean np, variance np(1 − p), standard deviation √(np(1 − p)).
+    questions:
+      - id: bi1
+        level: 0.25
+        stem: Which of these is a binomial random variable?
+        options:
+          - text: The number of heads in 10 fair coin flips
+            correct: true
+          - text: The number of aces in 5 cards drawn without replacement
+            misconception: binomial_not_independent
+          - text: The number of flips until the first head
+          - text: The total of two dice
+        explain: Coin flips are independent and each has the same p = 1/2. Card draws without replacement change p each time.
+      - id: bi2
+        level: 0.4
+        stem: X ~ Bin(10, 0.3). What is E[X]?
+        options:
+          - text: "3"
+            correct: true
+          - text: "2.1"
+            misconception: variance_sd_confusion
+          - text: "0.3"
+          - text: "7"
+        explain: E[X] = np = 10 × 0.3 = 3. 2.1 is the variance, np(1 − p).
+      - id: bi3
+        level: 0.55
+        stem: You flip a fair coin 3 times. What is the probability of exactly 2 heads?
+        options:
+          - text: 3/8
+            correct: true
+          - text: 1/8
+            misconception: binomial_no_choose
+          - text: 2/3
+          - text: 1/2
+        explain: HHT, HTH and THH each have probability 1/8, so C(3, 2) × 1/8 = 3/8.
+      - id: bi4
+        level: 0.7
+        stem: X ~ Bin(5, 0.2). What is P(X = 1)?
+        options:
+          - text: About 0.41
+            correct: true
+          - text: About 0.08
+            misconception: binomial_no_choose
+          - text: "1, because E[X] = 1"
+            misconception: expectation_most_likely
+          - text: "0.2"
+        explain: C(5, 1) × 0.2 × 0.8⁴ = 5 × 0.2 × 0.4096 ≈ 0.41.
+      - id: bi5
+        level: 0.85
+        stem: X ~ Bin(100, 0.5). What is Var(X)?
+        options:
+          - text: "25"
+            correct: true
+          - text: "50"
+            misconception: variance_sd_confusion
+          - text: "5"
+            misconception: variance_sd_confusion
+          - text: "0.25"
+        explain: Var(X) = np(1 − p) = 100 × 0.5 × 0.5 = 25. The mean is 50 and the standard deviation is 5.
