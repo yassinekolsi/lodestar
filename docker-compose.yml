@@ -1,6 +1,6 @@
 # `make up` starts everything; `make up-ollama` also starts a containerised Ollama.
 # Image tags are pinned (docs/plan/02, Pinned versions).
-name: lodestar
+name: lodestar-upside
 
 services:
   postgres:
