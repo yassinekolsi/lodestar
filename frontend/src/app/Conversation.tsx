@@ -60,6 +60,28 @@ const ASKS: Record<'en' | 'fr' | 'tn', string[]> = {
   ],
 }
 
+/** The same, for a student working from their own uploads: nothing assumes a course. */
+const DOCUMENT_ASKS: Record<'en' | 'fr' | 'tn', string[]> = {
+  en: [
+    'Quiz me on my notes',
+    'Explain the main idea of my chapter',
+    'What are the key definitions in my notes?',
+    'What do I keep getting wrong?',
+  ],
+  fr: [
+    'Interroge-moi sur mes notes',
+    "Explique l'idée principale de mon chapitre",
+    'Quelles sont les définitions clés dans mes notes ?',
+    'Qu’est-ce que je rate tout le temps ?',
+  ],
+  tn: [
+    'اختبرني على الnotes متاعي',
+    'فسّرلي الفكرة الأساسية في الchapitre متاعي',
+    'شنوّة أهم التعريفات في الnotes متاعي ؟',
+    'شنوّة الحاجات اللي نغلط فيهم ديما ؟',
+  ],
+}
+
 export function Star({ size = 32 }: { size?: number }) {
   return (
     <span className="avatar" aria-hidden="true" style={{ width: size, height: size }}>
@@ -259,8 +281,11 @@ export function Conversation({
   setWhy,
   onOpen,
   persona = 'willow',
+  ownMaterial = false,
 }: {
   persona?: Persona
+  /** No built-in course: suggestions are about the student's own documents. */
+  ownMaterial?: boolean
   session: ReturnType<typeof useSession>
   registry: Registry | null
   twin: TwinView | null
@@ -565,12 +590,14 @@ export function Conversation({
               <li>
                 <strong>{progress.stats.rounds_this_week}</strong> {t('exercises this week')}
               </li>
-              <li>
-                <strong>
-                  {progress.stats.skills_measured}/{progress.stats.skills_total}
-                </strong>{' '}
-                {t('concepts checked')}
-              </li>
+              {!ownMaterial && (
+                <li>
+                  <strong>
+                    {progress.stats.skills_measured}/{progress.stats.skills_total}
+                  </strong>{' '}
+                  {t('concepts checked')}
+                </li>
+              )}
             </ul>
           )}
           {state.phase === 'home' && (
@@ -599,7 +626,9 @@ export function Conversation({
                 </span>
                 <span className="action__title">{t('Start studying')}</span>
                 <span className="action__text">
-                  {t('The concept that needs you most, at your level')}
+                  {ownMaterial
+                    ? t('A quiz made from your own pages')
+                    : t('The concept that needs you most, at your level')}
                 </span>
               </button>
               <button
@@ -623,7 +652,7 @@ export function Conversation({
           {state.phase === 'home' && (
             <div className="ask-chips" aria-label={t('Try asking')}>
               <span className="muted small">{t('Try asking')}</span>
-              {ASKS[locale].map((ask) => (
+              {(ownMaterial ? DOCUMENT_ASKS : ASKS)[locale].map((ask) => (
                 <button
                   key={ask}
                   type="button"

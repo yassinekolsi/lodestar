@@ -60,9 +60,12 @@ def which_concept(course: Course) -> str:
 # Facts stay in English for the model, which is told to answer in the student's language.
 _SAY: dict[str, dict[i18n.Locale, str]] = {
     "no_course": {
-        "en": "Upload your course notes and I'll answer from them.",
-        "fr": "Importe tes notes de cours et je répondrai à partir d'elles.",
-        "tn": "حطّ الnotes متاع الcours متاعك ونجاوبك منهم.",
+        "en": "I don't have pages on that yet. Upload the chapter in Documents (in the sidebar) "
+        "and I'll answer from it, citing the page.",
+        "fr": "Je n'ai pas encore de pages là-dessus. Importe le chapitre dans Documents (dans le "
+        "menu) et je répondrai à partir de lui, en citant la page.",
+        "tn": "مازال ما عنديش pages على هالحاجة. حطّ الchapitre في Documents (في القائمة) "
+        "ونجاوبك منو، بالpage.",
     },
     "also_upload": {
         "en": " You can also upload your own notes or slides in Documents, and I'll answer "
@@ -210,7 +213,7 @@ async def teach(
     so any uploaded course works."""
     args = TeachArgs.model_validate(call.args)
     registry = ctx.services.registry
-    course = registry.course if registry.courses else None
+    course = registry.active_course
     concept = (
         course.concept(args.dim)
         if course is not None and args.dim is not None and registry.course_of(args.dim)
@@ -220,8 +223,10 @@ async def teach(
 
     if concept is None or course is None:
         if not hits:
-            reply = which_concept(course) if course is not None else _say("no_course")
-            reply += _say("also_upload")
+            if course is not None:
+                reply = which_concept(course) + _say("also_upload")
+            else:  # their own material only, and nothing uploaded that answers it yet
+                reply = _say("no_course")
             return ToolOutcome(name="teach", reply=reply), {}
         facts = _doc_facts(hits)
         emit(

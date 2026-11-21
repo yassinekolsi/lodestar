@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { API_BASE, api, getToken, withLang } from '../api/client'
+import { API_BASE, ApiError, api, getToken, withLang } from '../api/client'
 import type {
   AcsView,
   CourseMapView,
@@ -23,6 +23,8 @@ export interface DashboardData {
   decisions: Decision[]
   patterns: PatternsView | null
   course: CourseMapView | null
+  /** No built-in course for this account: it studies its own uploads (backend/course_scope.py). */
+  ownMaterial: boolean
   error: string | null
   /** Bumped on every live "twin updated" push, so views can animate a change. */
   updates: number
@@ -38,6 +40,7 @@ const EMPTY: DashboardData = {
   decisions: [],
   patterns: null,
   course: null,
+  ownMaterial: false,
   error: null,
   updates: 0,
 }
@@ -58,9 +61,12 @@ export function useDashboard(enabled: boolean): DashboardData & { refresh: () =>
       api.acs(),
       api.decisions(),
       api.patterns(),
-      api.course().catch(() => null),
+      api.course().then(
+        (course) => ({ course, ownMaterial: false }),
+        (e: unknown) => ({ course: null, ownMaterial: e instanceof ApiError && e.status === 404 }),
+      ),
     ]).then(
-      ([registry, twin, progress, forecast, goals, acs, decisions, patterns, course]) => {
+      ([registry, twin, progress, forecast, goals, acs, decisions, patterns, map]) => {
         setData((d) => ({
           ...d,
           registry,
@@ -71,7 +77,8 @@ export function useDashboard(enabled: boolean): DashboardData & { refresh: () =>
           acs,
           decisions,
           patterns,
-          course,
+          course: map.course,
+          ownMaterial: map.ownMaterial,
           error: null,
         }))
       },

@@ -30,6 +30,7 @@ from backend.scoring.norms import Norms
 router = APIRouter(tags=["course"])
 SOLID_PERCENT = 70.0
 CLASS_MISTAKES = 6
+NO_COURSE = "No built-in course for this account: it studies its own uploads"
 
 # The teacher's suggestions, in the language of the request (backend/i18n.py).
 _SUGGEST: dict[i18n.Locale, dict[str, str]] = {
@@ -66,9 +67,9 @@ def _state(belief: Belief | None, norms: Norms, dim: str) -> ConceptState:
 
 @router.get("/course", response_model=CourseMapView)
 async def course_map(conn: Conn, user_id: CurrentUser, registry: RegistryDep) -> CourseMapView:
-    if not registry.courses:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "No course loaded")
-    course = registry.course
+    course = registry.active_course
+    if course is None:  # a student working from their own uploads (backend/course_scope.py)
+        raise HTTPException(status.HTTP_404_NOT_FOUND, NO_COURSE)
     norms = Norms()
     now = datetime.now(UTC)
     twin = await read_twin(conn, user_id, now=now, norms=norms)
@@ -135,9 +136,9 @@ async def course_map(conn: Conn, user_id: CurrentUser, registry: RegistryDep) ->
 async def class_view(engine: Engine, user_id: CurrentUser, registry: RegistryDep) -> ClassView:
     """Everyone studying the course on this server, as counts and medians only. In a school
     deployment this sits behind a teacher role; the demo lets any signed-in user open it."""
-    if not registry.courses:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "No course loaded")
-    course = registry.course
+    course = registry.active_course
+    if course is None:  # a student working from their own uploads (backend/course_scope.py)
+        raise HTTPException(status.HTTP_404_NOT_FOUND, NO_COURSE)
     norms = Norms()
     now = datetime.now(UTC)
     concept_ids = {c.id for c in course.concepts}

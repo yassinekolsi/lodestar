@@ -16,6 +16,7 @@ import { Memory } from '../dashboard/Memory'
 import { ClassPanel } from '../dashboard/ClassPanel'
 import { ConceptMap } from '../dashboard/ConceptMap'
 import { Documents } from '../dashboard/Documents'
+import { OwnMaterial } from '../dashboard/OwnMaterial'
 import { SkillPage } from '../dashboard/SkillPage'
 import { useDashboard } from '../dashboard/useDashboard'
 import { setSpeakReplies, speakReplies, stopSpeaking } from '../voice/tts'
@@ -179,6 +180,12 @@ export function App() {
   const [voiceUsed, setVoiceUsed] = useState(false)
   useSpeakReplies(session.state, persona, voiceUsed || speakReplies())
   const { registry, twin, progress, forecast, goals, acs, decisions, patterns, course } = dash
+  // No built-in course: this student works from their own uploads (backend/course_scope.py).
+  const ownMaterial = dash.ownMaterial
+  const askFromPanel = (message: string) => {
+    setPanel(null)
+    void session.send(message)
+  }
 
   const checkLlm = () => {
     Promise.all([api.llm(), api.consent()]).then(
@@ -286,7 +293,17 @@ export function App() {
   const title = current ? t(current.label) : ''
 
   let body: ReactNode = null
-  if (panel === 'twin' && registry && twin && progress) {
+  if (ownMaterial && (panel === 'twin' || panel === 'games' || panel === 'teacher')) {
+    body = (
+      <OwnMaterial
+        what={panel === 'twin' ? 'map' : panel === 'games' ? 'practice' : 'class'}
+        onDocuments={() => {
+          open('documents')
+        }}
+        onAsk={askFromPanel}
+      />
+    )
+  } else if (panel === 'twin' && registry && twin && progress) {
     body = skill ? (
       <SkillPage
         dim={skill}
@@ -588,10 +605,12 @@ export function App() {
             setWhy={setWhy}
             onOpen={open}
             persona={persona}
+            ownMaterial={ownMaterial}
           />
           {!playing && session.state.phase !== 'resumable' && (
             <Composer
               session={session}
+              ownMaterial={ownMaterial}
               onVoice={(text) => {
                 setVoiceUsed(true)
                 void session.send(text, 'voice')
@@ -618,7 +637,7 @@ export function App() {
         )}
       </div>
 
-      {home && !panel && patterns?.plateaus[0] && (
+      {home && !panel && !ownMaterial && patterns?.plateaus[0] && (
         <PlateauToast
           plateau={patterns.plateaus[0]}
           onTry={(p) => {

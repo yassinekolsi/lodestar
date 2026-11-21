@@ -164,8 +164,8 @@ async def draft_verified(
     (docs/plan/09)."""
     registry = ctx.services.registry
     names = [d.name for d in registry.dimensions]
-    if registry.courses:  # a French or Derja reply names concepts in French
-        names += [c.name for c in registry.course.concepts if c.name not in names]
+    if (course := registry.active_course) is not None:  # French or Derja names in a reply
+        names += [c.name for c in course.concepts if c.name not in names]
     items: list[Fact | KnowledgeItem | MemoryItem] = [
         *packet.facts,
         *packet.knowledge,

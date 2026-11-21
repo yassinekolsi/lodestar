@@ -28,7 +28,9 @@ or two longer while it wakes. The connection pool checks connections before usin
 ## 2. Qdrant Cloud (memory search)
 
 1. Create a free cluster.
-2. Copy its URL (`https://…cloud.qdrant.io:6333`) and create an **API key** for it.
+2. Copy its URL and create an **API key** for it. Write the URL with port 443:
+   `https://…cloud.qdrant.io:443`. Qdrant Cloud serves the same API on 443 and 6333, and some
+   networks block 6333 (a connection timeout in the logs means that).
 3. The app creates its collections on the first start. If Qdrant can't be reached, the app still
    runs, without document search or memory (sessions keep working, answers come from the course
    notes alone).
@@ -43,7 +45,7 @@ or two longer while it wakes. The connection pool checks connections before usin
 | Variable | Value |
 |---|---|
 | `DATABASE_URL` | The Neon connection string from step 1 |
-| `QDRANT_URL` | The Qdrant cluster URL from step 2 |
+| `QDRANT_URL` | The Qdrant cluster URL from step 2, ending in `:443` |
 | `QDRANT_API_KEY` | The Qdrant API key |
 | `LODESTAR_OPERATOR_LLM_PROVIDER` | Optional, for example `gemini` (see below) |
 | `LODESTAR_OPERATOR_LLM_KEY` | Optional: that provider's API key |

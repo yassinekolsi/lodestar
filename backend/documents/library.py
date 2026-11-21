@@ -170,13 +170,13 @@ async def documents(conn: AsyncConnection, user_id: UUID) -> list[DocumentView]:
     return [_view(r) for r in rows]
 
 
-async def has_documents(conn: AsyncConnection, user_id: UUID) -> bool:
-    n = (
-        await conn.execute(
-            select(func.count()).select_from(t.documents).where(t.documents.c.user_id == user_id)
-        )
-    ).scalar_one()
-    return bool(n)
+async def has_documents(conn: AsyncConnection, user_id: UUID, *, ready_only: bool = False) -> bool:
+    """Whether the student has uploaded anything; with `ready_only`, anything they have checked
+    and validated, which is what answers and quizzes use."""
+    q = select(func.count()).select_from(t.documents).where(t.documents.c.user_id == user_id)
+    if ready_only:
+        q = q.where(t.documents.c.review_required.is_(False), t.documents.c.status == "ready")
+    return bool((await conn.execute(q)).scalar_one())
 
 
 async def remove(

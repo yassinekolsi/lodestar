@@ -54,6 +54,22 @@ No AI key is needed: Lodestar uses a local [Ollama](https://ollama.com) model if
 provider** with your own key (stored encrypted, shown as its last 4 characters). The terminal client
 works too: `bin/lodestar login --code <token>`, then `bin/lodestar chat`.
 
+## Your own course, or the demo's
+
+A student who signs up studies **their own material**: they create a subject, upload a chapter
+(PDF or text), check the extracted text against the original pages and validate it. From then on
+"Start studying" and "Quiz me on my notes" build questions from their pages, each citing its page,
+and questions are answered from their documents with the page. Before anything is validated,
+Lodestar says where to add or check a chapter; it never falls back to a course they didn't upload.
+This works in English, French and Derja: a French chapter gets questions in French, and a Derja
+speaker asking "ma fhemtech el pile" gets the passage on stacks.
+
+The built-in **Probability 1** course is the demo's: the demo person (Alex) and the classmates
+seeded with them study it, which is what shows the concept map, the gap rule, misconception
+feedback and the class view without uploading anything. `LODESTAR_BUILT_IN_COURSE=all` gives every
+account the built-in course (`backend/course_scope.py`). Demo chapters to upload are in
+`docs/demo/`, including a French one (`structures-de-donnees-piles-files.pdf`).
+
 ## How it decides
 
 **Documents** lets students create subjects, upload PDF/text chapters and study one selected

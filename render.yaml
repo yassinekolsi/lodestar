@@ -11,6 +11,8 @@ services:
     # Free works for a demo, but the server uses about 500-600 MB once the embedding models are
     # loaded, and Free and Starter stop at 512 MB. If Render restarts it for memory, use Standard.
     plan: free
+    # Next to the Neon project (AWS us-east-2 is Ohio): a request makes many small queries.
+    region: ohio
     healthCheckPath: /api/health
     autoDeploy: true
     envVars:
@@ -18,7 +20,8 @@ services:
       # checkpointer uses prepared statements, which a transaction pooler doesn't keep.
       - key: DATABASE_URL
         sync: false
-      # Qdrant Cloud: the cluster URL (https://...cloud.qdrant.io:6333) and its API key.
+      # Qdrant Cloud: the cluster URL with port 443 (https://...cloud.qdrant.io:443; some networks
+      # block 6333) and its API key.
       - key: QDRANT_URL
         sync: false
       - key: QDRANT_API_KEY

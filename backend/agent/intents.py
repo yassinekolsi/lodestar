@@ -273,7 +273,7 @@ _FR_TN_TOOLS: dict[str, str] = {
         r"explique[sz]?(-moi| moi)?(?! (ton|ce|cette|la) (choix|décision))|"
         r"aide-moi (à comprendre|avec)|je bloque sur|je suis perdu|"
         r"comment (on )?(calcule|trouve|utilise|applique|résout))\b|"
-        r"ما فهمتش|مافهمتش|موش فاهم|فهّمني|فهمني|اشرحلي|إشرحلي|شنوّة (هو|هي|معناها)|"
+        r"ما فهمتش|مافهمتش|موش فاهم|فهّمني|فهمني|اشرحلي|إشرحلي|فسّرلي|فسرلي|شنوّة (هو|هي|معناها)|"
         r"شنوة (هو|هي|معناها)|شنيّة|كيفاش نحسب|كيفاش نعمل|عاودلي|"
         r"\b(ma fhemtech|ma fhemtch|mafhemtech|ma fhmtch|fahhemni|fhemni|chnowa|chneya|"
         r"kifech|3awedli|achra7li)\b"
@@ -311,9 +311,10 @@ _FR_TN_CONTEST = (
     r"فما برشا حس|تلهّيت|تلهيت"
 )
 _FR_TN_NOTES = (
-    r"\b(mes|les|nos|de mes|sur mes) (propres )?(notes|slides?|pdfs?|documents?|cours|"
+    r"\b(mes|mon|ma|les|nos|de mes|de mon|sur mes|sur mon) (propres? )?(notes|slides?|pdfs?|"
+    r"documents?|cours|"
     r"polycopiés?|chapitres?|fichiers?)\b|الnotes متاعي|الcours متاعي|الslides متاعي|"
-    r"الdocument متاعي|\b(les notes mte3i|el cours mte3i)\b"
+    r"الdocument متاعي|الchapitre متاعي|\b(les notes mte3i|el cours mte3i)\b"
 )
 _FR_TN_QUIZ = (
     r"\b(quiz|interroge-moi|teste-moi|questions?|exercices?|réviser|entraîne-moi)\b|"

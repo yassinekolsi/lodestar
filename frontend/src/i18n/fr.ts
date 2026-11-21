@@ -399,4 +399,15 @@ export const FR: Record<string, string> = {
   'Share anonymised results with the team.': 'Partager des résultats anonymisés avec l’équipe.',
   'Lets the team include your anonymised results in its evaluation of Lodestar.':
     'Permet à l’équipe d’inclure tes résultats anonymisés dans son évaluation de Lodestar.',
+
+  // The student's own material (dashboard/OwnMaterial.tsx)
+  'The concept map is drawn from a course with its concepts and prerequisites. You study from your own documents, so ask about them or take a quiz made from their pages.':
+    'La carte des notions se dessine à partir d’un cours avec ses notions et ses prérequis. Tu étudies à partir de tes propres documents : pose des questions dessus ou fais un quiz tiré de leurs pages.',
+  'Your practice comes from your own documents: every question is made from one of your pages and cites it.':
+    'Tes exercices viennent de tes propres documents : chaque question est tirée d’une de tes pages et la cite.',
+  'The class view counts a whole class on the same course. Your account studies its own documents, so there is no class to show yet.':
+    'La vue de la classe compte toute une classe sur le même cours. Ton compte étudie ses propres documents, il n’y a donc pas encore de classe à afficher.',
+  'Quiz me on my notes': 'Interroge-moi sur mes notes',
+  'Open Documents': 'Ouvrir Documents',
+  'A quiz made from your own pages': 'Un quiz tiré de tes propres pages',
 }

@@ -4788,3 +4788,13 @@ button.primary.pick__go {
   right: auto;
   left: 1.25rem;
 }
+/* The student's own material, where a panel is built on the demo's course */
+.own-material {
+  max-width: 40rem;
+}
+.own-material .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}

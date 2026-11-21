@@ -60,3 +60,9 @@
 - {lang: tn, text: "chnowa nghlot dima ?", kind: chat, tool: mistakes}
 - {lang: tn, text: "yalla nabdew", kind: play}
 - {lang: tn, text: "3aslema", kind: chat}
+
+# Questions about the student's own documents (the home screen without the built-in course) -----
+- {lang: fr, text: "Explique l'idée principale de mon chapitre", kind: chat, tool: teach}
+- {lang: fr, text: "Quelles sont les définitions clés dans mes notes ?", kind: chat, tool: teach}
+- {lang: tn, text: "فسّرلي الفكرة الأساسية في الchapitre متاعي", kind: chat, tool: teach}
+- {lang: tn, text: "شنوّة أهم التعريفات في الnotes متاعي ؟", kind: chat, tool: teach}

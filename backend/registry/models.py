@@ -309,9 +309,13 @@ class Registry(Contract):
 
     def courses_in(self, locale: str | None = None) -> list[Course]:
         """The courses in the language of the request (backend/i18n.py); English when there is
-        no translation. Ids, answers and tags are the same in every language."""
-        from backend import i18n
+        no translation. Ids, answers and tags are the same in every language. Empty for a
+        student who studies their own uploads rather than the built-in course
+        (backend/course_scope.py)."""
+        from backend import course_scope, i18n
 
+        if not course_scope.enabled():
+            return []
         loc = locale or i18n.course_locale()
         translated = self.translations.get(loc)
         if not translated:
@@ -324,6 +328,12 @@ class Registry(Contract):
         """The course being studied, in the request's language. One course per deployment for
         now (docs/plan/19)."""
         return self.courses_in()[0]
+
+    @property
+    def active_course(self) -> Course | None:
+        """The course for this request, or None for a student working from their own uploads."""
+        courses = self.courses_in()
+        return courses[0] if courses else None
 
     def course_of(self, dim_id: str) -> Course | None:
         return next((c for c in self.courses_in() if any(k.id == dim_id for k in c.concepts)), None)

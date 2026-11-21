@@ -13,6 +13,7 @@ from langgraph.runtime import Runtime
 from langgraph.types import interrupt
 from sqlalchemy import any_, func, literal, select
 
+from backend import i18n
 from backend.agent import experiments, learning, why
 from backend.agent.affect import estimate, recent_cues
 from backend.agent.context import LodestarContext
@@ -335,6 +336,91 @@ def _split_pick(patterns: Any, pool: dict[str, list[Game]], played: int) -> Any:
     return side if side.game_id else None
 
 
+_FROM_DOCUMENTS: dict[str, dict[str, str]] = {
+    "quiz": {
+        "en": "Questions made from your document, each citing its page.",
+        "fr": "Des questions tirées de ton document, chacune avec sa page.",
+        "tn": "أسئلة من الdocument متاعك، كل سؤال بالpage متاعو.",
+    },
+    "review": {
+        "en": "Your document is waiting for you to check it: open Documents, compare the text with "
+        "the original pages and press Validate. Then I can quiz you on it and answer from it.",
+        "fr": "Ton document attend ta vérification : ouvre Documents, compare le texte avec les "
+        "pages d'origine et appuie sur Valider. Ensuite je pourrai t'interroger dessus et "
+        "répondre à partir de lui.",
+        "tn": "الdocument متاعك يستنّى فيك تثبّت فيه : حلّ Documents، قارن النص مع الpages "
+        "الأصلية واضغط Valider. من بعد نجم نعملك أسئلة عليه ونجاوبك منو.",
+    },
+    "no_quiz": {
+        "en": "I couldn't make a reliable quiz from that chapter. Try searching its pages or "
+        "choose another document. With an AI provider connected in Settings, I can also draft "
+        "questions from your passages.",
+        "fr": "Je n'ai pas pu faire un quiz fiable à partir de ce chapitre. Cherche dans ses "
+        "pages ou choisis un autre document. Avec un fournisseur d'IA connecté dans les "
+        "Paramètres, je peux aussi rédiger des questions à partir de tes passages.",
+        "tn": "ما نجمتش نعمل quiz مضبوط من هالchapitre. لوّج في الpages متاعو ولا اختار "
+        "document آخر. كان تربط fournisseur IA في الإعدادات، نجم نكتب أسئلة من النصوص متاعك.",
+    },
+    "upload": {
+        "en": "Add a chapter first: open Documents in the sidebar, create a subject and upload a "
+        "PDF. Then I'll quiz you on it and answer your questions from its pages.",
+        "fr": "Ajoute d'abord un chapitre : ouvre Documents dans le menu, crée une matière et "
+        "importe un PDF. Ensuite je t'interrogerai dessus et je répondrai à tes questions à "
+        "partir de ses pages.",
+        "tn": "زيد chapitre في الأول : حلّ Documents في القائمة، اعمل matière وحطّ PDF. من "
+        "بعد نعملك أسئلة عليه ونجاوبك من الpages متاعو.",
+    },
+}
+
+
+async def _plan_from_documents(
+    state: LodestarState, ctx: LodestarContext, now: datetime
+) -> dict[str, Any]:
+    """The plan for a student without the built-in course: a quiz from their own document, or,
+    before any upload, where to add one. The decision is recorded like any other."""
+    loc = i18n.current()
+    async with ctx.services.engine.connect() as conn:
+        has_notes = await library.has_documents(conn, ctx.user_id)
+        ready = await library.has_documents(conn, ctx.user_id, ready_only=True)
+    if not ready:
+        # Nothing uploaded yet, or uploads still waiting for the student's check (docs/plan/20).
+        emit({"kind": "say", "text": _FROM_DOCUMENTS["review" if has_notes else "upload"][loc]})
+        return {"plan": None, "exercise": None}
+    decision = Decision(
+        decision_id=uuid4(),
+        node="plan_next",
+        at=now,
+        question="Which skill and game next?",
+        candidates=[],
+        chosen=f"notes:{NOTES_QUIZ}",
+        reason=_FROM_DOCUMENTS["quiz"][loc],
+        evidence=["source:documents"],
+    )
+    await record_decision(ctx, decision)
+    if state.game_waiting() and state.exercise is not None:
+        await _abandon(ctx, state.exercise.round_id)
+    plan = SessionPlan(
+        game_id=NOTES_QUIZ,
+        mode="train",
+        success_mode=state.success_mode,
+        target_p=TARGET_P["balanced"],
+    )
+    intent = state.intent
+    once: dict[str, Any] = {
+        "game_id": None,
+        "avoid_dims": [],
+        "quick": False,
+        "replace_current": False,
+    }
+    return {
+        "decisions": [decision],
+        "plan": plan,
+        "exercise": None,
+        # prepare_exercise reads the requested document and concept from the intent.
+        "intent": intent.model_copy(update=once) if intent else None,
+    }
+
+
 @traced("plan_next")
 async def plan_next(state: LodestarState, runtime: Runtime[LodestarContext]) -> dict[str, Any]:
     """Choose the next skill and game with a utility whose parts are all shown (docs/plan/03).
@@ -349,6 +435,10 @@ async def plan_next(state: LodestarState, runtime: Runtime[LodestarContext]) -> 
     fatigue = state.affect.fatigue_p if state.affect else 0.0
     intent = state.intent
     seed = ctx.seed + len(state.rounds)
+    if registry.active_course is None:
+        # A student studying their own uploads (backend/course_scope.py): every exercise comes
+        # from their documents.
+        return await _plan_from_documents(state, ctx, now)
 
     # What the user turned down or paused, and "something quick", narrow the pool; the policy
     # still ranks what's left (UW3).
@@ -384,12 +474,12 @@ async def plan_next(state: LodestarState, runtime: Runtime[LodestarContext]) -> 
         played_at = await last_played(conn, ctx.user_id)
         recent = (
             await learning.recent_answers(conn, registry, ctx.user_id, now)
-            if registry.courses
+            if registry.active_course is not None
             else {}
         )
     plateaus = {p.dim: p for p in patterns.plateaus}
     beliefs = {d: _belief(state, d) for d in (state.twin.dims if state.twin else {})}
-    course = registry.course if registry.courses else None
+    course = registry.active_course
     asked_gap = (
         learning.find_gap(course, beliefs, recent, ctx.services.norms, concept=intent.dim)
         if course is not None
@@ -711,7 +801,8 @@ async def prepare_exercise(
     WP2.2 adds generated content, validation and the pool fallback."""
     ctx = runtime.context
     registry = ctx.services.registry
-    assert state.plan is not None and state.plan.game_id
+    if state.plan is None or not state.plan.game_id:
+        return {"exercise": None}  # nothing to play: plan_next said why
     game = registry.game(state.plan.game_id)
     primary = game.primary_dims[0] if game.primary_dims else None
     belief = _belief(state, primary) if primary else Belief()
@@ -758,9 +849,7 @@ async def prepare_exercise(
             emit(
                 {
                     "kind": "say",
-                    "text": "I couldn't make a reliable quiz from that chapter. "
-                    "Try searching its pages or choose another document. With an AI provider "
-                    "connected in Settings, I can also draft questions from your passages.",
+                    "text": _FROM_DOCUMENTS["no_quiz"][i18n.current()],
                 }
             )
             return {"exercise": None}

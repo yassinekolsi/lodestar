@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Structures de données – Chapitre 3 : Piles et files</title>
+<style>
+  @page { size: A4; margin: 22mm 20mm; }
+  body { font-family: "DejaVu Serif", Georgia, serif; font-size: 11.5pt; line-height: 1.45; color: #111; }
+  h1 { font-size: 18pt; margin: 0 0 4pt; }
+  .meta { color: #555; margin: 0 0 14pt; }
+  h2 { font-size: 13pt; margin: 16pt 0 6pt; }
+  p { margin: 0 0 7pt; text-align: justify; }
+  .page { page-break-after: always; }
+  .page:last-child { page-break-after: auto; }
+</style>
+</head>
+<body>
+<!-- Demo chapter for docs/DEPLOY.md and the upload tests: a French course, the usual case at a
+     Tunisian university. Printed to PDF with Chromium (structures-de-donnees-piles-files.pdf). -->
+<section class="page">
+  <h1>Structures de données – Chapitre 3 : Piles et files</h1>
+  <p class="meta">Faculté des sciences, première année, licence d'informatique</p>
+
+  <h2>3.1 La pile</h2>
+  <p>Une pile est une structure de données où le dernier élément ajouté est le premier retiré. On parle de structure LIFO, pour « dernier entré, premier sorti ».</p>
+  <p>L'empilement est l'opération qui ajoute un élément au sommet de la pile. Le dépilement est l'opération qui retire l'élément situé au sommet de la pile et le renvoie.</p>
+  <p>Le sommet désigne le dernier élément ajouté, le seul auquel on peut accéder directement.</p>
+  <p>Le débordement de pile est l'erreur produite quand on empile dans une pile qui n'a plus de place libre. Le dépassement par le bas est l'erreur produite quand on dépile une pile vide.</p>
+  <p>La pile d'appels d'un programme est une pile d'appels de fonctions : quand une fonction se termine, l'appel le plus récent est retiré en premier.</p>
+  <p>La fonction « annuler » d'un éditeur de texte utilise une pile : la dernière modification faite est la première annulée.</p>
+
+  <h2>3.2 La file</h2>
+  <p>Une file est une structure de données où le premier élément ajouté est le premier retiré. On parle de structure FIFO, pour « premier entré, premier sorti ».</p>
+  <p>L'enfilement est l'opération qui ajoute un élément à la fin de la file. Le défilement est l'opération qui retire l'élément situé en tête de la file.</p>
+</section>
+
+<section class="page">
+  <h2>3.3 Variantes de la file</h2>
+  <p>Une file de priorité est une file où chaque élément a une priorité, et où l'élément de plus haute priorité est retiré en premier, quel que soit son ordre d'arrivée.</p>
+  <p>Un tampon circulaire est un tableau de taille fixe utilisé comme une file, où la fin revient au début quand elle atteint la dernière case.</p>
+
+  <h2>3.4 Listes chaînées</h2>
+  <p>Une liste chaînée est une suite de nœuds où chaque nœud contient une valeur et un pointeur vers le nœud suivant.</p>
+  <p>La tête désigne le premier nœud de la liste chaînée ; le dernier nœud pointe vers rien.</p>
+  <p>Une liste doublement chaînée est une liste chaînée où chaque nœud stocke aussi un pointeur vers le nœud précédent, ce qui permet de la parcourir dans les deux sens.</p>
+  <p>Une pile peut être réalisée avec une liste chaînée : on empile et on dépile en tête de liste, en temps constant.</p>
+
+  <h2>3.5 À retenir</h2>
+  <p>Une pile retire toujours l'élément le plus récent, une file retire toujours l'élément le plus ancien. Le choix entre pile et file dépend de l'ordre dans lequel les éléments doivent être traités.</p>
+</section>
+</body>
+</html>

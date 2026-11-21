@@ -16,6 +16,7 @@ from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Command, StreamMode
 from sqlalchemy import func, select
 
+from backend import course_scope
 from backend.acs.events import BREAK_MINUTES, Observation
 from backend.agent.context import LodestarContext, Services
 from backend.agent.state import LodestarState
@@ -128,6 +129,9 @@ class SessionRunner:
         async with self.services.engine.connect() as conn:
             selection = await get_selection(conn, user_id, self.local_model)
             consent = await granted_switches(conn, user_id, self.services.registry.consent)
+            # The built-in course or the student's own uploads (backend/course_scope.py), for the
+            # rest of this run: the graph runs in the same task.
+            await course_scope.scope(conn, user_id)
         if selection.mode == "hosted" and "cloud_ai" not in consent:
             # Turning Cloud AI off stops it at once, even if a key is still saved (docs/plan/14).
             selection = LlmSelection(mode="local", provider="ollama", model=self.local_model)

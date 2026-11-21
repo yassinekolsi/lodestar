@@ -28,6 +28,8 @@ class Settings(BaseModel, frozen=True):
     registry_dir: str
     whisper_model: str = "base.en"
     demo: bool = True  # the "Demo" button: anyone who can reach the API may sign in as Alex
+    # Who gets the built-in course: "demo" (the demo person and classmates) or "all" accounts.
+    built_in_course: str = "demo"
 
 
 def _optional(name: str) -> str | None:
@@ -58,6 +60,7 @@ def get_settings() -> Settings:
         registry_dir=os.environ.get("LODESTAR_REGISTRY_DIR", "registry"),
         whisper_model=os.environ.get("LODESTAR_WHISPER_MODEL", "base.en"),
         demo=os.environ.get("LODESTAR_DEMO", "1") != "0",
+        built_in_course=os.environ.get("LODESTAR_BUILT_IN_COURSE", "demo").strip() or "demo",
     )
 
 

@@ -387,4 +387,15 @@ export const TN: Record<string, string> = {
   'Share anonymised results with the team.': 'شارك نتائج بلا هوية مع الفريق.',
   'Lets the team include your anonymised results in its evaluation of Lodestar.':
     'يخلّي الفريق يحطّ النتائج متاعك بلا هوية في التقييم متاع Lodestar.',
+
+  // The student's own material (dashboard/OwnMaterial.tsx)
+  'The concept map is drawn from a course with its concepts and prerequisites. You study from your own documents, so ask about them or take a quiz made from their pages.':
+    'خريطة الnotions تتعمل من cours فيه الnotions والprérequis متاعهم. انت تقرا من الdocuments متاعك، اسأل عليهم ولا اعمل quiz من الpages متاعهم.',
+  'Your practice comes from your own documents: every question is made from one of your pages and cites it.':
+    'التمارين متاعك جايين من الdocuments متاعك : كل سؤال معمول من page متاعك وفيه رقمها.',
+  'The class view counts a whole class on the same course. Your account studies its own documents, so there is no class to show yet.':
+    'القسم الكل يحسب قسم كامل على نفس الcours. الcompte متاعك يقرا من الdocuments متاعو، داكا علاش مازال ما فما حتى قسم نورّيوه.',
+  'Quiz me on my notes': 'اختبرني على الnotes متاعي',
+  'Open Documents': 'حلّ الdocuments',
+  'A quiz made from your own pages': 'quiz معمول من الpages متاعك',
 }

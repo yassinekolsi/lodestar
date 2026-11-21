@@ -7,6 +7,7 @@ from uuid import UUID
 from fastapi import Depends, Header, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
+from backend import course_scope
 from backend.db.engine import get_async_engine
 from backend.db.twin_store import user_for_token, user_scope
 from backend.registry.loader import load_registry
@@ -29,6 +30,9 @@ async def current_user(
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Missing bearer token")
     async with engine.begin() as conn:
         user_id = await user_for_token(conn, authorization.split(" ", 1)[1].strip())
+        if user_id is not None:
+            # Their own uploads, or the built-in course for the demo (backend/course_scope.py).
+            await course_scope.scope(conn, user_id)
     if user_id is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Unknown token")
     return user_id

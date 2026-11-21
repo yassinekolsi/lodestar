@@ -119,6 +119,15 @@ are in English.
    in all three (`backend/i18n.py`). Left: a read-through by Tunisian students; the panels off the
    demo path (Insights, Agent, Experiments, Memory, About, Documents, parts of Settings) are still
    English. Deploying: `render.yaml`, root `Dockerfile`, [docs/DEPLOY.md](docs/DEPLOY.md).
+8b. **Real students work from their uploads (2026-11-21).** `backend/course_scope.py`: the
+   built-in course is only for the demo people (`LODESTAR_BUILT_IN_COURSE=demo`, the default;
+   the test suite sets `all` in `tests/conftest.py`). Without it, `plan_next` serves the notes
+   quiz, or says to upload or validate a chapter; `/course` and `/class` return 404 and the
+   frontend shows `dashboard/OwnMaterial.tsx`. Tested end to end with the French demo chapter
+   (`docs/demo/structures-de-donnees-piles-files.pdf`) in French, Derja and English.
+   Known gaps: retrieval uses an English embedding model plus BM25, so a question in one language
+   about a document in another works through shared words only; passages still include page
+   headers (chunking, step 1).
 9. **Pitch and demo script** for the challenge. The old brain-training demo script
    (`docs/demo-script.md`) and report (`docs/report/`) were deleted; write new ones from scratch:
    - Upload a PDF.
