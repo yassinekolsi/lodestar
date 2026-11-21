@@ -85,6 +85,12 @@ def test_a_quiz_prefers_questions_not_seen_this_week() -> None:
     assert len(fresh) == len(COURSE.concept("bayes").questions) - len(seen)
 
 
+def test_every_key_idea_has_words_the_rubric_can_find() -> None:
+    for c in COURSE.concepts:
+        for idea in c.key_ideas:
+            assert len(learning.idea_words(idea)) >= 2, (c.id, idea)
+
+
 def test_the_rubric_finds_the_key_ideas_and_scales_down_short_answers() -> None:
     content = learning.explain_content(COURSE, "conditional", 0.3)
     full = (

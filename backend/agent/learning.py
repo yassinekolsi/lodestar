@@ -38,7 +38,7 @@ RECENT_DAYS = 14
 
 _STOP = {
     "a", "an", "and", "are", "as", "at", "be", "by", "each", "every", "for", "from", "has", "in",
-    "is", "it", "its", "not", "of", "on", "or", "same", "than", "that", "the", "then", "this",
+    "is", "it", "its", "of", "on", "or", "than", "that", "the", "then", "this",
     "to", "with", "when", "what", "you", "your", "only", "all", "into", "can", "does", "doesn",
     "don", "t", "s", "up", "one", "two",
 }  # fmt: skip

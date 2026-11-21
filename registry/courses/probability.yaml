@@ -493,7 +493,7 @@ concepts:
     requires: [sample_space, equally_likely]
     key_ideas:
       - knowing B shrinks the sample space to B
-      - P(A | B) = P(A and B) divided by P(B)
+      - "the conditional probability is the probability of both divided by the probability of B: P(A | B) = P(A and B) / P(B)"
       - the denominator is P(B) not the whole sample space
       - P(A | B) is not the same as P(B | A)
     misconceptions:
@@ -943,7 +943,7 @@ concepts:
       - E[X] is the sum of each value times its probability
       - it is a weighted average
       - it is not the most likely value
-      - E[aX + b] = a E[X] + b
+      - "expectation is linear: multiply the mean by a and add b, E[aX + b] = a E[X] + b"
     misconceptions:
       - id: expectation_most_likely
         text: Taking the most likely value as the expected value
@@ -1025,7 +1025,7 @@ concepts:
     requires: [expectation]
     key_ideas:
       - variance measures spread around the mean
-      - Var(X) = E[X²] − (E[X])²
+      - "variance is the mean of the squares minus the square of the mean: Var(X) = E[X²] − (E[X])²"
       - the standard deviation is the square root of the variance
       - adding a constant doesn't change the variance
       - multiplying by a multiplies the variance by a squared
@@ -1119,7 +1119,7 @@ concepts:
     requires: [independence, counting, expectation]
     key_ideas:
       - n independent trials with the same success probability p
-      - P(X = k) = C(n, k) p^k (1 − p)^(n − k)
+      - "the probability of k successes multiplies the number of orders by the chance of one order: P(X = k) = C(n, k) p^k (1 − p)^(n − k)"
       - C(n, k) counts the orders the successes can come in
       - the mean is np and the variance is np(1 − p)
     misconceptions:
