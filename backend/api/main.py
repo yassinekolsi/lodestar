@@ -39,7 +39,7 @@ from backend.mcp_server.server import build_server
 from backend.memory.embeddings import Embedder
 from backend.memory.langgraph_store import QdrantStore
 from backend.memory.notes import Notes
-from backend.memory.store import MemoryStore
+from backend.memory.store import CHAPTERS, MemoryStore
 from backend.ml import bundle
 from backend.ml.serve import GrowthForecaster, load_engagement
 from backend.registry.loader import load_knowledge_items, load_registry
@@ -47,17 +47,20 @@ from backend.registry.loader import load_knowledge_items, load_registry
 log = logging.getLogger(__name__)
 
 
-async def _memory(settings: Settings) -> tuple[MemoryStore | None, QdrantStore | None]:
-    """Qdrant-backed memory, or (None, None) if Qdrant is down: sessions continue without it."""
+async def _memory(
+    settings: Settings,
+) -> tuple[MemoryStore | None, QdrantStore | None, set[str]]:
+    """Qdrant-backed memory, or None if Qdrant is down: sessions continue without it. Also the
+    collections created just now (a new chapters collection is filled from Postgres)."""
     try:
         embedder = Embedder(threads=1, batch_size=1) if settings.low_memory else Embedder()
         memory = MemoryStore(qdrant_client(settings, timeout=5), embedder)
-        await memory.ensure_collections()
+        created = await memory.ensure_collections()
         await memory.load_knowledge(load_knowledge_items())
     except Exception:
         log.warning("Qdrant unavailable; memory is off for this run", exc_info=True)
-        return None, None
-    return memory, QdrantStore(memory)
+        return None, None, set()
+    return memory, QdrantStore(memory), created
 
 
 async def _bundled_models(engine: AsyncEngine) -> None:
@@ -78,11 +81,16 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     reg = load_registry()
     pool = checkpoint_pool(libpq_url())
     await pool.open()
-    memory, store = await _memory(settings)
+    memory, store, created = await _memory(settings)
     await _bundled_models(engine)
     # Uploads still being read when the server stopped can't resume (docs/plan/20).
     await library.interrupted(engine)
     llm = LlmFactory(reg, settings, engine)
+    if memory is not None:
+        # Multilingual chapter search through Gemini for students who allowed Cloud AI.
+        memory.cloud_embed = llm.gemini_embed
+        if CHAPTERS in created:
+            library.launch_reindex(engine, memory)
     services = Services(
         engine=engine,
         registry=reg,

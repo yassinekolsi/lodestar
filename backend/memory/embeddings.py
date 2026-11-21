@@ -45,17 +45,26 @@ class Embedder:
 
         return SparseTextEmbedding(SPARSE_MODEL, cache_dir=self.cache_dir, threads=self.threads)
 
-    def _embed_sync(self, texts: list[str], query: bool) -> list[Embedded]:
+    def _embed_sync(
+        self, texts: list[str], query: bool, sparse_only: bool = False
+    ) -> list[Embedded]:
         # ONNX sessions and their buffers are shared. Concurrent requests must not multiply
         # their peak memory, or race while initializing the cached models.
         with self._lock:
-            return self._embed_serial(texts, query)
+            return self._embed_serial(texts, query, sparse_only)
 
-    def _embed_serial(self, texts: list[str], query: bool) -> list[Embedded]:
-        dense = list(
-            self._dense.query_embed(texts, batch_size=self.batch_size)
-            if query
-            else self._dense.embed(texts, batch_size=self.batch_size)
+    def _embed_serial(
+        self, texts: list[str], query: bool, sparse_only: bool = False
+    ) -> list[Embedded]:
+        # sparse_only: the dense vector comes from elsewhere (Gemini), keyword weights from here.
+        dense: list[Any] = (
+            [[] for _ in texts]
+            if sparse_only
+            else list(
+                self._dense.query_embed(texts, batch_size=self.batch_size)
+                if query
+                else self._dense.embed(texts, batch_size=self.batch_size)
+            )
         )
         sparse = list(
             self._sparse.query_embed(texts, batch_size=self.batch_size)
@@ -71,8 +80,8 @@ class Embedder:
             for d, s in zip(dense, sparse, strict=True)
         ]
 
-    async def embed(self, texts: list[str]) -> list[Embedded]:
-        return await asyncio.to_thread(self._embed_sync, texts, False)
+    async def embed(self, texts: list[str], *, sparse_only: bool = False) -> list[Embedded]:
+        return await asyncio.to_thread(self._embed_sync, texts, False, sparse_only)
 
     async def embed_query(self, text: str) -> Embedded:
         [result] = await asyncio.to_thread(self._embed_sync, [text], True)

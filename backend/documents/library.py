@@ -471,6 +471,50 @@ async def interrupted(engine: AsyncEngine) -> int:
     return int(done.rowcount or 0)
 
 
+_REINDEX: set[Any] = set()
+
+
+def launch_reindex(engine: AsyncEngine, memory: MemoryStore) -> None:
+    """In the background: put every validated chapter into a newly created search collection,
+    one document at a time (bounded memory), from the passages kept in Postgres."""
+    import asyncio
+
+    task = asyncio.create_task(reindex_all(engine, memory), name="reindex-chapters")
+    _REINDEX.add(task)
+    task.add_done_callback(_REINDEX.discard)
+
+
+async def reindex_all(engine: AsyncEngine, memory: MemoryStore) -> int:
+    async with engine.connect() as conn:
+        docs = (
+            await conn.execute(
+                select(t.documents.c.user_id, t.documents.c.doc_id, t.documents.c.title).where(
+                    t.documents.c.status.in_(("ready", "review"))
+                )
+            )
+        ).all()
+    done = 0
+    for doc in docs:
+        try:
+            async with engine.begin() as conn:
+                await user_scope(conn, doc.user_id)
+                rows = [
+                    dict(r._mapping)
+                    for r in await conn.execute(
+                        select(t.document_passages).where(
+                            t.document_passages.c.doc_id == doc.doc_id,
+                            t.document_passages.c.user_id == doc.user_id,
+                        )
+                    )
+                ]
+            if await index(engine, memory, doc.user_id, doc.doc_id, doc.title, rows):
+                done += 1
+        except Exception:
+            log.warning("re-indexing document %s failed", doc.doc_id, exc_info=True)
+    log.info("re-indexed %d of %d chapters", done, len(docs))
+    return done
+
+
 async def approve(
     engine: AsyncEngine, memory: MemoryStore | None, user_id: UUID, doc_id: UUID
 ) -> DocumentView | None:

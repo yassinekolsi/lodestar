@@ -11,7 +11,7 @@ then MMR so the top results aren't five versions of the same memory.
 
 import math
 import uuid
-from collections.abc import Sequence
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any, Literal
@@ -22,8 +22,16 @@ from qdrant_client import AsyncQdrantClient, models
 from backend.contracts.memory import MemoryHit
 from backend.memory.embeddings import DENSE_SIZE, Embedder
 
-UserCollection = Literal["episodic", "facts", "exercises", "documents"]
-USER_COLLECTIONS: tuple[UserCollection, ...] = ("episodic", "facts", "exercises", "documents")
+GEMINI_SIZE = 768  # backend.llm.factory.GEMINI_EMBED_SIZE
+# Gemini embeddings sit higher for unrelated text than bge-small does.
+GEMINI_PASSAGE_FLOOR = 0.6
+CloudEmbed = Callable[..., Awaitable[list[list[float]]]]
+
+UserCollection = Literal["episodic", "facts", "exercises", "chapters"]
+USER_COLLECTIONS: tuple[UserCollection, ...] = ("episodic", "facts", "exercises", "chapters")
+# Uploaded chapters. Each passage carries the local "dense" vector, or, when the student allowed
+# Cloud AI, a multilingual Gemini vector ("gemini"); search fuses whichever the student has.
+CHAPTERS = "chapters"
 KNOWLEDGE = "knowledge"
 
 PREFETCH = 30
@@ -130,17 +138,22 @@ class MemoryStore:
         self._client = client
         self.embedder = embedder
         self.prefix = prefix
+        # Set at start-up to LlmFactory.gemini_embed (the key never comes here). None: local only.
+        self.cloud_embed: CloudEmbed | None = None
 
     def name(self, collection: str) -> str:
         return f"{self.prefix}{collection}"
 
     # Setup -------------------------------------------------------------------------------
 
-    async def ensure_collections(self) -> None:
+    async def ensure_collections(self) -> set[str]:
+        """Create what's missing; returns the collections that were just created."""
+        created: set[str] = set()
         for collection in (*USER_COLLECTIONS, KNOWLEDGE):
             name = self.name(collection)
             if await self._client.collection_exists(name):
                 continue
+            created.add(collection)
             sparse = (
                 {"sparse": models.SparseVectorParams(modifier=models.Modifier.IDF)}
                 if collection != "exercises"
@@ -149,7 +162,16 @@ class MemoryStore:
             await self._client.create_collection(
                 name,
                 vectors_config={
-                    "dense": models.VectorParams(size=DENSE_SIZE, distance=models.Distance.COSINE)
+                    "dense": models.VectorParams(size=DENSE_SIZE, distance=models.Distance.COSINE),
+                    **(
+                        {
+                            "gemini": models.VectorParams(
+                                size=GEMINI_SIZE, distance=models.Distance.COSINE
+                            )
+                        }
+                        if collection == CHAPTERS
+                        else {}
+                    ),
                 },
                 sparse_vectors_config=sparse,
             )
@@ -173,6 +195,7 @@ class MemoryStore:
                 ("served_at", models.PayloadSchemaType.DATETIME),
             ):
                 await self._client.create_payload_index(name, field, schema)
+        return created
 
     async def drop_collections(self) -> None:
         for collection in (*USER_COLLECTIONS, KNOWLEDGE):
@@ -412,12 +435,19 @@ class MemoryStore:
         uid = _require(user_id)
         if not passages:
             return 0
-        embs = await self.embedder.embed([p["text"] for p in passages])
+        texts = [p["text"] for p in passages]
+        cloud: list[list[float]] | None = None
+        if self.cloud_embed is not None:
+            try:
+                cloud = await self.cloud_embed(user_id, texts)
+            except ValueError:
+                cloud = None  # no Cloud AI for this student: the local model
+        embs = await self.embedder.embed(texts, sparse_only=cloud is not None)
         points = [
             models.PointStruct(
                 id=str(p["passage_id"]),
                 vector={
-                    "dense": e.dense,
+                    ("gemini" if cloud else "dense"): cloud[i] if cloud else e.dense,
                     "sparse": models.SparseVector(indices=e.sparse_indices, values=e.sparse_values),
                 },
                 payload={
@@ -431,10 +461,10 @@ class MemoryStore:
                     "created_at": datetime.now(UTC).isoformat(),
                 },
             )
-            for p, e in zip(passages, embs, strict=True)
+            for i, (p, e) in enumerate(zip(passages, embs, strict=True))
         ]
         for start in range(0, len(points), 128):
-            await self._client.upsert(self.name("documents"), points=points[start : start + 128])
+            await self._client.upsert(self.name(CHAPTERS), points=points[start : start + 128])
         return len(points)
 
     async def search_documents(
@@ -457,10 +487,21 @@ class MemoryStore:
             extra.append(models.FieldCondition(key="dims", match=models.MatchValue(value=concept)))
         flt = user_filter(user_id, *extra)
         q = await self.embedder.embed_query(query)
+        gq: list[float] | None = None
+        if self.cloud_embed is not None:
+            try:
+                [gq] = await self.cloud_embed(user_id, [query], query=True)
+            except ValueError:
+                gq = None
         response = await self._client.query_points(
-            self.name("documents"),
+            self.name(CHAPTERS),
             prefetch=[
                 models.Prefetch(query=q.dense, using="dense", filter=flt, limit=PREFETCH),
+                *(
+                    [models.Prefetch(query=gq, using="gemini", filter=flt, limit=PREFETCH)]
+                    if gq
+                    else []
+                ),
                 models.Prefetch(
                     query=models.SparseVector(indices=q.sparse_indices, values=q.sparse_values),
                     using="sparse",
@@ -472,14 +513,22 @@ class MemoryStore:
             query_filter=flt,
             limit=PREFETCH,
             with_payload=True,
-            with_vectors=["dense"],
+            with_vectors=["dense", "gemini"],
         )
         hits = []
         for point in response.points:
             payload = point.payload or {}
-            cos = _cos(q.dense, _dense(point))
-            if cos < PASSAGE_FLOOR:
-                continue
+            vectors: dict[str, list[float]] = point.vector or {}
+            if "gemini" in vectors:
+                if gq is None:
+                    continue
+                cos = _cos(gq, vectors["gemini"])
+                if cos < GEMINI_PASSAGE_FLOOR:
+                    continue
+            else:
+                cos = _cos(q.dense, vectors["dense"])
+                if cos < PASSAGE_FLOOR:
+                    continue
             hits.append(
                 PassageHit(
                     passage_id=str(point.id),
@@ -496,7 +545,7 @@ class MemoryStore:
 
     async def delete_document(self, user_id: UUID, doc_id: UUID) -> None:
         await self._client.delete(
-            self.name("documents"),
+            self.name(CHAPTERS),
             points_selector=models.FilterSelector(
                 filter=user_filter(
                     user_id,

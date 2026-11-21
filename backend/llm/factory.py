@@ -42,6 +42,9 @@ CALL_TIMEOUT_S = 30.0
 
 M = TypeVar("M", bound=BaseModel)
 
+GEMINI_EMBED_MODEL = "gemini-embedding-001"
+GEMINI_EMBED_SIZE = 768
+
 
 class NoModelAvailable(RuntimeError):
     def __init__(self, degraded: Sequence[str]) -> None:
@@ -224,23 +227,64 @@ class LlmFactory:
         text, rung, degraded = await self._walk(user_id, selection, call)
         return LlmReply(text, rung.provider, rung.model, degraded)
 
-    async def gemini_pdf_page(self, user_id: UUID, data: bytes, prompt: str, schema: type[M]) -> M:
-        """OCR has no text-only/local fallback. The key stays inside this factory.
-
-        Native PDF vision retains handwritten formulas and layout. Source pages are sent
-        only with Cloud AI enabled; provider errors never expose request headers or bodies.
-        """
+    async def _gemini_key(self, user_id: UUID) -> str:
+        """The student's Gemini key, else the server's. Only with Cloud AI switched on: nothing of
+        theirs goes to Google otherwise. Decrypted here, for one call."""
         async with self.engine.connect() as conn:
             consent = await granted_switches(conn, user_id, self.registry.consent)
             stored = await get_credential(conn, user_id, "gemini")
         if "cloud_ai" not in consent:
             raise ValueError("Enable Cloud AI in Settings to read scanned pages with Gemini.")
         if stored is not None and stored.status != "rejected" and self.vault.available:
-            key = self.vault.open(user_id, "gemini", stored.ciphertext, stored.nonce)
-        elif self.settings.operator_llm_provider == "gemini" and self.settings.operator_llm_key:
-            key = self.settings.operator_llm_key.get_secret_value()
-        else:
-            raise ValueError("Add your Gemini key in Settings to read scanned pages.")
+            return self.vault.open(user_id, "gemini", stored.ciphertext, stored.nonce)
+        if self.settings.operator_llm_provider == "gemini" and self.settings.operator_llm_key:
+            return self.settings.operator_llm_key.get_secret_value()
+        raise ValueError("Add your Gemini key in Settings to read scanned pages.")
+
+    async def gemini_embed(
+        self, user_id: UUID, texts: Sequence[str], *, query: bool = False
+    ) -> list[list[float]]:
+        """Multilingual embeddings (French, Derja, English) computed by Google, so the small
+        server holds no model for them. Raises ValueError when Gemini isn't allowed or fails;
+        the caller then uses the local embedder."""
+        key = await self._gemini_key(user_id)
+        model = f"models/{GEMINI_EMBED_MODEL}"
+        task = "RETRIEVAL_QUERY" if query else "RETRIEVAL_DOCUMENT"
+        out: list[list[float]] = []
+        try:
+            async with httpx.AsyncClient(timeout=60) as client:
+                for start in range(0, len(texts), 100):
+                    body = {
+                        "requests": [
+                            {
+                                "model": model,
+                                "content": {"parts": [{"text": text[:8000]}]},
+                                "taskType": task,
+                                "outputDimensionality": GEMINI_EMBED_SIZE,
+                            }
+                            for text in texts[start : start + 100]
+                        ]
+                    }
+                    response = await client.post(
+                        f"{self.api_base('gemini')}/{model}:batchEmbedContents",
+                        headers={"x-goog-api-key": key},
+                        json=body,
+                    )
+                    response.raise_for_status()
+                    out += [e["values"] for e in response.json()["embeddings"]]
+        except httpx.HTTPError, KeyError, TypeError, json.JSONDecodeError:
+            raise ValueError("Gemini embeddings are unavailable right now.") from None
+        if len(out) != len(texts) or any(len(v) != GEMINI_EMBED_SIZE for v in out):
+            raise ValueError("Gemini returned unexpected embeddings.")
+        return out
+
+    async def gemini_pdf_page(self, user_id: UUID, data: bytes, prompt: str, schema: type[M]) -> M:
+        """OCR has no text-only/local fallback. The key stays inside this factory.
+
+        Native PDF vision retains handwritten formulas and layout. Source pages are sent
+        only with Cloud AI enabled; provider errors never expose request headers or bodies.
+        """
+        key = await self._gemini_key(user_id)
         model = "gemini-3.5-flash-lite"
         body = {
             "contents": [
