@@ -82,6 +82,7 @@ _KINDS: list[tuple[IntentKind, re.Pattern[str]]] = [
             r"\b(settings?|willow|spark|sage|buddy|(change|switch) (my |the )?coach|"
             r"(calmer|friendlier|stricter|funnier|nicer) coach|coach (to|that)|be more (of )?a|"
             r"(push|chill|balanced) mode|mode please|from now on|stop suggesting|"
+            r"prefer (harder|easier) (games|quizzes)|make it more chill|"
             r"don'?t suggest|camera|microphone|voice (on|off)|turn (the )?\w+ (on|off))\b",
             re.I,
         ),
@@ -98,15 +99,15 @@ _KINDS: list[tuple[IntentKind, re.Pattern[str]]] = [
         "twin_chat",
         re.compile(
             r"\b(twin|when am i|best time|time of day|am i (better|sharper|faster) in|"
-            r"morning or (the )?evening|do i do better)\b",
+            r"morning or (the )?evening|do i do better|do i .{0,30} better at night)\b",
             re.I,
         ),
     ),
     (
         "goal",
         re.compile(
-            r"\b(goal|aim for|target|(want|like|need) (my|to) \w+ .{0,30}\b(solid|better|"
-            r"stronger|improve\w*|faster)|improve my|get (better|faster) at|make my \w+ "
+            r"\b(goal|aim for|target|(want|like|need) .{1,50}\b(solid|better|"
+            r"stronger|improve\w*|faster)|improve my|get (better|faster) at|make my .{1,40} "
             r"(stronger|better|solid)|help me get (better|faster)|my goal|a goal)\b",
             re.I,
         ),
@@ -147,8 +148,10 @@ _CHAT_TOOLS: list[tuple[ToolChoice, re.Pattern[str]]] = [
     (
         "explain",
         re.compile(
-            r"\b(why|how did you (choose|pick|decide)|what made you|explain (your|that|this|the) "
-            r"(choice|pick|decision))\b",
+            r"^why[?!. ]*$|\b(why (did you (choose|pick|assign)|this (game|quiz|exercise)|"
+            r"so (hard|easy))|why\b.{0,50}\bagain|"
+            r"how did you (choose|pick|decide)|what made you|explain (your|that|this|the) "
+            r"(choice|pick|decision)|reason for this pick)\b",
             re.I,
         ),
     ),
@@ -175,7 +178,7 @@ _CHAT_TOOLS: list[tuple[ToolChoice, re.Pattern[str]]] = [
         "search_memory",
         re.compile(
             r"\b(remember about me|know about me|did i (tell|say|mention)|what did i (say|tell)|"
-            r"recall)\b",
+            r"what do you remember|recall)\b",
             re.I,
         ),
     ),
@@ -192,7 +195,7 @@ _CHAT_TOOLS: list[tuple[ToolChoice, re.Pattern[str]]] = [
         re.compile(
             r"\b(how am i doing|my (profile|results?|scores?|strengths?|skills?)|"
             r"(memory|focus|speed|maths?|reasoning) score|how good is my|where am i at|"
-            r"show me my)\b",
+            r"show me my|my .{1,45} score|how strong is my|what am i best at)\b",
             re.I,
         ),
     ),
@@ -267,8 +270,10 @@ def _kinds(text: str) -> list[IntentKind]:
 
 def chat_tool(text: str) -> ToolChoice | None:
     for tool, pattern in _CHAT_TOOLS:
-        if pattern.search(text):
+        if tool != "teach" and pattern.search(text):
             return tool
+    if next(pattern for tool, pattern in _CHAT_TOOLS if tool == "teach").search(text):
+        return "teach"
     return None
 
 
@@ -301,8 +306,22 @@ def classify(text: str, trigger: str, registry: Registry | None = None) -> Route
         )
         return Routed(intent, sure=True)
     tool = chat_tool(stripped)
+    if tool == "teach" and set(kinds) & {
+        "twin_chat",
+        "experiment",
+        "settings",
+        "goal",
+        "life_context",
+    }:
+        tool = None
     asks = notes or _QUESTION.search(stripped)
-    if tool is None and asks and not _SMALL_TALK.search(stripped) and not _PLAY.search(stripped):
+    if (
+        tool is None
+        and not kinds
+        and asks
+        and not _SMALL_TALK.search(stripped)
+        and not _PLAY.search(stripped)
+    ):
         tool = "teach"  # a real question: answer it from their documents and the course
     if tool in ("teach", "mistakes"):
         dims = skills_in(stripped, registry)

@@ -8,6 +8,7 @@ cascades every Postgres row from `app.users` in one transaction that also writes
 Qdrant is unreachable nothing is deleted, so a retry can finish the job.
 """
 
+import base64
 import datetime as dt
 import hashlib
 from typing import Any
@@ -87,7 +88,13 @@ async def export_user(services: Services, user_id: UUID) -> dict[str, Any]:
             columns = [c for c in table.c if c.name not in SECRET_COLUMNS]
             rows = await conn.execute(select(*columns).where(table.c.user_id == user_id))
             tables[f"{table.schema}.{table.name}"] = [
-                {k: _plain(v) for k, v in row._mapping.items()} for row in rows
+                {
+                    k: base64.b64encode(v).decode("ascii")
+                    if k == "source_pdf" and v is not None
+                    else _plain(v)
+                    for k, v in row._mapping.items()
+                }
+                for row in rows
             ]
     memories: dict[str, list[dict[str, Any]]] = {}
     if services.memory is not None:

@@ -114,21 +114,33 @@ def _belief(percent: float, n: int = 40, sigma: float = 0.3) -> Belief:
 
 def test_a_gap_goes_back_to_the_shaky_prerequisite_of_a_struggling_concept() -> None:
     beliefs = {
-        "sample_space": _belief(85), "counting": _belief(75), "equally_likely": _belief(80),
-        "conditional": _belief(42), "total_probability": _belief(75), "bayes": _belief(12),
-    }  # fmt: skip
+        "sample_space": _belief(85),
+        "counting": _belief(75),
+        "equally_likely": _belief(80),
+        "conditional": _belief(42),
+        "total_probability": _belief(75),
+        "bayes": _belief(12),
+    }
     gap = learning.find_gap(COURSE, beliefs, {}, NORMS)
     assert gap is not None
-    assert (gap.concept, gap.prereq, gap.chain) == ("bayes", "conditional", ["bayes", "conditional"])
+    assert (gap.concept, gap.prereq, gap.chain) == (
+        "bayes",
+        "conditional",
+        ["bayes", "conditional"],
+    )
     reason = learning.gap_reason(COURSE, gap, asked=False)
     assert "Bayes' theorem is at 12%" in reason and "conditional probability" in reason
 
 
 def test_a_gap_follows_the_chain_down_to_the_deepest_shaky_concept() -> None:
     beliefs = {
-        "sample_space": _belief(40), "counting": _belief(75), "equally_likely": _belief(80),
-        "conditional": _belief(42), "total_probability": _belief(75), "bayes": _belief(12),
-    }  # fmt: skip
+        "sample_space": _belief(40),
+        "counting": _belief(75),
+        "equally_likely": _belief(80),
+        "conditional": _belief(42),
+        "total_probability": _belief(75),
+        "bayes": _belief(12),
+    }
     gap = learning.find_gap(COURSE, beliefs, {}, NORMS)
     assert gap is not None and gap.chain == ["bayes", "conditional", "sample_space"]
 
@@ -163,10 +175,18 @@ def test_review_comes_sooner_for_concepts_known_less_well() -> None:
 
 def _trial(correct: bool, hints: int = 0, rt: float = 20_000, level: float = 0.5) -> TrialEvent:
     return TrialEvent(
-        trial_id=uuid4(), round_id=uuid4(), session_id=uuid4(), game_id="quiz_bayes",
-        level=level, trial_index=0, stimulus={"question_id": "by1"}, correct=correct,
-        rt_ms=rt, hint_level=hints, ts=datetime.now(UTC),
-    )  # fmt: skip
+        trial_id=uuid4(),
+        round_id=uuid4(),
+        session_id=uuid4(),
+        game_id="quiz_bayes",
+        level=level,
+        trial_index=0,
+        stimulus={"question_id": "by1"},
+        correct=correct,
+        rt_ms=rt,
+        hint_level=hints,
+        ts=datetime.now(UTC),
+    )
 
 
 def test_an_answer_found_with_hints_counts_for_less() -> None:
@@ -198,6 +218,12 @@ def test_mastery_is_the_chance_of_a_typical_question_with_its_range() -> None:
     [
         ("I don't get Bayes' theorem", "chat", "teach", "bayes"),
         ("what is a random variable?", "chat", "teach", "random_variables"),
+        (
+            "Why are independent events different from disjoint events?",
+            "chat",
+            "teach",
+            "independence",
+        ),
         ("What do I keep getting wrong?", "chat", "mistakes", None),
         ("Quiz me on conditional probability", "play", None, "conditional"),
         ("revise the binomial distribution", "play", None, "binomial"),

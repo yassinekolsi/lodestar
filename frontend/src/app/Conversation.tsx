@@ -335,6 +335,9 @@ export function Conversation({
             <div className="pick__body">
               <p className="pick__meta">{state.phase === 'after' ? 'Up next' : 'Your game'}</p>
               <h2>{name}</h2>
+              {typeof item.spec.content?.['concept_name'] === 'string' && (
+                <p className="muted">From {item.spec.content['concept_name']}</p>
+              )}
               {game && <p className="pick__how">{game.instructions}</p>}
               <div className="why-box" data-testid="why-box">
                 <p className="why-box__title">
@@ -541,7 +544,13 @@ export function Conversation({
           )}
           {state.phase === 'home' && (
             <div className="hero__actions" data-testid="start">
-              <button type="button" className="action" onClick={() => { onOpen('documents'); }}>
+              <button
+                type="button"
+                className="action"
+                onClick={() => {
+                  onOpen('documents')
+                }}
+              >
                 <span className="action__title">Upload your course</span>
                 <span className="action__text">
                   Add subjects and chapters, then learn from your own pages

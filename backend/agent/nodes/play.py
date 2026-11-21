@@ -364,6 +364,16 @@ async def plan_next(state: LodestarState, runtime: Runtime[LodestarContext]) -> 
         if dim not in avoid and options:
             pool[dim] = options
     overridden = bool(pool) and (bool(turned_down) or quick or skip_game is not None)
+    if not pool and quick:
+        # Course quizzes take longer than the retired tap games. Keep declined concepts out
+        # even when no exercise fits the requested time; show the actual duration.
+        pool = {
+            dim: [g for g in games if g.id != skip_game]
+            for dim, games in by_dim.items()
+            if dim not in avoid
+        }
+        pool = {dim: games for dim, games in pool.items() if games}
+        overridden = bool(pool)
     if not pool:
         pool = by_dim
 
@@ -444,7 +454,7 @@ async def plan_next(state: LodestarState, runtime: Runtime[LodestarContext]) -> 
         game = _pick(pool[dim], last_game, seed)
         off = registry.game(intent.game_id).name
         reason = f"{off} is switched off in your privacy settings, so here's {game.name} instead."
-    elif requested is not None and requested.origin == "custom":
+    elif requested is not None and requested.origin == "custom" and requested.id != NOTES_QUIZ:
         dim, game = requested.primary_dims[0], requested
         # docs/plan/08: block-built games count at low weight, and Lodestar says so.
         reason = (
@@ -458,8 +468,8 @@ async def plan_next(state: LodestarState, runtime: Runtime[LodestarContext]) -> 
         if has_notes:
             game = requested
             reason = (
-                "Questions made from your own document, each citing its page. They count, at "
-                "half weight, for the course concepts the pages are about."
+                "Questions made from your chosen document, each citing its page. Matching course "
+                "concepts count at half weight; other topics are practice without a mastery score."
             )
         else:
             game = _quiz(by_dim.get(dim, [])) or _pick(pool[candidates[0].option], last_game, seed)
@@ -740,7 +750,9 @@ async def prepare_exercise(
                 seed,
                 concept=state.intent.dim if state.intent else None,
                 draft=_drafter(ctx),
-                doc_id=library.requested_document((state.intent.text or "") if state.intent else ""),
+                doc_id=library.requested_document(
+                    (state.intent.text or "") if state.intent else ""
+                ),
             )
         if notes_content is None:
             emit(

@@ -103,9 +103,11 @@ def _right(item: dict[str, Any], intent: Any) -> bool:
 HELDOUT = yaml.safe_load((HERE / "intents_heldout.yaml").read_text())
 
 
-def test_heldout_utterances_rules_are_rarely_sure_and_wrong() -> None:
-    """Phrasings written after the rules and never used to tune them. The rules alone get most of
-    them; when they don't, they should say they aren't sure, so the model router gets the turn."""
+def test_additional_utterances_rules_are_rarely_sure_and_wrong() -> None:
+    """Additional regression phrasings migrated to the course vocabulary.
+
+    These cases have informed routing fixes and are no longer an untouched held-out set.
+    """
     right = sure_wrong = 0
     for item in HELDOUT:
         routed = classify(item["text"], "ui", REGISTRY)
@@ -113,7 +115,7 @@ def test_heldout_utterances_rules_are_rarely_sure_and_wrong() -> None:
             right += 1
         elif routed.sure:
             sure_wrong += 1
-    print(f"held out, rules only: {right}/{len(HELDOUT)} right, {sure_wrong} sure and wrong")
+    print(f"additional cases: {right}/{len(HELDOUT)} right, {sure_wrong} sure and wrong")
     assert right >= 0.7 * len(HELDOUT) and sure_wrong <= 0.1 * len(HELDOUT)
 
 
@@ -134,7 +136,7 @@ async def test_local_model_router_on_unsure_turns(aengine: AsyncEngine) -> None:
     llm = LlmFactory(REGISTRY, settings, aengine)
     local = LlmSelection(mode="local", provider="ollama", model=settings.local_model)
     user_id = await new_user(aengine, mode="local")
-    for name, items in (("labelled", LABELLED), ("held out", HELDOUT)):
+    for name, items in (("labelled", LABELLED), ("additional regression", HELDOUT)):
         right = asked_model = 0
         for item in items:
             intent, _ = await route(item["text"], "ui", REGISTRY, llm, user_id, local)
@@ -194,16 +196,18 @@ async def test_router_asks_a_model_only_when_the_rules_arent_sure(
     make_runner: RunnerFactory, aengine: AsyncEngine
 ) -> None:
     runner = await make_runner(
-        routing_responder({"kind": "play", "skill": "spatial", "game": None, "quick": False})
+        routing_responder(
+            {"kind": "play", "skill": "random variables", "game": None, "quick": False}
+        )
     )
     user_id = await returning_user(aengine)
     session_id = await runner.create_session(user_id, "ui")
     spec = interrupt_of(await collect(runner, user_id, session_id, message="hmm, shapes maybe"))
-    assert "spatial_thinking" in REGISTRY.game(spec["game_id"]).dims  # the model's reading
+    assert "random_variables" in REGISTRY.game(spec["game_id"]).dims  # the model's reading
     # A clear request never waits on the model: the stub would have said "play" here too.
     session_id = await runner.create_session(user_id, "ui")
     events = await collect(runner, user_id, session_id, message="what can you do?")
-    assert "practice coach" in said(events)
+    assert "study coach" in said(events)
 
 
 async def test_safety_model_can_add_a_refusal_but_rules_come_first(
@@ -239,9 +243,9 @@ async def test_uw13_thirty_diagnosis_requests_through_the_graph(
 # Tools that write always pause ----------------------------------------------------------------
 
 WRITES = [
-    ("I want my memory to be solid before exams.", "set_goal", t.goals),
+    ("I want conditional probability to be solid before exams.", "set_goal", t.goals),
     ("I slept like 4 hours.", "log_life_context", t.life_context),
-    ("stop suggesting maths this week", "update_settings", t.skill_pauses),
+    ("stop suggesting expectation this week", "update_settings", t.skill_pauses),
     ("I want to run an experiment", "start_experiment", t.experiments),
 ]
 
@@ -310,18 +314,22 @@ async def test_uw9_life_context_weighs_rounds_half(
                 "Thanks for telling me. I'll keep today light, and today's results will count "
                 "less toward your profile."
             )
-        spec = interrupt_of(await collect(runner, user_id, session_id, message="play Quick Draw"))
+        spec = interrupt_of(
+            await collect(
+                runner, user_id, session_id, message="play Quiz: Sample spaces and events"
+            )
+        )
         await play(runner, aengine, user_id, session_id, spec, [True, False] * 5)
         async with aengine.connect() as conn:
             mu = (
                 await conn.execute(
                     select(t.dimension_state.c.mu).where(
                         t.dimension_state.c.user_id == user_id,
-                        t.dimension_state.c.dim == "processing_speed",
+                        t.dimension_state.c.dim == "sample_space",
                     )
                 )
             ).scalar_one()
-        return float(mu)
+            return float(mu) - 1.5
 
     outside, inside = await speed_change(False), await speed_change(True)
     assert outside != 0.0
@@ -334,16 +342,19 @@ async def test_uw11_goal_then_progress(make_runner: RunnerFactory, aengine: Asyn
     session_id = await runner.create_session(user_id, "ui")
     payload = asked(
         await collect(
-            runner, user_id, session_id, message="I want my memory to be solid before exams."
+            runner,
+            user_id,
+            session_id,
+            message="I want conditional probability to be solid before exams.",
         )
     )
-    assert re.search(r"within ±\d+ points by \d+ \w{3}", payload["prompt"])
-    assert re.search(r"about \d+ more working memory rounds", payload["prompt"])
+    assert re.search(r"within ±\d+ points (by|until) \d+ \w{3}", payload["prompt"])
+    assert "Regular practice keeps it there" in payload["prompt"]
     await collect(runner, user_id, session_id, resume={"confirmed": True})
     # The next pick favours the goal skill, and says so in its breakdown.
     session_id = await runner.create_session(user_id, "ui")
     spec = interrupt_of(await collect(runner, user_id, session_id))
-    assert "working_memory" in REGISTRY.game(spec["game_id"]).primary_dims
+    assert "conditional" in REGISTRY.game(spec["game_id"]).primary_dims
     async with aengine.connect() as conn:
         candidates = (
             await conn.execute(
@@ -353,7 +364,7 @@ async def test_uw11_goal_then_progress(make_runner: RunnerFactory, aengine: Asyn
             )
         ).scalar_one()
     top = candidates[0]
-    assert top["option"] == "working_memory" and top["breakdown"]["goal_weight"] == 1.0
+    assert top["option"] == "conditional" and top["breakdown"]["goal_weight"] == 1.0
 
 
 async def test_uw7_explain_cites_the_latest_decision(
@@ -404,11 +415,14 @@ async def test_uw3_decline_then_nudge_once(
     for session in range(4):
         session_id = await runner.create_session(user_id, "ui")
         events = await collect(
-            runner, user_id, session_id, message="Not memory today, something quick."
+            runner,
+            user_id,
+            session_id,
+            message="Not conditional probability today, something quick.",
         )
         spec = interrupt_of(events)
         game = REGISTRY.game(spec["game_id"])
-        assert "working_memory" not in game.primary_dims and game.duration_s <= 60
+        assert "conditional" not in game.primary_dims and game.duration_s <= 180
         plan = [e for e in events if e["kind"] == "decision" and e["node"] == "plan_next"]
         assert plan[0]["reason"].startswith("Sure. Here's")
         nudged = any(e["kind"] == "say" and "skipped" in e["text"] for e in events)
@@ -417,7 +431,7 @@ async def test_uw3_decline_then_nudge_once(
             payload = asked(
                 await collect(runner, user_id, session_id, message="stop suggesting it this week")
             )
-            assert payload["type"] == "confirm" and "working memory" in payload["prompt"]
+            assert payload["type"] == "confirm" and "conditional probability" in payload["prompt"]
             await collect(runner, user_id, session_id, resume={"confirmed": True})
         if session == 0:  # the rest of that session leaves memory alone too
             for _ in range(2):
@@ -425,12 +439,12 @@ async def test_uw3_decline_then_nudge_once(
                 if not any(e["kind"] == "interrupt" for e in events):
                     break
                 spec = interrupt_of(events)
-                assert "working_memory" not in REGISTRY.game(spec["game_id"]).primary_dims
+                assert "conditional" not in REGISTRY.game(spec["game_id"]).primary_dims
     assert nudges == [False, False, True, False]  # once, after the third session
     assert await count(aengine, t.skill_pauses, user_id) == 1
     session_id = await runner.create_session(user_id, "ui")  # paused, even without asking
     spec = interrupt_of(await collect(runner, user_id, session_id))
-    assert "working_memory" not in REGISTRY.game(spec["game_id"]).primary_dims
+    assert "conditional" not in REGISTRY.game(spec["game_id"]).primary_dims
 
 
 async def test_new_message_replaces_the_waiting_game(

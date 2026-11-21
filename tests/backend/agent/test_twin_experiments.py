@@ -63,7 +63,7 @@ async def seed_trials(
                     round_id=round_id,
                     user_id=user_id,
                     session_id=session_id,
-                    game_id="arrow_storm",
+                    game_id="quiz_independence",
                     level=0.4,
                     status="completed",
                     started_at=when,
@@ -71,13 +71,25 @@ async def seed_trials(
                     score=p,
                 )
             )
-            await conn.execute(t.trials.insert(), [
-                {"trial_id": uuid4(), "user_id": user_id, "session_id": session_id,
-                 "round_id": round_id, "game_id": "arrow_storm", "level": 0.4, "trial_index": i,
-                 "correct": bool(rng.random() < p), "rt_ms": 500.0, "stimulus": {},
-                 "ts": when + timedelta(seconds=5 * i)}
-                for i in range(20)
-            ])  # fmt: skip
+            await conn.execute(
+                t.trials.insert(),
+                [
+                    {
+                        "trial_id": uuid4(),
+                        "user_id": user_id,
+                        "session_id": session_id,
+                        "round_id": round_id,
+                        "game_id": "quiz_independence",
+                        "level": 0.4,
+                        "trial_index": i,
+                        "correct": bool(rng.random() < p),
+                        "rt_ms": 500.0,
+                        "stimulus": {},
+                        "ts": when + timedelta(seconds=5 * i),
+                    }
+                    for i in range(20)
+                ],
+            )
 
 
 async def test_uw8_twin_answers_when_im_sharpest(

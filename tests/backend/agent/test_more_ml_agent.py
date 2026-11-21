@@ -54,7 +54,7 @@ async def test_someone_drifting_away_gets_a_short_easy_session(
     spec = interrupt_of(await collect(runner, user_id, session_id))
     [pick] = await decisions(aengine, session_id, "plan_next")
     assert "A short, easy session today" in pick.reason
-    assert REGISTRY.game(spec["game_id"]).duration_s <= 60
+    assert REGISTRY.game(spec["game_id"]).duration_s <= 180
     assert spec["target_p"] == TARGET_P["chill"]
     assert "Welcome back" not in pick.reason  # the check-up waits
     events = await play(runner, aengine, user_id, session_id, spec, [True] * 10)
@@ -84,24 +84,45 @@ async def seed_tiring_sessions(engine: AsyncEngine, user_id: UUID, sessions: int
             session_id, round_id = uuid4(), uuid4()
             await conn.execute(
                 t.sessions.insert().values(
-                    session_id=session_id, user_id=user_id, trigger="ui", status="ended",
+                    session_id=session_id,
+                    user_id=user_id,
+                    trigger="ui",
+                    status="ended",
                     started_at=start,
                 )
-            )  # fmt: skip
+            )
             await conn.execute(
                 t.rounds.insert().values(
-                    round_id=round_id, user_id=user_id, session_id=session_id,
-                    game_id="quick_draw", level=0.4, started_at=start, status="completed",
+                    round_id=round_id,
+                    user_id=user_id,
+                    session_id=session_id,
+                    game_id="quiz_sample_space",
+                    level=0.4,
+                    started_at=start,
+                    status="completed",
                 )
-            )  # fmt: skip
-            await conn.execute(t.trials.insert(), [
-                {"trial_id": uuid4(), "user_id": user_id, "session_id": session_id,
-                 "round_id": round_id, "game_id": "quick_draw", "level": 0.4, "trial_index": i,
-                 "correct": bool(rng.random() < (0.6 if i >= 30 else 0.9)),
-                 "rt_ms": float(np.exp(rng.normal(np.log(450) + (0.7 if i >= 30 else 0), 0.2))),
-                 "stimulus": {}, "ts": start + timedelta(seconds=10 * i)}
-                for i in range(60)
-            ])  # fmt: skip
+            )
+            await conn.execute(
+                t.trials.insert(),
+                [
+                    {
+                        "trial_id": uuid4(),
+                        "user_id": user_id,
+                        "session_id": session_id,
+                        "round_id": round_id,
+                        "game_id": "quiz_sample_space",
+                        "level": 0.4,
+                        "trial_index": i,
+                        "correct": bool(rng.random() < (0.6 if i >= 30 else 0.9)),
+                        "rt_ms": float(
+                            np.exp(rng.normal(np.log(450) + (0.7 if i >= 30 else 0), 0.2))
+                        ),
+                        "stimulus": {},
+                        "ts": start + timedelta(seconds=10 * i),
+                    }
+                    for i in range(60)
+                ],
+            )
 
 
 async def test_the_fatigue_point_ends_a_session_with_a_range(
@@ -127,40 +148,55 @@ async def test_the_fatigue_point_ends_a_session_with_a_range(
 
 
 async def seed_gains(engine: AsyncEngine, user_id: UUID, rounds: int) -> None:
-    """Rounds of Echo and Market Rush with their twin.updated events."""
+    """Rounds of Quiz: Conditional probability and Quiz: Counting with their twin.updated events."""
     async with engine.begin() as conn:
         session_id = uuid4()
         start = datetime.now(UTC) - timedelta(days=3)
         await conn.execute(
             t.sessions.insert().values(
-                session_id=session_id, user_id=user_id, trigger="ui", status="ended",
+                session_id=session_id,
+                user_id=user_id,
+                trigger="ui",
+                status="ended",
                 started_at=start,
             )
-        )  # fmt: skip
+        )
         mu = 0.0
         for i in range(rounds):
             round_id = uuid4()
-            game = "echo" if i % 2 else "market_rush"
+            game = "quiz_conditional" if i % 2 else "explain_conditional"
             when = start + timedelta(minutes=2 * i)
             await conn.execute(
                 t.rounds.insert().values(
-                    round_id=round_id, user_id=user_id, session_id=session_id, game_id=game,
-                    level=0.4, started_at=when, status="completed", scored_at=when,
+                    round_id=round_id,
+                    user_id=user_id,
+                    session_id=session_id,
+                    game_id=game,
+                    level=0.4,
+                    started_at=when,
+                    status="completed",
+                    scored_at=when,
                 )
-            )  # fmt: skip
+            )
             change = DimensionChange(
-                dim="working_memory", mu_before=mu, mu_after=mu + 0.05, sigma_before=0.5,
-                sigma_after=0.48, n_after=10 * (i + 1),
-            )  # fmt: skip
+                dim="conditional",
+                mu_before=mu,
+                mu_after=mu + 0.05,
+                sigma_before=0.5,
+                sigma_after=0.48,
+                n_after=10 * (i + 1),
+            )
             mu += 0.05
             inputs = ScoringInputs(context_weight=1.0, trust=1.0, quality_verdict="ok")
             await append_event(
                 conn,
                 TwinUpdated(
-                    user_id=user_id, session_id=session_id, ts=when,
+                    user_id=user_id,
+                    session_id=session_id,
+                    ts=when,
                     payload=TwinUpdatedPayload(round_id=round_id, changes=[change], inputs=inputs),
                 ),
-            )  # fmt: skip
+            )
 
 
 def bandit_parts(pick: Any) -> list[float]:
@@ -181,7 +217,10 @@ async def test_the_bandit_joins_plan_next_once_there_is_data(
     await seed_gains(aengine, played, 12)
     async with aengine.connect() as conn:
         gains = await bandit.gains_by_game(conn, played, REGISTRY)
-    assert set(gains) == {"echo", "market_rush"} and sum(map(len, gains.values())) == 11
+    assert (
+        set(gains) == {"quiz_conditional", "explain_conditional"}
+        and sum(map(len, gains.values())) == 11
+    )
     session_id = await runner.create_session(played, "ui")
     await collect(runner, played, session_id)
     parts = bandit_parts(await candidates(aengine, session_id))

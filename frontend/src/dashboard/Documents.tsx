@@ -99,7 +99,9 @@ export function Documents({ onAsk }: { onAsk: (message: string) => void }) {
             placeholder="e.g. C++ or Probability"
             value={name}
             maxLength={100}
-            onChange={(e) => { setName(e.target.value); }}
+            onChange={(e) => {
+              setName(e.target.value)
+            }}
           />
           <button disabled={busy || !name.trim()}>Add subject</button>
         </form>
@@ -131,13 +133,17 @@ export function Documents({ onAsk }: { onAsk: (message: string) => void }) {
               maxLength={120}
               value={chapter}
               disabled={busy}
-              onChange={(e) => { setChapter(e.target.value); }}
+              onChange={(e) => {
+                setChapter(e.target.value)
+              }}
             />
           </label>
         </div>
         <div
           className="documents__drop"
-          onDragOver={(e) => { e.preventDefault(); }}
+          onDragOver={(e) => {
+            e.preventDefault()
+          }}
           onDrop={(e) => {
             e.preventDefault()
             upload(e.dataTransfer.files)
@@ -165,7 +171,9 @@ export function Documents({ onAsk }: { onAsk: (message: string) => void }) {
             accept=".pdf,.txt,.md"
             aria-label="Upload course files"
             disabled={busy}
-            onChange={(e) => { upload(e.target.files); }}
+            onChange={(e) => {
+              upload(e.target.files)
+            }}
           />
         </div>
       </section>
@@ -285,7 +293,9 @@ export function Documents({ onAsk }: { onAsk: (message: string) => void }) {
           className="inline-ask"
           onSubmit={(e) => {
             e.preventDefault()
-            void run(async () => { setHits(await api.searchDocuments(query.trim(), selected)); })
+            void run(async () => {
+              setHits(await api.searchDocuments(query.trim(), selected))
+            })
           }}
         >
           <input
@@ -293,13 +303,18 @@ export function Documents({ onAsk }: { onAsk: (message: string) => void }) {
             placeholder="Use terms from your notes, such as vector or conditional probability"
             value={query}
             maxLength={500}
-            onChange={(e) => { setQuery(e.target.value); }}
+            onChange={(e) => {
+              setQuery(e.target.value)
+            }}
           />
           <button disabled={busy || !query.trim()}>Search passages</button>
         </form>
         {hits?.length === 0 && <p>No matching passage. Try a term used in your chapter.</p>}
         {hits?.map((hit, i) => (
-            <article className="documents__passage" key={`${hit.doc_id}-${String(hit.page)}-${String(i)}`}>
+          <article
+            className="documents__passage"
+            key={`${hit.doc_id}-${String(hit.page)}-${String(i)}`}
+          >
             <strong>
               {hit.title} · page {hit.page}
             </strong>
@@ -308,8 +323,9 @@ export function Documents({ onAsk }: { onAsk: (message: string) => void }) {
             </div>
             <button
               disabled={busy}
-              onClick={() => { onAsk(`Explain this idea from my notes: ${query} [document:${hit.doc_id}]`); }
-              }
+              onClick={() => {
+                onAsk(`Explain this idea from my notes: ${query} [document:${hit.doc_id}]`)
+              }}
             >
               Help me understand this
             </button>

@@ -20,6 +20,7 @@ from backend.db import tables as t
 from backend.db.twin_store import append_event, user_scope
 from backend.documents import library
 from backend.documents.ingest import MAX_BYTES, UnreadableDocument, split_passages
+from backend.documents.math_text import math_issues
 from backend.documents.ocr import extract_document
 
 router = APIRouter(tags=["documents"])
@@ -219,12 +220,21 @@ async def review_document(
 ) -> library.DocumentView:
     if sum(len(p) for p in body.pages) > 5_000_000 or any("[unclear]" in p for p in body.pages):
         raise HTTPException(422, "Resolve every [unclear] marker before approving these pages.")
+    if any(math_issues(page) for page in body.pages):
+        raise HTTPException(422, "Fix unbalanced formula delimiters or braces before approving.")
     services: Services = request.app.state.services
     passages = await run_in_threadpool(split_passages, body.pages)
     if not passages:
         raise HTTPException(422, "Add readable course text before approving these pages.")
     from uuid import uuid4
 
+    concepts: dict[str, list[int]] = {}
+    for passage in passages:
+        passage.concepts = skills_in(passage.text, registry)
+        for concept in passage.concepts:
+            concepts.setdefault(concept, [])
+            if passage.page not in concepts[concept]:
+                concepts[concept].append(passage.page)
     rows = [
         {
             "passage_id": uuid4(),
@@ -233,7 +243,7 @@ async def review_document(
             "page": p.page,
             "position": p.position,
             "text": p.text,
-            "concepts": skills_in(p.text, registry),
+            "concepts": p.concepts,
         }
         for p in passages
     ]
@@ -260,7 +270,13 @@ async def review_document(
         await conn.execute(
             update(t.documents)
             .where(t.documents.c.doc_id == doc_id)
-            .values(extraction=extraction, review_required=False, indexed=False, passages=len(rows))
+            .values(
+                extraction=extraction,
+                review_required=False,
+                indexed=False,
+                passages=len(rows),
+                concepts=concepts,
+            )
         )
         await append_event(
             conn,

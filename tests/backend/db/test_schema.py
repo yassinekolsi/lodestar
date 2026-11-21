@@ -25,7 +25,11 @@ def _round(conn: Connection, user_id: UUID, session_id: UUID) -> UUID:
     round_id = uuid4()
     conn.execute(
         insert(t.rounds).values(
-            round_id=round_id, user_id=user_id, session_id=session_id, game_id="echo", level=0.4
+            round_id=round_id,
+            user_id=user_id,
+            session_id=session_id,
+            game_id="quiz_conditional",
+            level=0.4,
         )
     )
     return round_id
@@ -50,43 +54,106 @@ def test_every_table_accepts_and_returns_a_row(conn: Connection) -> None:
     round_id = _round(conn, user_id, session_id)
     item_id = conn.execute(
         insert(t.content_pool)
-        .values(game_id="market_rush", level=0.5, content={"orders": []}, validator_report={})
+        .values(game_id="quiz_counting", level=0.5, content={"orders": []}, validator_report={})
         .returning(t.content_pool.c.item_id)
     ).scalar_one()
 
     rows: dict[Table, dict[str, object]] = {
         t.consent: {"user_id": user_id, "switch": "core", "granted": True, "notice_version": "1"},
-        t.goals: {"user_id": user_id, "dim": "working_memory", "kind": "range", "target": 0.1,
-                  "due": date(2026, 11, 7)},
+        t.goals: {
+            "user_id": user_id,
+            "dim": "conditional",
+            "kind": "range",
+            "target": 0.1,
+            "due": date(2026, 11, 7),
+        },
         t.deletion_receipts: {"user_hash": "abc", "counts": {"events": 3}},
-        t.llm_credentials: {"user_id": user_id, "provider": "gemini", "key_ciphertext": b"x",
-                            "nonce": b"n", "master_key_version": 1, "key_last4": "a91F"},
-        t.llm_selection: {"user_id": user_id, "mode": "local", "provider": "ollama",
-                          "model": "qwen3.5:4b"},
-        t.events: {"user_id": user_id, "session_id": session_id, "type": "session.started",
-                   "payload": {"trigger": "ui", "persona": "willow"}},
-        t.trials: {"trial_id": uuid4(), "user_id": user_id, "session_id": session_id,
-                   "round_id": round_id, "game_id": "echo", "level": 0.4, "trial_index": 0,
-                   "correct": True, "rt_ms": 420.0, "stimulus": {"letter": "K"}, "ts": NOW},
-        t.dimension_state: {"user_id": user_id, "dim": "working_memory", "mu": 0.1, "sigma": 1.2},
-        t.history: {"user_id": user_id, "day": date(2026, 10, 21), "dim": "working_memory",
-                    "mu": 0.1, "sigma": 1.2, "n": 4},
-        t.item_difficulty: {"game_id": "echo", "level_key": "n=2", "b": 0.3},
-        t.acs_observations: {"user_id": user_id, "component": "V", "success": True,
-                             "source": "spot_the_mistake"},
-        t.life_context: {"user_id": user_id, "label": "exam week",
-                         "period": Range(NOW, NOW + timedelta(days=7))},
-        t.decisions: {"decision_id": uuid4(), "session_id": session_id, "user_id": user_id,
-                      "node": "plan_next", "question": "Which skill next?", "candidates": [],
-                      "chosen": "working_memory", "reason": "Least certain skill"},
-        t.traces: {"session_id": session_id, "seq": 1, "user_id": user_id, "node": "ingest",
-                   "event": "done", "ms": 3.5},
-        t.experiments: {"user_id": user_id, "hypothesis": "Evening is better",
-                        "design": {"sessions": 6}},
+        t.llm_credentials: {
+            "user_id": user_id,
+            "provider": "gemini",
+            "key_ciphertext": b"x",
+            "nonce": b"n",
+            "master_key_version": 1,
+            "key_last4": "a91F",
+        },
+        t.llm_selection: {
+            "user_id": user_id,
+            "mode": "local",
+            "provider": "ollama",
+            "model": "qwen3.5:4b",
+        },
+        t.events: {
+            "user_id": user_id,
+            "session_id": session_id,
+            "type": "session.started",
+            "payload": {"trigger": "ui", "persona": "willow"},
+        },
+        t.trials: {
+            "trial_id": uuid4(),
+            "user_id": user_id,
+            "session_id": session_id,
+            "round_id": round_id,
+            "game_id": "quiz_conditional",
+            "level": 0.4,
+            "trial_index": 0,
+            "correct": True,
+            "rt_ms": 420.0,
+            "stimulus": {"letter": "K"},
+            "ts": NOW,
+        },
+        t.dimension_state: {"user_id": user_id, "dim": "conditional", "mu": 0.1, "sigma": 1.2},
+        t.history: {
+            "user_id": user_id,
+            "day": date(2026, 10, 21),
+            "dim": "conditional",
+            "mu": 0.1,
+            "sigma": 1.2,
+            "n": 4,
+        },
+        t.item_difficulty: {"game_id": "quiz_conditional", "level_key": "n=2", "b": 0.3},
+        t.acs_observations: {
+            "user_id": user_id,
+            "component": "V",
+            "success": True,
+            "source": "spot_the_mistake",
+        },
+        t.life_context: {
+            "user_id": user_id,
+            "label": "exam week",
+            "period": Range(NOW, NOW + timedelta(days=7)),
+        },
+        t.decisions: {
+            "decision_id": uuid4(),
+            "session_id": session_id,
+            "user_id": user_id,
+            "node": "plan_next",
+            "question": "Which skill next?",
+            "candidates": [],
+            "chosen": "conditional",
+            "reason": "Least certain skill",
+        },
+        t.traces: {
+            "session_id": session_id,
+            "seq": 1,
+            "user_id": user_id,
+            "node": "ingest",
+            "event": "done",
+            "ms": 3.5,
+        },
+        t.experiments: {
+            "user_id": user_id,
+            "hypothesis": "Evening is better",
+            "design": {"sessions": 6},
+        },
         t.content_served: {"user_id": user_id, "item_id": item_id},
-        t.ml_models: {"name": "growth_forecast", "version": "1", "metrics": {"coverage": 0.79},
-                      "artefact_path": "models/growth/1.txt", "trained_at": NOW},
-    }  # fmt: skip
+        t.ml_models: {
+            "name": "growth_forecast",
+            "version": "1",
+            "metrics": {"coverage": 0.79},
+            "artefact_path": "models/growth/1.txt",
+            "trained_at": NOW,
+        },
+    }
     for table, values in rows.items():
         conn.execute(insert(table).values(**values))
         assert conn.execute(select(func.count()).select_from(table)).scalar_one() >= 1, table
@@ -145,7 +212,7 @@ def test_deleting_a_user_cascades_everywhere(conn: Connection) -> None:
             user_id=user_id,
             session_id=session_id,
             round_id=round_id,
-            game_id="echo",
+            game_id="quiz_conditional",
             level=0.4,
             trial_index=0,
             stimulus={},

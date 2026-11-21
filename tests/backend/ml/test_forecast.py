@@ -97,11 +97,11 @@ def test_serving_gives_ordered_bands(trained: dict[str, Any]) -> None:
     low, mid, high = model.predict([0.1, 0.4, 0.6, 0.7], [0, 1, 1, 1], 6, 5)
     assert low < mid < high and mid > 0.5  # a rising learner keeps rising, with a range
     today = date(2026, 10, 21)
-    history = [(today - timedelta(days=d), "processing_speed", 0.1 * (5 - d)) for d in range(5)]
-    history += [(today, "working_memory", 0.2)]  # one day only: no band
+    history = [(today - timedelta(days=d), "equally_likely", 0.1 * (5 - d)) for d in range(5)]
+    history += [(today, "conditional", 0.2)]  # one day only: no band
     bands = forecast_bands(model, REGISTRY, history, 5)
-    assert set(bands) == {"processing_speed"}
-    band = bands["processing_speed"]
+    assert set(bands) == {"equally_likely"}
+    band = bands["equally_likely"]
     assert band.low <= band.median <= band.high and band.sessions_ahead == 5
     with pytest.raises(ValueError):
         model.predict([0.1, 0.2], [0, 1], 6, 5)
@@ -125,17 +125,25 @@ async def test_coach_facts_carry_the_forecast_with_its_range(
         await conn.execute(
             t.history.insert(),
             [
-                {"user_id": user_id, "day": today - timedelta(days=d), "dim": "processing_speed",
-                 "mu": 0.1 * (4 - d), "sigma": 0.5, "n": 10}
+                {
+                    "user_id": user_id,
+                    "day": today - timedelta(days=d),
+                    "dim": "equally_likely",
+                    "mu": 0.1 * (4 - d),
+                    "sigma": 0.5,
+                    "n": 10,
+                }
                 for d in range(1, 5)
             ],
-        )  # fmt: skip
+        )
     session_id = await runner.create_session(user_id, "ui")
-    spec = interrupt_of(await collect(runner, user_id, session_id, message="play Quick Draw"))
+    spec = interrupt_of(
+        await collect(runner, user_id, session_id, message="play Quiz: Equally likely outcomes")
+    )
     await play(runner, aengine, user_id, session_id, spec, [True] * 8)
     state = await runner.graph.aget_state(runner.config(session_id))
     texts = [f.text for f in state.values["facts"].facts]
-    forecast = [x for x in texts if x.startswith("Forecast for Processing speed")]
+    forecast = [x for x in texts if x.startswith("Forecast for Equally likely outcomes")]
     assert forecast and "after 5 more sessions" in forecast[0] and "80% range" in forecast[0]
 
 
@@ -169,13 +177,19 @@ async def test_forecast_endpoint_returns_percent_ranges(
             await conn.execute(
                 t.history.insert(),
                 [
-                    {"user_id": user_id, "day": today - timedelta(days=d), "dim": "working_memory",
-                     "mu": 0.1 * (4 - d), "sigma": 0.5, "n": 10}
+                    {
+                        "user_id": user_id,
+                        "day": today - timedelta(days=d),
+                        "dim": "conditional",
+                        "mu": 0.1 * (4 - d),
+                        "sigma": 0.5,
+                        "n": 10,
+                    }
                     for d in range(4)
                 ],
-            )  # fmt: skip
+            )
         bands = (await client.get("/forecast?sessions=5", headers=headers)).json()
     [band] = bands
-    assert band["dim"] == "working_memory" and band["sessions_ahead"] == 5
+    assert band["dim"] == "conditional" and band["sessions_ahead"] == 5
     assert 0 <= band["low"] <= band["median"] <= band["high"] <= 100
     assert "36,000 players" in band["note"]

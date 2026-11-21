@@ -52,4 +52,8 @@ Phase 1: **Sun 1 Nov 2026** (public GitHub repo). Final: **Sat 7 Nov 2026**. The
 
 ## Our honesty rule
 
+The current study track is in [19-study-coach.md](19-study-coach.md). Student uploads and OCR
+review are specified in [20-student-library.md](20-student-library.md), and formula rendering in
+[21-math-rendering.md](21-math-rendering.md).
+
 We never claim Lodestar makes you smarter. We claim it measures your practice honestly, explains what it sees, and coaches you at the right level. The research (`17`) shows that's what the evidence supports, and most competitors overclaim.

@@ -18,24 +18,41 @@ async def test_insights_calibration_and_rhythm(aengine: AsyncEngine) -> None:
     async with aengine.begin() as conn:
         await conn.execute(
             t.sessions.insert().values(
-                session_id=session_id, user_id=user_id, trigger="ui", status="ended",
+                session_id=session_id,
+                user_id=user_id,
+                trigger="ui",
+                status="ended",
                 started_at=now - timedelta(hours=1),
             )
-        )  # fmt: skip
+        )
         await conn.execute(
             t.rounds.insert().values(
-                round_id=round_id, user_id=user_id, session_id=session_id, game_id="quick_draw",
-                level=0.5, status="completed", started_at=now - timedelta(hours=1),
+                round_id=round_id,
+                user_id=user_id,
+                session_id=session_id,
+                game_id="quiz_sample_space",
+                level=0.5,
+                status="completed",
+                started_at=now - timedelta(hours=1),
             )
-        )  # fmt: skip
+        )
         for i in range(12):
             await conn.execute(
                 t.trials.insert().values(
-                    trial_id=uuid4(), user_id=user_id, session_id=session_id, round_id=round_id,
-                    game_id="quick_draw", level=0.5, trial_index=i, correct=i < 9,
-                    rt_ms=400.0, confidence=0.9, stimulus={}, ts=now - timedelta(minutes=50),
+                    trial_id=uuid4(),
+                    user_id=user_id,
+                    session_id=session_id,
+                    round_id=round_id,
+                    game_id="quiz_sample_space",
+                    level=0.5,
+                    trial_index=i,
+                    correct=i < 9,
+                    rt_ms=400.0,
+                    confidence=0.9,
+                    stimulus={},
+                    ts=now - timedelta(minutes=50),
                 )
-            )  # fmt: skip
+            )
     async with aengine.connect() as conn:
         view = await get_insights(user_id, conn, aengine)
     assert view.calibration is not None
@@ -68,9 +85,13 @@ def test_model_headlines_and_wilson() -> None:
     assert [h.value for h in forecast] == ["79%", "80%", "0.27 SD"]
     _, _, risk = headline(
         "engagement_risk",
-        {"results": {"logistic regression": {"auc": 0.857, "ece": 0.006},
-                     "days since last activity (rule)": {"auc": 0.828}}},
-    )  # fmt: skip
+        {
+            "results": {
+                "logistic regression": {"auc": 0.857, "ece": 0.006},
+                "days since last activity (rule)": {"auc": 0.828},
+            }
+        },
+    )
     assert [h.value for h in risk] == ["0.86", "0.83", "0.006"]
     low, high = wilson(9, 12)
     assert 0 < low < 0.75 < high < 1

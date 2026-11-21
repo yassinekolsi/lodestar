@@ -90,7 +90,10 @@ def main(argv: list[str] | None = None) -> int:
     r = evaluate(args.users, args.seed)
     print("| Check | Result |")
     print("|---|---|")
-    print(f"| Planted gap found by the gap rule | {r.found}/{r.students} ({r.found / r.students:.0%}) |")
+    print(
+        f"| Planted gap found by the gap rule | {r.found}/{r.students} "
+        f"({r.found / r.students:.0%}) |"
+    )
     print(
         f"| Planted gap found by 'practise your weakest concept' | {r.baseline}/{r.students} "
         f"({r.baseline / r.students:.0%}) |"

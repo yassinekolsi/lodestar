@@ -131,18 +131,33 @@ async def test_nothing_reaches_a_cloud_provider_before_cloud_ai_is_on(
 def _trials(spec: dict[str, Any], session_id: str, correct: list[bool]) -> list[dict[str, Any]]:
     start = datetime.now(UTC)
     return [
-        {"trial_id": str(uuid4()), "round_id": spec["round_id"], "session_id": session_id,
-         "game_id": spec["game_id"], "level": spec["level"], "trial_index": i, "stimulus": {},
-         "correct": c, "rt_ms": 550.0, "ts": (start + timedelta(seconds=3 * i)).isoformat()}
+        {
+            "trial_id": str(uuid4()),
+            "round_id": spec["round_id"],
+            "session_id": session_id,
+            "game_id": spec["game_id"],
+            "level": spec["level"],
+            "trial_index": i,
+            "stimulus": {},
+            "correct": c,
+            "rt_ms": 6000.0,
+            "ts": (start + timedelta(seconds=8 * i)).isoformat(),
+        }
         for i, c in enumerate(correct)
-    ]  # fmt: skip
+    ]
 
 
 def _result(spec: dict[str, Any], n: int) -> dict[str, Any]:
     now = datetime.now(UTC)
-    return {"round_id": spec["round_id"], "game_id": spec["game_id"], "status": "completed",
-            "trial_count": n, "final_level": spec["level"], "started_at": now.isoformat(),
-            "ended_at": (now + timedelta(minutes=1)).isoformat()}  # fmt: skip
+    return {
+        "round_id": spec["round_id"],
+        "game_id": spec["game_id"],
+        "status": "completed",
+        "trial_count": n,
+        "final_level": spec["level"],
+        "started_at": now.isoformat(),
+        "ended_at": (now + timedelta(minutes=1)).isoformat(),
+    }
 
 
 async def test_session_endpoints_play_a_round(
@@ -181,8 +196,11 @@ def test_websocket_through_the_real_lifespan(db_url: str, monkeypatch: pytest.Mo
             token, user_id = created["token"], UUID(created["user_id"])
             engine = create_engine(sync_url(db_url))
             with engine.begin() as conn:  # deterministic coach: the stub model
-                conn.execute(t.llm_selection.insert().values(
-                    user_id=user_id, mode="stub", provider="stub", model="stub"))  # fmt: skip
+                conn.execute(
+                    t.llm_selection.insert().values(
+                        user_id=user_id, mode="stub", provider="stub", model="stub"
+                    )
+                )
             engine.dispose()
             headers = {"Authorization": f"Bearer {token}"}
             session = tc.post("/sessions", json={"trigger": "ui"}, headers=headers).json()

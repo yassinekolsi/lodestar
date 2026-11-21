@@ -68,7 +68,7 @@ async def practice(engine: AsyncEngine, user_id: UUID, when: datetime, right: li
                 round_id=round_id,
                 user_id=user_id,
                 session_id=session_id,
-                game_id="quick_draw",
+                game_id="quiz_equally_likely",
                 level=0.4,
                 status="completed",
                 started_at=when,
@@ -83,7 +83,7 @@ async def practice(engine: AsyncEngine, user_id: UUID, when: datetime, right: li
                     "user_id": user_id,
                     "session_id": session_id,
                     "round_id": round_id,
-                    "game_id": "quick_draw",
+                    "game_id": "quiz_equally_likely",
                     "level": 0.4,
                     "trial_index": i,
                     "correct": c,
@@ -96,9 +96,7 @@ async def practice(engine: AsyncEngine, user_id: UUID, when: datetime, right: li
         )
         await conn.execute(
             pg_insert(t.history)
-            .values(
-                user_id=user_id, day=when.date(), dim="processing_speed", mu=0.2, sigma=0.6, n=12
-            )
+            .values(user_id=user_id, day=when.date(), dim="equally_likely", mu=0.2, sigma=0.6, n=12)
             .on_conflict_do_nothing()  # two practices on one day share one history row
         )
     return session_id
@@ -114,7 +112,7 @@ async def test_progress_pills_and_heatmaps(client: httpx.AsyncClient, aengine: A
     assert p["stats"]["streak_days"] == 3 and p["stats"]["rounds_this_week"] == 5
     assert p["stats"]["skills_measured"] == 0  # no dimension_state rows: nothing scored yet
     week = p["by_week"]
-    assert week["skills"] == ["processing_speed"] and len(week["weeks"]) == 8
+    assert week["skills"] == ["equally_likely"] and len(week["weeks"]) == 8
     assert sum(week["rounds"][0]) == 5
     hour = p["by_hour"]
     # 09:00 UTC is 10:00 in Tunis: the "10-14" block, not "6-10".
@@ -130,7 +128,7 @@ async def test_twin_curves_carry_ranges(client: httpx.AsyncClient, aengine: Asyn
     user_id, headers = await signup(client)
     await practice(aengine, user_id, datetime.now(UTC), [True] * 10)
     [point] = (await client.get("/twin", headers=headers)).json()["curves"]
-    assert point["dim"] == "processing_speed"
+    assert point["dim"] == "equally_likely"
     assert point["low"] < point["percent"] < point["high"]
 
 

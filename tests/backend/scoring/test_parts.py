@@ -42,9 +42,9 @@ def test_staircase_2_down_1_up_converges_near_71_percent() -> None:
 
 
 def test_percentile_range_brackets_the_value() -> None:
-    pr = Norms().percentile("working_memory", Belief(mu=0.3, sigma=0.4))
+    pr = Norms().percentile("conditional", Belief(mu=0.3, sigma=0.4))
     assert pr.low < pr.value < pr.high
-    assert pr.source == "simulated"
+    assert pr.source == "mastery"
     assert pr.label().startswith(f"{pr.value:.0f}% (likely")
 
 

@@ -7,18 +7,24 @@ from backend.registry.loader import load_registry
 from backend.registry.models import Game, Knob, Registry
 
 PLAN_DIMENSIONS = {
-    "selective_attention", "sustained_attention", "divided_attention", "inhibition",
-    "working_memory", "short_term_memory", "processing_speed", "cognitive_flexibility",
-    "planning", "reasoning", "spatial_thinking", "verbal_skill", "numerical_thinking",
-    "decision_style", "accuracy_awareness", "creativity",
-}  # fmt: skip
+    "sample_space",
+    "total_probability",
+    "variance",
+    "independence",
+    "conditional",
+    "addition_rule",
+    "equally_likely",
+    "binomial",
+    "counting",
+    "bayes",
+    "random_variables",
+    "expectation",
+}
 
 # docs/plan/06, "Core set".
 PLAN_P1_GAMES = {
-    "quick_draw", "ink_clash", "arrow_storm", "odd_one_out", "hold_it", "echo", "light_path",
-    "market_list", "market_rush", "symbol_code", "switch", "pattern_gap", "spot_the_mistake",
-    "turn_it", "number_line",
-}  # fmt: skip
+    *(f"quiz_{concept}" for concept in PLAN_DIMENSIONS),
+}
 
 
 @pytest.fixture(scope="module")
@@ -40,7 +46,7 @@ def test_core_set_covers_established_skills_except_sustained_attention(
 ) -> None:
     established = {d.id for d in registry.dimensions if d.badge == "established"}
     covered = {d for g in registry.games if g.phase == "P1" for d in g.primary_dims}
-    assert established - covered == {"sustained_attention"}
+    assert established <= covered
 
 
 def test_experimental_dimensions_stay_out_of_overall(registry: Registry) -> None:
@@ -49,19 +55,20 @@ def test_experimental_dimensions_stay_out_of_overall(registry: Registry) -> None
             assert not dim.in_overall
 
 
-def test_unusual_uses_never_enters_an_overall_score(registry: Registry) -> None:
-    for dim in registry.game("unusual_uses").dims:
-        assert not registry.dimension(dim).in_overall
+def test_uploaded_notes_have_no_fixed_mastery_dimensions(registry: Registry) -> None:
+    assert registry.game("quiz_notes").dims == {}
 
 
 def test_onboarding_battery_uses_core_games(registry: Registry) -> None:
     battery = registry.batteries["onboarding"]
-    assert battery.games[0] == "quick_draw"  # also measures device lag (UW1)
+    assert battery.games[0] == "quiz_sample_space"  # also measures device lag (UW1)
     assert all(registry.game(g).phase == "P1" for g in battery.games)
     assert registry.core_skills() == {
-        "processing_speed", "inhibition", "selective_attention",
-        "working_memory", "spatial_thinking", "reasoning",
-    }  # fmt: skip
+        "equally_likely",
+        "sample_space",
+        "conditional",
+        "random_variables",
+    }
 
 
 def test_knobs_move_from_easy_to_hard(registry: Registry) -> None:
@@ -78,33 +85,54 @@ def test_int_knob_rounds_half_up() -> None:
 
 
 def test_reliability_follows_origin(registry: Registry) -> None:
-    assert registry.game("echo").effective_reliability == 1.0
-    assert registry.game("market_rush").effective_reliability == 0.8
-    assert registry.game("teach_me").effective_reliability == 0.5
+    assert registry.game("quiz_conditional").effective_reliability == 0.9
+    assert registry.game("quiz_counting").effective_reliability == 0.9
+    assert registry.game("explain_conditional").effective_reliability == 0.4
+    assert registry.game("quiz_notes").effective_reliability == 0.5
 
 
 def test_providers(registry: Registry) -> None:
     hosted = {p.id for p in registry.providers if p.needs_key}
     assert hosted == {
-        "anthropic", "openai", "gemini", "deepseek", "xai", "mistral", "groq", "openrouter",
-    }  # fmt: skip
+        "anthropic",
+        "openai",
+        "gemini",
+        "deepseek",
+        "xai",
+        "mistral",
+        "groq",
+        "openrouter",
+    }
     assert not registry.provider("anthropic").capabilities.forced_tool_choice
 
 
 def _game(**overrides: object) -> dict[str, object]:
     base: dict[str, object] = {
-        "id": "test_game", "name": "Test", "kind": "game", "phase": "P1",
-        "dims": {"reasoning": 1.0}, "origin": "classic", "paradigm": "x", "code_source": "own",
-        "does": "x", "scoring": "binary", "duration_s": 60, "metrics": ["accuracy"],
-        "knobs": {"n": {"easy": 1, "hard": 3}}, "level_map": "linear", "content": "code",
-        "modalities": ["keyboard"], "acs_hooks": [], "practice_trials": 3,
-    }  # fmt: skip
+        "id": "test_game",
+        "name": "Test",
+        "kind": "game",
+        "phase": "P1",
+        "dims": {"bayes": 1.0},
+        "origin": "classic",
+        "paradigm": "x",
+        "code_source": "own",
+        "does": "x",
+        "scoring": "binary",
+        "duration_s": 60,
+        "metrics": ["accuracy"],
+        "knobs": {"n": {"easy": 1, "hard": 3}},
+        "level_map": "linear",
+        "content": "code",
+        "modalities": ["keyboard"],
+        "acs_hooks": [],
+        "practice_trials": 3,
+    }
     return base | overrides
 
 
 def test_game_needs_a_primary_dimension() -> None:
     with pytest.raises(ValidationError, match="primary"):
-        Game.model_validate(_game(dims={"reasoning": 0.5}))
+        Game.model_validate(_game(dims={"bayes": 0.5}))
 
 
 def test_level_map_needs_knobs() -> None:
@@ -124,8 +152,7 @@ def test_registry_endpoint_hides_test_provider(registry: Registry) -> None:
     assert "stub" not in {p["id"] for p in body["providers"]}
 
 
-def test_detective_story_chains_games_the_browser_can_run(registry: Registry) -> None:
-    story = registry.game("detective").story
-    assert story is not None and len(story.chapters) >= 3
-    assert all(registry.game(c.game).available for c in story.chapters)
-    assert all(registry.game(g).story is None for g in ("echo", "logic_lock"))
+def test_every_registered_concept_has_both_browser_formats(registry: Registry) -> None:
+    for concept in registry.course.concepts:
+        assert registry.game(f"quiz_{concept.id}").available
+        assert registry.game(f"explain_{concept.id}").available

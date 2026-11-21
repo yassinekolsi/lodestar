@@ -7,6 +7,7 @@ in `degraded`. Keys are decrypted here, in memory, for one call; they never leav
 
 import asyncio
 import base64
+import json
 import logging
 import os
 from collections.abc import Sequence
@@ -17,7 +18,7 @@ from uuid import UUID
 import httpx
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import BaseMessage
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -247,7 +248,13 @@ class LlmFactory:
                     )
                     if response.status_code not in (429, 500, 502, 503, 504) or attempt == 2:
                         break
-                    await asyncio.sleep(2**attempt)
+                    delay = 2**attempt
+                    if response.status_code == 429:
+                        try:
+                            delay = min(45, max(10, int(response.headers.get("Retry-After", "30"))))
+                        except ValueError:
+                            delay = 30
+                    await asyncio.sleep(delay)
             if response.status_code in (401, 403):
                 raise ValueError("Gemini could not authorise OCR. Check your key in Settings.")
             if response.status_code == 404:
@@ -262,7 +269,15 @@ class LlmFactory:
                 raise ValueError("Gemini did not finish reading this page. Try a smaller file.")
             text = "".join(p.get("text", "") for p in candidate["content"]["parts"])
             return schema.model_validate_json(text)
-        except httpx.HTTPError, KeyError, IndexError:
+        except (
+            httpx.HTTPError,
+            KeyError,
+            IndexError,
+            TypeError,
+            AttributeError,
+            json.JSONDecodeError,
+            ValidationError,
+        ):
             raise ValueError("Gemini could not read this page. Try again later.") from None
 
     async def import_gemini_environment(self, user_id: UUID) -> list[str]:

@@ -80,17 +80,21 @@ async def test_cues_need_their_own_switch_and_are_kept_coarse(
 async def _round(
     runner: Any, engine: AsyncEngine, cue: float | None
 ) -> tuple[list[dict[str, Any]], dict[str, Any], list[tuple[str, float, float]]]:
-    """One Quick Draw round played with rapid taps (behaviour frustration 0.6), with or without
-    a camera cue; returns the events, the logged affect reading and the profile afterwards."""
+    """Play a course round with rapid taps, with or without a camera cue.
+
+    Return events, the affect reading and the resulting profile.
+    """
     async with engine.begin() as conn:  # same item difficulties for both users
         await conn.execute(
-            delete(t.item_difficulty).where(t.item_difficulty.c.game_id == "quick_draw")
+            delete(t.item_difficulty).where(t.item_difficulty.c.game_id == "quiz_sample_space")
         )
     user_id = await returning_user(engine)
     async with engine.begin() as conn:
         await set_consent(conn, user_id, REGISTRY.consent, "camera", True)
     session_id = await runner.create_session(user_id, "ui")
-    spec = interrupt_of(await collect(runner, user_id, session_id, message="play Quick Draw"))
+    spec = interrupt_of(
+        await collect(runner, user_id, session_id, message="play Quiz: Sample spaces and events")
+    )
     if cue is not None:
         async with engine.begin() as conn:
             await append_event(
@@ -103,9 +107,14 @@ async def _round(
                 ),
             )
     events = await play(
-        runner, engine, user_id, session_id, spec, [True, False] * 5,
+        runner,
+        engine,
+        user_id,
+        session_id,
+        spec,
+        [True, False] * 5,
         behaviour={"rapid_taps": 3},
-    )  # fmt: skip
+    )
     async with engine.connect() as conn:
         reading = (
             await conn.execute(

@@ -18,14 +18,30 @@ NOW = datetime(2026, 10, 21, 20, 0, tzinfo=UTC)
 
 # docs/plan/04, "Event types" (experiment.* expanded).
 PLAN_EVENT_TYPES = {
-    "session.started", "trial.recorded", "round.completed", "twin.updated", "acs.observed",
-    "affect.estimated", "affect.labelled", "affect.biometric.cue", "context.added", "goal.set",
+    "session.started",
+    "trial.recorded",
+    "round.completed",
+    "twin.updated",
+    "acs.observed",
+    "affect.estimated",
+    "affect.labelled",
+    "affect.biometric.cue",
+    "context.added",
+    "goal.set",
     "experiment.started",
-    "experiment.session_logged", "experiment.completed", "consent.changed", "memory.written",
+    "experiment.session_logged",
+    "experiment.completed",
+    "consent.changed",
+    "memory.written",
     "settings.changed",
-    "session.ended", "data.exported", "twin.snapshot", "llm.selection_changed",
-    "story.chapter_completed", "assessment.contested",
-}  # fmt: skip
+    "session.ended",
+    "data.exported",
+    "twin.snapshot",
+    "llm.selection_changed",
+    "story.chapter_completed",
+    "assessment.contested",
+    "library.changed",
+}
 
 
 def test_event_types_match_plan() -> None:
@@ -42,7 +58,7 @@ def test_trial_event_round_trips() -> None:
             "trial_id": str(uuid4()),
             "round_id": str(uuid4()),
             "session_id": str(uuid4()),
-            "game_id": "echo",
+            "game_id": "quiz_conditional",
             "level": 0.4,
             "trial_index": 0,
             "stimulus": {"letter": "K"},
@@ -63,11 +79,9 @@ def test_unknown_event_type_is_rejected() -> None:
 
 
 def test_forecast_is_a_range() -> None:
-    ForecastBand(dim="reasoning", sessions_ahead=5, low=0.1, median=0.2, high=0.4, source="model")
+    ForecastBand(dim="bayes", sessions_ahead=5, low=0.1, median=0.2, high=0.4, source="model")
     with pytest.raises(ValidationError, match="low <= median <= high"):
-        ForecastBand(
-            dim="reasoning", sessions_ahead=5, low=0.3, median=0.2, high=0.4, source="model"
-        )
+        ForecastBand(dim="bayes", sessions_ahead=5, low=0.3, median=0.2, high=0.4, source="model")
 
 
 def test_affect_fusion_keeps_behaviour_dominant() -> None:
@@ -77,7 +91,7 @@ def test_affect_fusion_keeps_behaviour_dominant() -> None:
 
 
 def test_facts_packet_ids_are_unique() -> None:
-    fact = Fact(id="F1", text="Working memory estimate 0.66")
+    fact = Fact(id="F1", text="Conditional probability estimate 0.66")
     assert FactsPacket(facts=[fact]).text_of("F1") == fact.text
     with pytest.raises(ValidationError, match="unique"):
         FactsPacket(facts=[fact, fact])

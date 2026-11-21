@@ -28,10 +28,14 @@ async def _set_skill(engine: AsyncEngine, user_id: UUID, dim: str, mu: float, si
         )
         await conn.execute(
             t.dimension_state.insert().values(
-                user_id=user_id, dim=dim, mu=mu, sigma=sigma, n=200,
+                user_id=user_id,
+                dim=dim,
+                mu=mu,
+                sigma=sigma,
+                n=200,
                 last_practised=datetime.now(UTC) - timedelta(days=1),
             )
-        )  # fmt: skip
+        )
 
 
 async def _skill(engine: AsyncEngine, user_id: UUID, dim: str) -> tuple[float, float]:
@@ -60,22 +64,35 @@ async def _mash(
     round_id, start = UUID(spec["round_id"]), datetime.now(UTC)
     trials = [
         TrialEvent(
-            trial_id=uuid4(), round_id=round_id, session_id=session_id, game_id=spec["game_id"],
-            level=spec["level"], trial_index=i, stimulus={}, correct=i % 3 == 0, rt_ms=90.0 + i,
+            trial_id=uuid4(),
+            round_id=round_id,
+            session_id=session_id,
+            game_id=spec["game_id"],
+            level=spec["level"],
+            trial_index=i,
+            stimulus={},
+            correct=i % 3 == 0,
+            rt_ms=90.0 + i,
             ts=start + timedelta(milliseconds=200 * i),
         )
         for i in range(12)
-    ]  # fmt: skip
+    ]
     async with engine.begin() as conn:
         await record_trials(conn, user_id, trials)
     return await collect(
-        runner, user_id, session_id,
+        runner,
+        user_id,
+        session_id,
         resume={
-            "round_id": str(round_id), "game_id": spec["game_id"], "status": "completed",
-            "trial_count": 12, "final_level": spec["level"], "started_at": start.isoformat(),
+            "round_id": str(round_id),
+            "game_id": spec["game_id"],
+            "status": "completed",
+            "trial_count": 12,
+            "final_level": spec["level"],
+            "started_at": start.isoformat(),
             "ended_at": (start + timedelta(seconds=5)).isoformat(),
         },
-    )  # fmt: skip
+    )
 
 
 async def test_button_masher_flags_the_round_and_keeps_the_estimate(
@@ -83,14 +100,16 @@ async def test_button_masher_flags_the_round_and_keeps_the_estimate(
 ) -> None:
     runner = await make_runner()
     user_id = await returning_user(aengine)
-    await _set_skill(aengine, user_id, "selective_attention", 0.5, 0.5)
+    await _set_skill(aengine, user_id, "sample_space", 0.5, 0.5)
     session_id = await runner.create_session(user_id, "ui")
-    spec = interrupt_of(await collect(runner, user_id, session_id, message="play Arrow Storm"))
+    spec = interrupt_of(
+        await collect(runner, user_id, session_id, message="play Quiz: Sample spaces and events")
+    )
     events = await _mash(runner, aengine, user_id, session_id, spec)
 
     [card] = cards(events, "rushed")
     assert card["median_rt_ms"] < 150 and card["answered"] == 12
-    mu, sigma = await _skill(aengine, user_id, "selective_attention")
+    mu, sigma = await _skill(aengine, user_id, "sample_space")
     assert mu == pytest.approx(0.5, abs=0.02) and sigma > 0.5  # no drop, and less sure
     assert "Were you distracted, or rushing?" in said(events)
     async with aengine.connect() as conn:
@@ -109,22 +128,26 @@ async def test_button_masher_flags_the_round_and_keeps_the_estimate(
 async def test_plateau_changes_the_format(make_runner: RunnerFactory, aengine: AsyncEngine) -> None:
     runner = await make_runner()
     user_id = await returning_user(aengine)
-    await _set_skill(aengine, user_id, "working_memory", 0.5, 0.45)
+    await _set_skill(aengine, user_id, "conditional", 0.5, 0.45)
     today = datetime.now(UTC).date()
     async with aengine.begin() as conn:
         for i in range(8):
             await conn.execute(
                 t.history.insert().values(
-                    user_id=user_id, day=today - timedelta(days=3 * (7 - i)),
-                    dim="working_memory", mu=0.5 + 0.01 * (i % 2), sigma=0.45, n=100 + 20 * i,
+                    user_id=user_id,
+                    day=today - timedelta(days=3 * (7 - i)),
+                    dim="conditional",
+                    mu=0.5 + 0.01 * (i % 2),
+                    sigma=0.45,
+                    n=100 + 20 * i,
                 )
-            )  # fmt: skip
+            )
     session_id = await runner.create_session(user_id, "ui")
-    events = await collect(runner, user_id, session_id, message="play working memory")
+    events = await collect(runner, user_id, session_id, message="play conditional probability")
     spec = interrupt_of(events)
     assert spec["track"] == "new_format"
     assert "stayed near" in spec["reason"] and "New approach" in spec["reason"]
-    assert spec["game_id"] != "echo"  # echo is what they played last
+    assert spec["game_id"] != "quiz_conditional"  # echo is what they played last
 
 
 async def test_every_pick_says_why_and_past_picks_can_be_asked_about(
@@ -137,12 +160,18 @@ async def test_every_pick_says_why_and_past_picks_can_be_asked_about(
         for i in range(3):
             await conn.execute(
                 t.history.insert().values(
-                    user_id=user_id, day=today - timedelta(days=i), dim="working_memory",
-                    mu=0.3 + i * 0.1, sigma=0.5, n=100,
+                    user_id=user_id,
+                    day=today - timedelta(days=i),
+                    dim="conditional",
+                    mu=0.3 + i * 0.1,
+                    sigma=0.5,
+                    n=100,
                 )
-            )  # fmt: skip
+            )
     session_id = await runner.create_session(user_id, "ui")
-    spec = interrupt_of(await collect(runner, user_id, session_id, message="play working memory"))
+    spec = interrupt_of(
+        await collect(runner, user_id, session_id, message="play conditional probability")
+    )
     assert spec["reason"]
     assert any(line["source"] == "Progress curve" for line in spec["why"])
 
@@ -163,11 +192,13 @@ async def test_pushback_widens_the_range_and_counts_once(
 ) -> None:
     runner = await make_runner()
     user_id = await returning_user(aengine)
-    await _set_skill(aengine, user_id, "working_memory", 0.2, 0.5)
+    await _set_skill(aengine, user_id, "conditional", 0.2, 0.5)
     session_id = await runner.create_session(user_id, "ui")
-    spec = interrupt_of(await collect(runner, user_id, session_id, message="play Echo"))
+    spec = interrupt_of(
+        await collect(runner, user_id, session_id, message="play Quiz: Conditional probability")
+    )
     await play(runner, aengine, user_id, session_id, spec, [False] * 8 + [True] * 2)
-    mu, sigma = await _skill(aengine, user_id, "working_memory")
+    mu, sigma = await _skill(aengine, user_id, "conditional")
 
     text = "That's not fair, the room was so noisy I could not focus"
     events = await collect(runner, user_id, session_id, message=text)
@@ -176,7 +207,7 @@ async def test_pushback_widens_the_range_and_counts_once(
     assert card["dims"][0]["after_high"] - card["dims"][0]["after_low"] > (
         card["dims"][0]["before_high"] - card["dims"][0]["before_low"]
     )
-    mu2, sigma2 = await _skill(aengine, user_id, "working_memory")
+    mu2, sigma2 = await _skill(aengine, user_id, "conditional")
     assert mu2 == pytest.approx(mu) and sigma2 > sigma
     async with aengine.connect() as conn:
         counts = await acs_counts(conn, user_id)
@@ -214,15 +245,15 @@ async def test_split_profile_gets_two_tracks(
 ) -> None:
     runner = await make_runner()
     user_id = await returning_user(aengine)
-    await _set_skill(aengine, user_id, "reasoning", 3.0, 0.4)
-    await _set_skill(aengine, user_id, "selective_attention", -3.0, 0.4)
+    await _set_skill(aengine, user_id, "bayes", 3.0, 0.4)
+    await _set_skill(aengine, user_id, "sample_space", -3.0, 0.4)
     session_id = await runner.create_session(user_id, "ui")
     first = interrupt_of(await collect(runner, user_id, session_id))
     assert first["track"] == "foundation" and first["target_p"] == 0.9
     assert "far apart" in first["reason"]
     second = interrupt_of(await play(runner, aengine, user_id, session_id, first, [True] * 10))
-    assert second["track"] == "advanced" and second["target_p"] == 0.65
-    assert second["level"] > first["level"] + 0.3  # two difficulties, never one average
+    assert second["game_id"] == "explain_sample_space"
+    assert second["content"]["key_ideas"]  # consolidate a strong quiz before switching tracks
 
 
 @pytest.mark.parametrize(

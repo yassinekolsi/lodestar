@@ -35,28 +35,44 @@ def interrupt_of(events: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 async def play(
-    runner: SessionRunner, engine: AsyncEngine, user_id: UUID, session_id: UUID,
-    spec: dict[str, Any], results: list[bool], **extra: Any,
-) -> list[dict[str, Any]]:  # fmt: skip
+    runner: SessionRunner,
+    engine: AsyncEngine,
+    user_id: UUID,
+    session_id: UUID,
+    spec: dict[str, Any],
+    results: list[bool],
+    **extra: Any,
+) -> list[dict[str, Any]]:
     """What the browser does: stream trials to /events, then resume the graph."""
     round_id = UUID(spec["round_id"])
     start = datetime.now(UTC)
     trials = [
         TrialEvent(
-            trial_id=uuid4(), round_id=round_id, session_id=session_id, game_id=spec["game_id"],
-            level=spec["level"], trial_index=i, stimulus={}, correct=c, rt_ms=600.0,
+            trial_id=uuid4(),
+            round_id=round_id,
+            session_id=session_id,
+            game_id=spec["game_id"],
+            level=spec["level"],
+            trial_index=i,
+            stimulus={},
+            correct=c,
+            rt_ms=6000.0,
             ts=start + timedelta(seconds=4 * i),
         )
         for i, c in enumerate(results)
-    ]  # fmt: skip
+    ]
     async with engine.begin() as conn:
         await record_trials(conn, user_id, trials)
     result = {
-        "round_id": str(round_id), "game_id": spec["game_id"], "status": "completed",
-        "trial_count": len(results), "final_level": spec["level"],
-        "started_at": start.isoformat(), "ended_at": (start + timedelta(minutes=1)).isoformat(),
+        "round_id": str(round_id),
+        "game_id": spec["game_id"],
+        "status": "completed",
+        "trial_count": len(results),
+        "final_level": spec["level"],
+        "started_at": start.isoformat(),
+        "ended_at": (start + timedelta(minutes=1)).isoformat(),
         **extra,
-    }  # fmt: skip
+    }
     return await collect(runner, user_id, session_id, resume=result)
 
 
@@ -85,22 +101,36 @@ async def test_full_session_with_the_stub_llm(
         if not any(e["kind"] == "interrupt" for e in events):
             break
         spec = interrupt_of(events)
-    assert rounds == 6
+    from backend.registry.loader import load_registry
+
+    placement_count = len(load_registry().batteries["onboarding"].games)
+    assert rounds == placement_count
     assert any(e["kind"] == "session" and e["status"] == "ended" for e in events)
     assert events[-1] == {"kind": "done", "waiting": False}
 
     async with aengine.connect() as conn:
         state = t.dimension_state
-        n_dims = (await conn.execute(
-            select(func.count()).select_from(state).where(state.c.user_id == user_id)
-        )).scalar_one()  # fmt: skip
-        reasons = (await conn.execute(
-            select(t.decisions.c.reason).where(t.decisions.c.session_id == session_id)
-        )).scalars().all()  # fmt: skip
-        status = (await conn.execute(
-            select(t.sessions.c.status).where(t.sessions.c.session_id == session_id)
-        )).scalar_one()  # fmt: skip
-    assert n_dims >= 6 and all(reasons) and len(reasons) == 12 and status == "ended"
+        n_dims = (
+            await conn.execute(
+                select(func.count()).select_from(state).where(state.c.user_id == user_id)
+            )
+        ).scalar_one()
+        reasons = (
+            (
+                await conn.execute(
+                    select(t.decisions.c.reason).where(t.decisions.c.session_id == session_id)
+                )
+            )
+            .scalars()
+            .all()
+        )
+        status = (
+            await conn.execute(
+                select(t.sessions.c.status).where(t.sessions.c.session_id == session_id)
+            )
+        ).scalar_one()
+    assert n_dims >= placement_count and all(reasons)
+    assert len(reasons) == 2 * placement_count and status == "ended"
 
 
 async def test_paused_session_survives_a_server_restart(
@@ -127,9 +157,14 @@ async def test_duplicate_resume_scores_once(
     spec = interrupt_of(await collect(runner, user_id, session_id))
     await play(runner, aengine, user_id, session_id, spec, [True] * 10)
     async with aengine.connect() as conn:
-        updates = (await conn.execute(text(
-            "SELECT count(*) FROM twin.events WHERE user_id = :u AND type = 'twin.updated'"
-        ), {"u": user_id})).scalar_one()  # fmt: skip
+        updates = (
+            await conn.execute(
+                text(
+                    "SELECT count(*) FROM twin.events WHERE user_id = :u AND type = 'twin.updated'"
+                ),
+                {"u": user_id},
+            )
+        ).scalar_one()
     assert updates == 1
 
 
@@ -211,13 +246,13 @@ async def test_canary_key_never_leaks(
 
 def test_verifier_catches_wrong_numbers_and_uncited_claims() -> None:
     packet = FactsPacket(
-        facts=[Fact(id="F1", text="Working memory estimate 54% (80% range 41-66%)")]
+        facts=[Fact(id="F1", text="Conditional probability estimate 54% (80% range 41-66%)")]
     )
-    names = ["Working memory"]
-    assert verify("Working memory estimate 54% [F1].", packet, names).ok
-    assert not verify("Working memory estimate 60% [F1].", packet, names).ok
-    assert not verify("Your working memory is 54%.", packet, names).ok
+    names = ["Conditional probability"]
+    assert verify("Conditional probability estimate 54% [F1].", packet, names).ok
+    assert not verify("Conditional probability estimate 60% [F1].", packet, names).ok
+    assert not verify("Your conditional probability is 54%.", packet, names).ok
     assert not verify("Nice [F9].", packet, names).ok
     assert not verify("No deficit here [F1].", packet, names).ok
     # A citation after the punctuation belongs to the sentence before it.
-    assert verify("Working memory estimate 54%! [F1] Keep going.", packet, names).ok
+    assert verify("Conditional probability estimate 54%! [F1] Keep going.", packet, names).ok

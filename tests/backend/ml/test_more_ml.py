@@ -94,8 +94,8 @@ def session(
         minute = minutes * i / n
         slow = change_at is not None and minute >= change_at
         rt = float(np.exp(rng.normal(np.log(600) + (0.6 if slow else 0.0), 0.25)))
-        game = "echo" if i % 2 else "quick_draw"
-        rt *= 3 if game == "echo" else 1  # mixed games: different usual speeds
+        game = "quiz_conditional" if i % 2 else "quiz_sample_space"
+        rt *= 3 if game == "quiz_conditional" else 1  # mixed games: different usual speeds
         correct = bool(rng.random() < (0.7 if slow else 0.85))
         out.append(fatigue.Answer(minute, game, rt, correct))
     return out
@@ -136,47 +136,54 @@ def test_sessions_without_a_change_count_as_not_yet() -> None:
 
 def test_each_change_is_credited_to_the_game_played_before_on_that_skill() -> None:
     rounds = [
-        ("echo", "working_memory", 0.0),
-        ("quick_draw", "processing_speed", 0.1),
-        ("market_rush", "working_memory", 0.3),  # learned from echo
-        ("echo", "working_memory", -0.1),  # learned from market_rush
+        ("quiz_conditional", "conditional", 0.0),
+        ("quiz_sample_space", "equally_likely", 0.1),
+        ("quiz_counting", "conditional", 0.3),  # learned from echo
+        ("quiz_conditional", "conditional", -0.1),  # learned from market_rush
     ]
-    assert bandit.credited(rounds) == {"echo": [0.3], "market_rush": [-0.1]}
+    assert bandit.credited(rounds) == {"quiz_conditional": [0.3], "quiz_counting": [-0.1]}
 
 
 def test_population_prior_recovers_each_games_gain_per_round() -> None:
     rng = np.random.default_rng(4)
-    true = {"echo": 0.05, "market_rush": 0.01}
+    true = {"quiz_conditional": 0.05, "quiz_counting": 0.01}
     people = []
     for _ in range(400):
         rounds = []
         ability, est = 0.0, 0.0
         for _ in range(int(rng.integers(4, 12))):
-            game = "echo" if rng.random() < 0.5 else "market_rush"
+            game = "quiz_conditional" if rng.random() < 0.5 else "quiz_counting"
             new_est = ability + rng.normal(0, 0.3)
-            rounds.append((game, "working_memory", new_est - est))
+            rounds.append((game, "conditional", new_est - est))
             est = new_est
             ability += true[game]
         people.append(rounds)
     priors = bandit.population_priors(people)
-    assert priors["echo"].mean > priors["market_rush"].mean
+    assert priors["quiz_conditional"].mean > priors["quiz_counting"].mean
     for game, gain in true.items():
         assert abs(priors[game].mean - gain) < 3 * priors[game].sd
 
 
 def test_thompson_prefers_the_better_game_and_scales_skills() -> None:
-    priors = {"echo": bandit.Prior(0.05, 0.01), "market_rush": bandit.Prior(0.0, 0.01)}
-    posteriors = bandit.arms({}, ["echo", "market_rush", "quick_draw"], priors)
-    assert posteriors["quick_draw"].sd == pytest.approx(bandit.UNKNOWN_SD)
+    priors = {
+        "quiz_conditional": bandit.Prior(0.05, 0.01),
+        "quiz_counting": bandit.Prior(0.0, 0.01),
+    }
+    posteriors = bandit.arms({}, ["quiz_conditional", "quiz_counting", "quiz_sample_space"], priors)
+    assert posteriors["quiz_sample_space"].sd == pytest.approx(bandit.UNKNOWN_SD)
     rng = np.random.default_rng(5)
     wins = sum(
-        (s := bandit.thompson(posteriors, rng))["echo"] > s["market_rush"] for _ in range(200)
+        (s := bandit.thompson(posteriors, rng))["quiz_conditional"] > s["quiz_counting"]
+        for _ in range(200)
     )
     assert wins > 180
     gains = bandit.skill_gains(
-        {"echo": 0.05, "market_rush": 0.0, "quick_draw": 0.01},
-        {"working_memory": ["echo", "market_rush"], "processing_speed": ["quick_draw"]},
+        {"quiz_conditional": 0.05, "quiz_counting": 0.0, "quiz_sample_space": 0.01},
+        {
+            "conditional": ["quiz_conditional", "quiz_counting"],
+            "equally_likely": ["quiz_sample_space"],
+        },
     )
-    assert gains == {"working_memory": 1.0, "processing_speed": 0.0}
-    assert not bandit.ready({"echo": [0.1] * 3}, {})
+    assert gains == {"conditional": 1.0, "equally_likely": 0.0}
+    assert not bandit.ready({"quiz_conditional": [0.1] * 3}, {})
     assert bandit.ready({}, priors)

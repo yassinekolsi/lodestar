@@ -99,6 +99,7 @@ Pin these exactly (`==` in Python, exact versions in `package.json`, image tags 
 | pandas | 3.0.6 | | pytest | 9.1.1 |
 | ruff | 0.17.1 | | mypy | 2.4.0 |
 | cryptography | 50.0.2 | | | |
+| pypdf | 6.1.1 (native PDF text and page splitting, WP20) | | | |
 
 **LLM provider integrations (PyPI, checked 20 Oct 2026)**
 
@@ -124,6 +125,7 @@ Pin these exactly (`==` in Python, exact versions in `package.json`, image tags 
 | vitest | 5.0.5 | | @mediapipe/tasks-vision | 1.1.1 |
 | @playwright/test | 1.64.1 | | @picovoice/porcupine-web | 4.0.1 |
 | @huggingface/transformers | 4.3.1 | | kokoro-js | 1.2.1 |
+| katex | 0.19.1 (added in [WP21](21-math-rendering.md)) | | | |
 | @fontsource-variable/bricolage-grotesque | 5.3.0 (display type, self-hosted) | | @fontsource-variable/inter | 5.3.0 (UI type) | | @fontsource-variable/geist-mono | 5.3.0 (labels, numbers) |
 
 **Supporting packages and images (added in WP0.1, same pinning rule)**

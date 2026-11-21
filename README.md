@@ -54,6 +54,15 @@ works too: `bin/lodestar login --code <token>`, then `bin/lodestar chat`.
 
 ## How it decides
 
+**Documents** lets students create subjects, upload PDF/text chapters and study one selected
+chapter with page citations. Scanned PDFs require a Gemini key and Cloud AI consent; OCR uses
+Gemini 3.5 Flash Lite. Review the original beside the extracted text and rendered formulas before
+approving a scan for study. See [the library review notes](docs/plan/20-student-library.md) for
+known transcription limitations.
+
+For the mounted development app, run
+`docker compose -p lodestar-upside -f docker-compose.yml -f docker-compose.dev.yml up -d --no-build`.
+
 ```mermaid
 flowchart LR
   C[Course YAML<br/>notes · concepts · prerequisites<br/>questions · misconceptions] --> R[Registry]

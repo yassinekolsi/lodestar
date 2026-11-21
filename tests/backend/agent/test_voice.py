@@ -1,5 +1,4 @@
-"""WP2.10 voice basics: private speech to text from a recorded fixture, and UW4 underneath
-("give me a memory game about football" starts Market List with football words)."""
+"""Private speech transcription and a spoken course request reaching the study runner."""
 
 import importlib.util
 from collections.abc import AsyncIterator
@@ -17,7 +16,6 @@ from backend.api.deps import engine_dep
 from backend.api.main import create_app
 from backend.config import get_settings
 from backend.generation.pipeline import ContentService
-from backend.generation.vocab import word_theme
 from backend.llm.factory import LlmFactory
 from backend.registry.loader import load_registry
 from tests.backend.agent.conftest import RunnerFactory, test_settings
@@ -79,20 +77,16 @@ async def test_private_voice_round_trip_from_a_recording(client: httpx.AsyncClie
         assert text == said and reply.json()["engine"] == "whisper:tiny.en"
 
 
-async def test_uw4_memory_game_about_football(
+async def test_spoken_course_request_starts_a_quiz(
     make_runner: RunnerFactory, aengine: AsyncEngine
 ) -> None:
     runner = await make_runner()
     runner.services = replace(runner.services, content=ContentService(aengine, llm=None))
     user_id = await returning_user(aengine)
     session_id = await runner.create_session(user_id, "voice")
-    events = await collect(
-        runner, user_id, session_id, message="Give me a memory game about football."
-    )
+    events = await collect(runner, user_id, session_id, message="Quiz me on sample space.")
     spec = interrupt_of(events)
-    assert spec["game_id"] == "market_list" and spec["mode"] == "train"
-    assert spec["content"]["theme"] == "football"
-    football = set(word_theme("football") or [])
-    assert all(w in football for words in spec["content"]["lists"] for w in words)
+    assert spec["game_id"] == "quiz_sample_space" and spec["mode"] == "train"
+    assert spec["content"]["questions"]
     [plan] = [e for e in events if e["kind"] == "decision" and e["node"] == "plan_next"]
-    assert plan["reason"] == "Football memory, coming up: Market List."
+    assert "sample space" in plan["reason"].lower()

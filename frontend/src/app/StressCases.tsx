@@ -335,7 +335,10 @@ function Sources({ sources }: { sources: DocumentSource[] }) {
   return (
     <div aria-label="Course sources">
       {sources.map((source, i) => (
-      <details className="documents__passage" key={`${source.title}-${String(source.page)}-${String(i)}`}>
+        <details
+          className="documents__passage"
+          key={`${source.title}-${String(source.page)}-${String(i)}`}
+        >
           <summary>
             {source.title} · page {source.page}
           </summary>

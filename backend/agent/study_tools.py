@@ -7,9 +7,9 @@ them: the verifier rejects any number that isn't in a fact.
 """
 
 import re
-from uuid import UUID
 from dataclasses import replace
 from typing import Any
+from uuid import UUID
 
 from pydantic import Field
 

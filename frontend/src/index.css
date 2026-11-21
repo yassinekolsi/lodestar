@@ -4431,6 +4431,20 @@ button.primary.pick__go {
   display: grid;
   gap: 1rem;
 }
+.course-table {
+  overflow-x: auto;
+  margin-block: 1rem;
+}
+.course-table table {
+  border-collapse: collapse;
+  width: 100%;
+}
+.course-table th,
+.course-table td {
+  border: 1px solid var(--color-line);
+  padding: 0.6rem 0.8rem;
+  text-align: left;
+}
 .document-review__pages {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));

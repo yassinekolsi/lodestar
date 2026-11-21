@@ -21,7 +21,7 @@ from backend.llm.factory import LlmFactory
 from backend.registry.loader import load_registry
 
 
-async def run(directory: Path, probability_only: bool) -> None:
+async def run(directory: Path, probability_only: bool, cpp_only: bool = False) -> None:
     settings = get_settings()
     engine = get_async_engine()
     registry = load_registry()
@@ -46,6 +46,8 @@ async def run(directory: Path, probability_only: bool) -> None:
             )
         for pattern, subject, chapter in CHAPTERS:
             if probability_only and subject != "Probability":
+                continue
+            if cpp_only and subject != "C++":
                 continue
             file = next(directory.glob(pattern))  # noqa: ASYNC240 - local CLI input
             async with engine.connect() as conn:
@@ -150,8 +152,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("directory", type=Path)
     parser.add_argument("--probability-only", action="store_true")
+    parser.add_argument("--cpp-only", action="store_true")
     args = parser.parse_args()
-    asyncio.run(run(args.directory, args.probability_only))
+    asyncio.run(run(args.directory, args.probability_only, args.cpp_only))
 
 
 if __name__ == "__main__":

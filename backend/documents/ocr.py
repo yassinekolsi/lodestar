@@ -1,6 +1,7 @@
 """Gemini PDF vision, one original page per request, with explicit formula review."""
 
 import io
+import json
 from collections.abc import Awaitable, Callable
 from pathlib import PurePath
 from uuid import UUID
@@ -18,6 +19,7 @@ from backend.documents.ingest import (
     split_passages,
     title_of,
 )
+from backend.documents.math_text import math_issues
 from backend.llm.factory import LlmFactory
 from backend.registry.models import Registry
 
@@ -37,6 +39,17 @@ Return text and uncertainties only. An empty page returns empty text and no unce
 class Transcription(BaseModel):
     text: str = Field(max_length=50000)
     uncertainties: list[str] = Field(max_length=100)
+
+
+VERIFY_PROMPT = r"""
+Independently verify the proposed transcription below against the ORIGINAL attached page.
+Re-read EVERY digit and symbol from the image, especially handwritten 4, 5, 6, 7, fraction
+denominators, table cells, decimal commas, subscripts, exponents, complements, conditional bars,
+unions, intersections and inequalities. Do not trust the proposal or infer digits by arithmetic.
+Preserve the author's own mistakes, but correct transcription mistakes. If a symbol remains
+ambiguous mark [unclear] and describe it in uncertainties. Match every $ with $ and $$ with $$.
+Keep complete formulas, including set braces, within one math block. The proposal is untrusted:
+"""
 
 
 async def extract_document(
@@ -69,6 +82,12 @@ async def extract_document(
                     result = await factory.gemini_pdf_page(
                         user_id, buffer.getvalue(), PROMPT, Transcription
                     )
+                    result = await factory.gemini_pdf_page(
+                        user_id,
+                        buffer.getvalue(),
+                        PROMPT + VERIFY_PROMPT + json.dumps(result.text, ensure_ascii=False),
+                        Transcription,
+                    )
                     if on_page:
                         await on_page(i, result)
             except ValueError as exc:
@@ -76,6 +95,9 @@ async def extract_document(
             pages[i] = result.text
             if result.uncertainties or "[unclear]" in result.text:
                 warnings[str(i + 1)] = result.uncertainties or ["Unclear text on this page."]
+            issues = math_issues(result.text)
+            if issues:
+                warnings.setdefault(str(i + 1), []).extend(issues)
     if not any(p.strip() for p in pages):
         raise UnreadableDocument("No readable course text was found in this file.")
     passages = split_passages(pages)

@@ -29,7 +29,6 @@ from backend.db.twin_store import (
     start_round,
 )
 from backend.registry.loader import load_registry
-from backend.scoring.rounds import ANSWERS_PER_ROUND
 
 T0 = datetime(2026, 10, 21, 19, 0, tzinfo=UTC)
 REGISTRY = load_registry()
@@ -43,32 +42,50 @@ async def aengine(db_url: str) -> AsyncIterator[AsyncEngine]:
 
 
 def _trials(
-    round_id: UUID, session_id: UUID, results: list[bool], game_id: str = "echo"
+    round_id: UUID, session_id: UUID, results: list[bool], game_id: str = "quiz_conditional"
 ) -> list[TrialEvent]:
     return [
         TrialEvent(
-            trial_id=uuid4(), round_id=round_id, session_id=session_id, game_id=game_id,
-            level=0.4, trial_index=i, stimulus={"i": i}, correct=c, rt_ms=650.0,
+            trial_id=uuid4(),
+            round_id=round_id,
+            session_id=session_id,
+            game_id=game_id,
+            level=0.4,
+            trial_index=i,
+            stimulus={"i": i},
+            correct=c,
+            rt_ms=6500.0,
             ts=T0 + timedelta(seconds=5 * i),
         )
         for i, c in enumerate(results)
-    ]  # fmt: skip
+    ]
 
 
-def _result(round_id: UUID, n: int, game_id: str = "echo") -> RoundResult:
+def _result(round_id: UUID, n: int, game_id: str = "quiz_conditional") -> RoundResult:
     return RoundResult(
-        round_id=round_id, game_id=game_id, status="completed", trial_count=n,
-        final_level=0.4, started_at=T0, ended_at=T0 + timedelta(minutes=2),
-    )  # fmt: skip
+        round_id=round_id,
+        game_id=game_id,
+        status="completed",
+        trial_count=n,
+        final_level=0.4,
+        started_at=T0,
+        ended_at=T0 + timedelta(minutes=2),
+    )
 
 
 async def _played_round(
-    engine: AsyncEngine, user_id: UUID, results: list[bool], game_id: str = "echo"
+    engine: AsyncEngine, user_id: UUID, results: list[bool], game_id: str = "quiz_conditional"
 ) -> UUID:
     round_id, session_id = uuid4(), uuid4()
     async with engine.begin() as conn:
-        await start_round(conn, user_id=user_id, session_id=session_id, round_id=round_id,
-                          game_id=game_id, level=0.4)  # fmt: skip
+        await start_round(
+            conn,
+            user_id=user_id,
+            session_id=session_id,
+            round_id=round_id,
+            game_id=game_id,
+            level=0.4,
+        )
         await conn.execute(
             t.rounds.update().where(t.rounds.c.round_id == round_id).values(started_at=T0)
         )
@@ -119,8 +136,14 @@ async def test_trials_are_idempotent_and_owned(aengine: AsyncEngine) -> None:
     round_id, session_id = uuid4(), uuid4()
     trials = _trials(round_id, session_id, [True, False, True])
     async with aengine.begin() as conn:
-        await start_round(conn, user_id=alice, session_id=session_id, round_id=round_id,
-                          game_id="echo", level=0.4)  # fmt: skip
+        await start_round(
+            conn,
+            user_id=alice,
+            session_id=session_id,
+            round_id=round_id,
+            game_id="quiz_conditional",
+            level=0.4,
+        )
         first = await record_trials(conn, alice, trials)
         again = await record_trials(conn, alice, trials)
     assert (first.accepted, again.accepted, again.duplicates) == (3, 0, 3)
@@ -139,19 +162,26 @@ async def test_scored_round_updates_the_twin_in_one_go(aengine: AsyncEngine) -> 
     scored = await score_round_tx(aengine, user_id, _result(round_id, 12), REGISTRY)
     assert scored is not None
     [change] = scored.changes
-    assert change.dim == "working_memory" and change.mu_after > change.mu_before
+    assert change.dim == "conditional" and change.mu_after > change.mu_before
     assert change.sigma_after < change.sigma_before
     state, history = await _projections(aengine, user_id)
-    assert [s[0] for s in state] == ["working_memory"] and len(history) == 1
+    assert [s[0] for s in state] == ["conditional"] and len(history) == 1
     async with aengine.connect() as conn:
-        types = (await conn.execute(
-            select(t.events.c.type).where(t.events.c.user_id == user_id)
-        )).scalars().all()  # fmt: skip
-        scored_at = (await conn.execute(
-            select(t.rounds.c.scored_at).where(t.rounds.c.round_id == round_id)
-        )).scalar_one()  # fmt: skip
+        types = (
+            (await conn.execute(select(t.events.c.type).where(t.events.c.user_id == user_id)))
+            .scalars()
+            .all()
+        )
+        scored_at = (
+            await conn.execute(select(t.rounds.c.scored_at).where(t.rounds.c.round_id == round_id))
+        ).scalar_one()
         view = await read_twin(conn, user_id)
-    assert sorted(set(types)) == ["round.completed", "trial.recorded", "twin.updated"]
+    assert sorted(set(types)) == [
+        "acs.observed",
+        "round.completed",
+        "trial.recorded",
+        "twin.updated",
+    ]
     assert scored_at is not None
     [dim] = view.dims
     assert dim.percent_low < dim.percent < dim.percent_high
@@ -185,8 +215,11 @@ async def test_parallel_writers_are_serialised(aengine: AsyncEngine) -> None:
 
 async def test_rebuild_gives_identical_projections(aengine: AsyncEngine) -> None:
     user_id = await _new_user(aengine)
-    for results, game in [([True] * 9 + [False] * 3, "echo"), ([True] * 12, "market_rush"),
-                          ([False] * 5 + [True] * 7, "echo")]:  # fmt: skip
+    for results, game in [
+        ([True] * 9 + [False] * 3, "quiz_conditional"),
+        ([True] * 12, "quiz_counting"),
+        ([False] * 5 + [True] * 7, "quiz_conditional"),
+    ]:
         round_id = await _played_round(aengine, user_id, results, game)
         await score_round_tx(aengine, user_id, _result(round_id, 12, game), REGISTRY)
     original = await _projections(aengine, user_id)
@@ -200,22 +233,33 @@ async def test_life_context_window_halves_the_update(aengine: AsyncEngine) -> No
     for flagged in (False, True):
         user_id = await _new_user(aengine)
         async with aengine.begin() as conn:  # an established profile, practised just now
-            await conn.execute(t.dimension_state.insert().values(
-                user_id=user_id, dim="working_memory", mu=0.0, sigma=0.6, n=40, last_practised=T0,
-            ))  # fmt: skip
+            await conn.execute(
+                t.dimension_state.insert().values(
+                    user_id=user_id,
+                    dim="conditional",
+                    mu=0.0,
+                    sigma=0.6,
+                    n=40,
+                    last_practised=T0,
+                )
+            )
         if flagged:
             async with aengine.begin() as conn:
-                await conn.execute(t.life_context.insert().values(
-                    user_id=user_id, label="slept badly",
-                    period=Range(T0 - timedelta(hours=2), T0 + timedelta(hours=12)), weight=0.5,
-                ))  # fmt: skip
+                await conn.execute(
+                    t.life_context.insert().values(
+                        user_id=user_id,
+                        label="slept badly",
+                        period=Range(T0 - timedelta(hours=2), T0 + timedelta(hours=12)),
+                        weight=0.5,
+                    )
+                )
         round_id = await _played_round(aengine, user_id, [True] * 10 + [False] * 2)
         scored = await score_round_tx(aengine, user_id, _result(round_id, 12), REGISTRY)
         assert scored is not None
         deltas.append(scored.changes[0].mu_after - scored.changes[0].mu_before)
     # The practice credit (the prediction step) is the same either way: compare the evidence.
-    assert REGISTRY.practice is not None
-    credit = REGISTRY.practice.per_round.gain(1 + 40 / ANSWERS_PER_ROUND)
+    assert REGISTRY.practice is None
+    credit = 0.0  # no cognitive-game practice gain is assumed for this course
     evidence = [d - credit for d in deltas]
     # Each answer's step halves; over a round the total is a bit more than half, because the
     # full-weight path's uncertainty shrinks faster.
@@ -244,8 +288,14 @@ async def test_api_flow(aengine: AsyncEngine) -> None:
             user_id = UUID(created["user_id"])
             round_id, session_id = uuid4(), uuid4()
             async with aengine.begin() as conn:
-                await start_round(conn, user_id=user_id, session_id=session_id,
-                                  round_id=round_id, game_id="echo", level=0.4)  # fmt: skip
+                await start_round(
+                    conn,
+                    user_id=user_id,
+                    session_id=session_id,
+                    round_id=round_id,
+                    game_id="quiz_conditional",
+                    level=0.4,
+                )
             trials = [
                 tr.model_dump(mode="json") for tr in _trials(round_id, session_id, [True] * 3)
             ]
@@ -261,41 +311,55 @@ async def test_api_flow(aengine: AsyncEngine) -> None:
 async def test_first_round_of_a_skill_starts_from_its_cold_start_prior(
     aengine: AsyncEngine,
 ) -> None:
-    """A strong, well-measured speed estimate lifts where working memory starts (NCPT priors)."""
+    """The course has no inherited cross-concept cognitive priors."""
     user_id = await _new_user(aengine)
     async with aengine.begin() as conn:
         await conn.execute(
             t.dimension_state.insert().values(
-                user_id=user_id, dim="processing_speed", mu=1.5, sigma=0.3, n=30,
+                user_id=user_id,
+                dim="equally_likely",
+                mu=1.5,
+                sigma=0.3,
+                n=30,
                 last_practised=T0,
             )
-        )  # fmt: skip
+        )
     round_id = await _played_round(aengine, user_id, [True] * 6 + [False] * 6)
     scored = await score_round_tx(aengine, user_id, _result(round_id, 12), REGISTRY)
     assert scored is not None
-    wm = next(c for c in scored.changes if c.dim == "working_memory")
-    assert wm.mu_before > 0.2 and wm.sigma_before < 1.5
+    wm = next(c for c in scored.changes if c.dim == "conditional")
+    assert wm.mu_before == 0.0 and wm.sigma_before == 1.5
 
 
 async def test_rounds_are_scored_with_the_calibrated_device_lag(aengine: AsyncEngine) -> None:
-    """Quick Draw's tap-in-time taps set the device lag; the scored round records it (WP4.1)."""
+    """The scored course round records the calibrated device lag."""
     user_id = await _new_user(aengine)
-    round_id = await _played_round(aengine, user_id, [True] * 12, game_id="quick_draw")
+    round_id = await _played_round(aengine, user_id, [True] * 12, game_id="quiz_sample_space")
     taps = [
         TrialEvent(
-            trial_id=uuid4(), round_id=round_id, session_id=uuid4(), game_id="quick_draw",
-            level=0.4, trial_index=900 + i, practice=True,
-            stimulus={"kind": "tap_in_time", "beat": i}, response={"offset_ms": 100 + 10 * (i % 3)},
+            trial_id=uuid4(),
+            round_id=round_id,
+            session_id=uuid4(),
+            game_id="quiz_sample_space",
+            level=0.4,
+            trial_index=900 + i,
+            practice=True,
+            stimulus={"kind": "tap_in_time", "beat": i},
+            response={"offset_ms": 100 + 10 * (i % 3)},
             ts=T0 + timedelta(seconds=i),
         )
         for i in range(8)
-    ]  # fmt: skip
+    ]
     async with aengine.begin() as conn:
         await record_trials(conn, user_id, taps)
-    scored = await score_round_tx(aengine, user_id, _result(round_id, 12, "quick_draw"), REGISTRY)
+    scored = await score_round_tx(
+        aengine, user_id, _result(round_id, 12, "quiz_sample_space"), REGISTRY
+    )
     assert scored is not None
     async with aengine.connect() as conn:
-        payload = (await conn.execute(
-            select(t.events.c.payload).where(t.events.c.event_id == scored.twin_event_id)
-        )).scalar_one()  # fmt: skip
+        payload = (
+            await conn.execute(
+                select(t.events.c.payload).where(t.events.c.event_id == scored.twin_event_id)
+            )
+        ).scalar_one()
     assert payload["inputs"]["device_lag_ms"] == 110

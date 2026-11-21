@@ -2,6 +2,7 @@
 switch off stops that processing. Also the 18+ gate, consent events, export without keys,
 memory edits (UW14), de-identified text for cloud AI, and the retention job."""
 
+import base64
 import json
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
@@ -114,9 +115,14 @@ async def test_consent_switches_are_logged_with_the_notice_version(
     view = (await client.get("/consent", headers=headers)).json()
     state = {s["id"]: s["granted"] for s in view["switches"]}
     assert state == {
-        "core": True, "cloud_ai": False, "microphone": True, "camera": False,
-        "voice_tone": False, "deliberate_mistakes": True, "research_export": False,
-    }  # fmt: skip
+        "core": True,
+        "cloud_ai": False,
+        "microphone": True,
+        "camera": False,
+        "voice_tone": False,
+        "deliberate_mistakes": True,
+        "research_export": False,
+    }
     assert (
         await client.put("/consent/core", json={"granted": False}, headers=headers)
     ).status_code == 409
@@ -176,12 +182,24 @@ async def test_planted_mistakes_switch_keeps_spot_the_mistake_out(
     app: FastAPI, aengine: AsyncEngine
 ) -> None:
     runner: SessionRunner = app.state.runner
+    from dataclasses import replace
+
+    registry = runner.services.registry
+    exercise = registry.game("quiz_conditional").model_copy(
+        update={"consent": "deliberate_mistakes"}
+    )
+    registry = registry.model_copy(
+        update={"games": [exercise if game.id == exercise.id else game for game in registry.games]}
+    )
+    runner.services = replace(runner.services, registry=registry)
     user_id = await returning_user(aengine)
     await grant(aengine, user_id, "deliberate_mistakes", granted=False)
     session_id = await runner.create_session(user_id, "ui")
-    events = await collect(runner, user_id, session_id, message="play Spot the AI's Mistake")
+    events = await collect(
+        runner, user_id, session_id, message="play Quiz: Conditional probability"
+    )
     spec = interrupt_of(events)
-    assert spec["game_id"] != "spot_the_mistake"
+    assert spec["game_id"] != "quiz_conditional"
     [plan] = [e for e in events if e["kind"] == "decision" and e["node"] == "plan_next"]
     assert "switched off in your privacy settings" in plan["reason"]
 
@@ -247,6 +265,19 @@ async def test_export_has_everything_and_never_a_key(
     client: httpx.AsyncClient, app: FastAPI, aengine: AsyncEngine
 ) -> None:
     user_id, headers = await _lived_in(client, app, aengine)
+    original = b"%PDF-1.7\nprivate course source"
+    async with aengine.begin() as conn:
+        await conn.execute(
+            t.documents.insert().values(
+                doc_id=uuid4(),
+                user_id=user_id,
+                title="A private chapter",
+                filename="chapter.pdf",
+                pages=1,
+                passages=0,
+                source_pdf=original,
+            )
+        )
     response = await client.get("/me/export", headers=headers)
     assert response.status_code == 200
     assert "attachment" in response.headers["content-disposition"]
@@ -255,6 +286,7 @@ async def test_export_has_everything_and_never_a_key(
     assert "token_hash" not in response.text
     assert data["tables"]["twin.rounds"] and data["tables"]["twin.events"]
     assert data["tables"]["app.llm_credentials"][0]["key_last4"] == "cdef"
+    assert base64.b64decode(data["tables"]["app.documents"][0]["source_pdf"]) == original
     assert data["memories"]["episodic"] and "core.md" in data["notes"]
     async with aengine.connect() as conn:
         exported = (
@@ -275,9 +307,12 @@ async def test_memory_lines_can_be_seen_and_deleted(
     assert services.notes is not None
     services.notes.write_core(user_id, ["Usually plays in the evening", "Prefers the Willow coach"])
     point_id = await memory.write(
-        user_id, "Usually plays in the evening", collection="facts", kind="preference",
+        user_id,
+        "Usually plays in the evening",
+        collection="facts",
+        kind="preference",
         importance=0.8,
-    )  # fmt: skip
+    )
     mine = (await client.get("/me/data", headers=headers)).json()
     assert "Usually plays in the evening" in mine["core"] and mine["life_context"]
     assert any(m["id"] == str(point_id) for m in mine["memories"])

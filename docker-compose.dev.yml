@@ -22,3 +22,12 @@ services:
       - ./frontend/vite.config.ts:/app/vite.config.ts
       - ./frontend/playwright.config.ts:/app/playwright.config.ts
       - ./contracts:/contracts
+      - ./registry:/registry:ro
+      - ./tests/fixtures:/tests/fixtures:ro
+      - ./frontend/scripts:/app/scripts
+      - ./frontend/.prettierrc.json:/app/.prettierrc.json
+      - ./frontend/.prettierignore:/app/.prettierignore
+      - ./frontend/eslint.config.js:/app/eslint.config.js
+      - ./frontend/tsconfig.json:/app/tsconfig.json
+      - ./frontend/tsconfig.node.json:/app/tsconfig.node.json
+      - ./frontend/index.html:/app/index.html

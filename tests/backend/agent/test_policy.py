@@ -40,7 +40,7 @@ async def returning_user(engine: AsyncEngine, days_ago: float = 1.0, sigma: floa
                 round_id=uuid4(),
                 user_id=user_id,
                 session_id=session_id,
-                game_id="echo",
+                game_id="quiz_conditional",
                 level=0.4,
                 status="completed",
                 started_at=then,
@@ -50,7 +50,7 @@ async def returning_user(engine: AsyncEngine, days_ago: float = 1.0, sigma: floa
         for dim in POOL_DIMS:
             await conn.execute(
                 t.dimension_state.insert().values(
-                    user_id=user_id, dim=dim, mu=0.0, sigma=sigma, n=40, last_practised=then
+                    user_id=user_id, dim=dim, mu=1.5, sigma=sigma, n=40, last_practised=then
                 )
             )
     return user_id
@@ -97,9 +97,11 @@ async def test_uw1_onboarding_battery(make_runner: RunnerFactory, aengine: Async
         if not any(e["kind"] == "interrupt" for e in events):
             break
         spec = interrupt_of(events)
-    assert played == REGISTRY.batteries["onboarding"].games  # Quick Draw first
+    assert played == REGISTRY.batteries["onboarding"].games  # Quiz: Sample spaces and events first
     reasons = [r.reason for r in await decisions(aengine, session_id, "plan_next")]
-    assert reasons[0].startswith("Warm-up game 1 of 6")
+    assert reasons[0].startswith(
+        f"Placement check 1 of {len(REGISTRY.batteries['onboarding'].games)}"
+    )
     async with aengine.connect() as conn:
         sigmas = dict(
             (
@@ -172,7 +174,11 @@ async def test_monitor_stops_when_answers_slow_down(
         rid = uuid4()
         await conn.execute(
             t.rounds.insert().values(
-                round_id=rid, user_id=user_id, session_id=session_id, game_id="echo", level=0.4
+                round_id=rid,
+                user_id=user_id,
+                session_id=session_id,
+                game_id="quiz_conditional",
+                level=0.4,
             )
         )
         base = datetime.now(UTC) - timedelta(minutes=20)
@@ -184,7 +190,7 @@ async def test_monitor_stops_when_answers_slow_down(
                     user_id=user_id,
                     session_id=session_id,
                     round_id=rid,
-                    game_id="echo",
+                    game_id="quiz_conditional",
                     level=0.4,
                     trial_index=i,
                     correct=not (late and i % 2 == 0),
@@ -212,7 +218,7 @@ async def test_uw15_check_up_after_three_weeks(
             await conn.execute(
                 select(t.dimension_state.c.sigma).where(
                     t.dimension_state.c.user_id == user_id,
-                    t.dimension_state.c.dim == "working_memory",
+                    t.dimension_state.c.dim == "conditional",
                 )
             )
         ).scalar_one()
@@ -226,7 +232,7 @@ async def test_goal_raises_its_skill(make_runner: RunnerFactory, aengine: AsyncE
         await conn.execute(
             t.goals.insert().values(
                 user_id=user_id,
-                dim="working_memory",
+                dim="conditional",
                 kind="range",
                 target=0.1,
                 due=date.today() + timedelta(days=12),
@@ -235,11 +241,9 @@ async def test_goal_raises_its_skill(make_runner: RunnerFactory, aengine: AsyncE
         # make every other skill a little less certain, so only the goal can explain the pick
         await conn.execute(
             update(t.dimension_state)
-            .where(
-                t.dimension_state.c.user_id == user_id, t.dimension_state.c.dim != "working_memory"
-            )
+            .where(t.dimension_state.c.user_id == user_id, t.dimension_state.c.dim != "conditional")
             .values(sigma=0.55)
         )
     session_id, _ = await start(runner, user_id)
     [plan] = await decisions(aengine, session_id, "plan_next")
-    assert plan.chosen.startswith("working_memory:") and "goal" in plan.reason
+    assert plan.chosen.startswith("conditional:") and "goal" in plan.reason

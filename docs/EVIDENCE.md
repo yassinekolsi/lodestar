@@ -20,6 +20,12 @@ experiment).
 
 ## The claims
 
+Student uploads are covered by [the library review notes](plan/20-student-library.md) and
+`tests/backend/agent/test_documents.py`. Gemini OCR can misread handwritten mathematics even after
+a second pass; OCR chapters require approval before study. Formula rendering tests establish
+syntax and display behavior, not transcription accuracy. The additional intent regression cases
+have informed routing fixes and are no longer an untouched held-out evaluation set.
+
 | Claim | Evidence | Check |
 |---|---|---|
 | Finds why a concept won't stick | Gap rule: the deepest shaky prerequisite under a concept with low mastery (fairly surely low: the top of its 80% range under 50%). Experiment 13: 72% vs 24%. | `find_gap` in `backend/agent/learning.py`, `simulator/gap_eval.py` |

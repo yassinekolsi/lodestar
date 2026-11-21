@@ -4,9 +4,21 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Browser speech uses ONNX WASM; CI needs no optional CUDA binaries for Node.
+  ONNXRUNTIME_NODE_INSTALL_CUDA: skip
+
 jobs:
   backend:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     services:
       postgres:
         image: postgres:18.6
@@ -36,8 +48,14 @@ jobs:
           path: /home/runner/.cache/fastembed
           key: fastembed-bge-small-en-v1.5-bm25
       - run: uv sync --frozen --python 3.14 --extra whisper
-      - run: make lint-backend lint-language test-backend
-      - run: make sim N=200
+      - name: Check Python formatting and types
+        run: make lint-backend
+      - name: Check study language
+        run: make lint-language
+      - name: Run backend tests
+        run: make test-backend
+      - name: Run simulated student thresholds
+        run: make sim N=200
 
   frontend:
     runs-on: ubuntu-latest
@@ -49,7 +67,12 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci --prefix frontend
-      - run: make lint-frontend test-frontend
+      - name: Check frontend formatting and types
+        run: make lint-frontend
+      - name: Run frontend tests
+        run: make test-frontend
+      - name: Build the student app
+        run: npm run build --prefix frontend
 
   contracts:
     runs-on: ubuntu-latest

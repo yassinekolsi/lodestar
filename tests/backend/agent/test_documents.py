@@ -11,6 +11,7 @@ from backend.api.deps import engine_dep
 from backend.api.main import create_app
 from backend.db import tables as t
 from backend.documents import ingest, library, questions
+from backend.documents.math_text import math_issues
 from backend.registry.loader import load_registry
 
 
@@ -80,6 +81,50 @@ def test_offline_quiz_has_page_section_and_valid_answers() -> None:
     assert library.requested_document(f"Quiz me on my notes [document:{selected}]") == selected
 
 
+def test_math_blocks_survive_chunking_and_bad_delimiters_need_review() -> None:
+    formula = r"$$P(A\mid B)=\frac{P(A\cap B)}{P(B)}$$"
+    code = '```cpp\n  cout << "hello";\n```'
+    pages = ["A paragraph about a course. " * 18 + formula + "\n" + code + " more text" * 60]
+    passages = ingest.split_passages(pages)
+    assert any(formula in p.text for p in passages)
+    assert any(code in p.text for p in passages)
+    table = "| Event | Probability |\n| --- | --- |\n| A | $P(A)=0.5$ |"
+    assert any(
+        table in p.text for p in ingest.split_passages(["A paragraph. " * 48 + "\n" + table])
+    )
+    assert not math_issues(formula)
+    assert math_issues(r"$$P(A)=1$")
+    assert math_issues(r"$\left\{A, B\}$")
+
+
+async def test_scanned_page_uses_gemini_twice_and_stays_out_of_study(monkeypatch) -> None:
+    import io
+    from unittest.mock import AsyncMock
+
+    from pypdf import PdfWriter
+
+    from backend.documents.ocr import Transcription, extract_document
+
+    writer = PdfWriter()
+    writer.add_blank_page(width=200, height=200)
+    buffer = io.BytesIO()
+    writer.write(buffer)
+    factory = SimpleNamespace(
+        gemini_pdf_page=AsyncMock(
+            side_effect=[
+                Transcription(text=r"$P(A)=\frac{1}{6}$", uncertainties=[]),
+                Transcription(
+                    text=r"$P(A)=\frac{1}{4}$ [unclear]", uncertainties=["Unclear denominator."]
+                ),
+            ]
+        )
+    )
+    doc = await extract_document(buffer.getvalue(), "scan.pdf", load_registry(), factory, uuid4())
+    assert factory.gemini_pdf_page.await_count == 2
+    assert doc.review_required and doc.method == "gemini-3.5-flash-lite"
+    assert doc.warnings["1"] and r"\frac{1}{4}" in doc.page_texts[0]
+
+
 async def test_subject_upload_quiz_ownership_events_and_delete(aengine) -> None:
     app = create_app(with_lifespan=False)
     app.state.services = SimpleNamespace(engine=aengine, memory=None, llm=None)
@@ -127,6 +172,34 @@ async def test_subject_upload_quiz_ownership_events_and_delete(aengine) -> None:
         )
         assert stolen.status_code == 422
         assert (await c.delete(f"/documents/{doc['doc_id']}", headers=other)).status_code == 404
+        url = f"/documents/{doc['doc_id']}"
+        assert (await c.get(f"{url}/pages", headers=other)).status_code == 404
+        assert (await c.get(f"{url}/original", headers=other)).status_code == 404
+        assert (
+            await c.put(f"{url}/review", json={"pages": [text]}, headers=other)
+        ).status_code == 404
+        for bad in ("[unclear]", r"$$P(A)=1$", text + "\f" + text):
+            pages = bad.split("\f")
+            assert (
+                await c.put(f"{url}/review", json={"pages": pages}, headers=headers)
+            ).status_code == 422
+        async with aengine.begin() as conn:
+            await conn.execute(
+                t.documents.update()
+                .where(t.documents.c.doc_id == UUID(doc["doc_id"]))
+                .values(review_required=True, source_pdf=b"%PDF-private-source")
+            )
+        original = await c.get(f"{url}/original", headers=headers)
+        assert original.content == b"%PDF-private-source"
+        assert original.headers["cache-control"] == "no-store"
+        async with aengine.connect() as conn:
+            blocked, _ = await library.quiz_content(
+                conn, user, load_registry(), 42, doc_id=UUID(doc["doc_id"])
+            )
+            assert blocked is None
+        reviewed = await c.put(f"{url}/review", json={"pages": [text]}, headers=headers)
+        assert reviewed.status_code == 200, reviewed.text
+        assert not reviewed.json()["review_required"]
         async with aengine.connect() as conn:
             content, loadings = await library.quiz_content(
                 conn, user, load_registry(), 42, doc_id=UUID(doc["doc_id"])
@@ -150,5 +223,64 @@ async def test_subject_upload_quiz_ownership_events_and_delete(aengine) -> None:
             assert {e["action"] for e in events} == {
                 "subject_created",
                 "document_uploaded",
+                "document_reviewed",
                 "document_deleted",
             }
+
+
+async def test_gemini_factory_requires_consent_and_hides_invalid_provider_data(
+    aengine, monkeypatch
+):
+    import base64
+    import json
+
+    from backend.db.llm_store import save_credential
+    from backend.documents.ocr import Transcription
+    from backend.llm.factory import LlmFactory
+    from tests.backend.agent.conftest import grant, new_user, test_settings
+    from tests.backend.llm import fake_provider as provider_module
+
+    user = await new_user(aengine)
+    secret = "private-gemini-canary-12345678"
+    with provider_module.fake_provider() as fake:
+        factory = LlmFactory(
+            load_registry(), test_settings(), aengine, base_overrides={"gemini": fake.base}
+        )
+        async with aengine.begin() as conn:
+            await save_credential(
+                conn, user, "gemini", factory.vault.seal(user, "gemini", secret), "ok"
+            )
+        with pytest.raises(ValueError, match="Enable Cloud AI"):
+            await factory.gemini_pdf_page(user, b"source", "Transcribe", Transcription)
+        assert fake.requests == []
+        await grant(aengine, user, "cloud_ai")
+
+        def response(text):
+            return {
+                "candidates": [{"finishReason": "STOP", "content": {"parts": [{"text": text}]}}]
+            }
+
+        monkeypatch.setattr(
+            provider_module,
+            "_route",
+            lambda *_: (200, response(json.dumps({"text": secret, "uncertainties": "invalid"}))),
+        )
+        with pytest.raises(ValueError) as error:
+            await factory.gemini_pdf_page(user, b"source", "Transcribe", Transcription)
+        assert secret not in str(error.value)
+        assert str(error.value) == "Gemini could not read this page. Try again later."
+        monkeypatch.setattr(
+            provider_module,
+            "_route",
+            lambda *_: (200, response(json.dumps({"text": "$P(A)=1$", "uncertainties": []}))),
+        )
+        result = await factory.gemini_pdf_page(user, b"source", "Transcribe", Transcription)
+        assert result.text == "$P(A)=1$"
+        request = fake.requests[-1]
+        assert "gemini-3.5-flash-lite" in request.path and "key=" not in request.path
+        assert request.headers["x-goog-api-key"] == secret
+        assert secret not in json.dumps(request.body)
+        assert request.body["contents"][0]["parts"][1]["inline_data"] == {
+            "mime_type": "application/pdf",
+            "data": base64.b64encode(b"source").decode(),
+        }

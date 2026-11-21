@@ -38,9 +38,17 @@ def test_weights_sum_to_one() -> None:
 
 def _trial(game: str, correct: bool, hints: int = 0) -> TrialEvent:
     return TrialEvent(
-        trial_id=uuid4(), round_id=uuid4(), session_id=uuid4(), game_id=game, level=0.5,
-        trial_index=0, stimulus={}, correct=correct, hint_level=hints, ts=T0,
-    )  # fmt: skip
+        trial_id=uuid4(),
+        round_id=uuid4(),
+        session_id=uuid4(),
+        game_id=game,
+        level=0.5,
+        trial_index=0,
+        stimulus={},
+        correct=correct,
+        hint_level=hints,
+        ts=T0,
+    )
 
 
 def test_observations_from_play() -> None:
@@ -48,11 +56,20 @@ def test_observations_from_play() -> None:
         "spot_the_mistake", [_trial("spot_the_mistake", True), _trial("spot_the_mistake", False)]
     )
     assert [(o.component, o.success) for o in v] == [("V", True), ("V", False)]
-    a = from_trials("pattern_gap", [_trial("pattern_gap", True, 0), _trial("pattern_gap", True, 2)])
+    a = from_trials(
+        "quiz_expectation",
+        [_trial("quiz_expectation", True, 0), _trial("quiz_expectation", True, 2)],
+    )
     assert [(o.component, o.success) for o in a] == [("A", True), ("A", False)]
-    assert from_trials("echo", [_trial("echo", True)]) == []
-    assert iteration("echo", 0.3, 0.6)[0].success and not iteration("echo", 0.3, 0.2)[0].success
-    assert iteration("echo", 0.8, 0.9) == []  # not a retry after a failure
+    assert [
+        (o.component, o.success)
+        for o in from_trials("quiz_conditional", [_trial("quiz_conditional", True)])
+    ] == [("A", True)]
+    assert (
+        iteration("quiz_conditional", 0.3, 0.6)[0].success
+        and not iteration("quiz_conditional", 0.3, 0.2)[0].success
+    )
+    assert iteration("quiz_conditional", 0.8, 0.9) == []  # not a retry after a failure
 
 
 def test_experiment_7_rankings_are_stable_under_weight_changes() -> None:
@@ -62,9 +79,17 @@ def test_experiment_7_rankings_are_stable_under_weight_changes() -> None:
 
 def _asked(game: str, ambiguous: bool, response: dict[str, Any] | None) -> TrialEvent:
     return TrialEvent(
-        trial_id=uuid4(), round_id=uuid4(), session_id=uuid4(), game_id=game, level=0.5,
-        trial_index=0, stimulus={"ambiguous": ambiguous}, response=response, correct=False, ts=T0,
-    )  # fmt: skip
+        trial_id=uuid4(),
+        round_id=uuid4(),
+        session_id=uuid4(),
+        game_id=game,
+        level=0.5,
+        trial_index=0,
+        stimulus={"ambiguous": ambiguous},
+        response=response,
+        correct=False,
+        ts=T0,
+    )
 
 
 def test_clarification_and_retries_from_guide_the_robot_and_teach_me() -> None:
@@ -72,11 +97,14 @@ def test_clarification_and_retries_from_guide_the_robot_and_teach_me() -> None:
         "guide_the_robot",
         [
             _asked("guide_the_robot", True, {"asked_first": True, "first_failed": False}),
-            _asked("guide_the_robot", False, {"asked_first": True, "first_failed": True,
-                                              "solved": True}),
+            _asked(
+                "guide_the_robot",
+                False,
+                {"asked_first": True, "first_failed": True, "solved": True},
+            ),
             _asked("guide_the_robot", True, None),
         ],
-    )  # fmt: skip
+    )
     assert [(o.component, o.success) for o in robot] == [("C", True), ("C", False), ("I", True)]
     teach = from_trials(
         "teach_me",

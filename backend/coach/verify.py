@@ -20,7 +20,7 @@ _SENTENCE = re.compile(r"(?<=[.!?])\s+")
 # "Nice work! [F1]" cites the sentence before it: move trailing citations inside the punctuation.
 _TRAILING_CITES = re.compile(r"([.!?]+)\s*((?:\[[FDKM]\d+\]\s*)+)")
 _FORECAST = re.compile(
-    r"\b(will (reach|be|get|hit|improve|rise|go)|you'll (reach|be|get)|expect(ed)?|"
+    r"\b(will (reach|be|get|hit|improve|rise|go)|you'll (reach|be|get)|expect(ed)?(?!\s+value)|"
     r"forecast|predict(ed)?|on track to)\b",
     re.IGNORECASE,
 )

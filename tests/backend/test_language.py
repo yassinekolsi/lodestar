@@ -23,7 +23,7 @@ def test_banned_words_are_caught(text: str) -> None:
 @pytest.mark.parametrize(
     "text",
     [
-        "Your working memory is a growth area.",
+        "Your conditional probability is a growth area.",
         "This is within the typical range.",
         "Your results show steady practice.",
         "We normalize the scores.",

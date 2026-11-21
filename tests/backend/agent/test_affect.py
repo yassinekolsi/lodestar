@@ -25,9 +25,15 @@ FRUSTRATED = BehaviourSignals(error_streak=5, rapid_taps=4, rt_variability_z=2.5
 def _result(status: str = "completed", **kw: Any) -> RoundResult:
     now = datetime.now(UTC)
     return RoundResult(
-        round_id=uuid4(), game_id="quick_draw", status=status, trial_count=10,  # type: ignore[arg-type]
-        final_level=0.4, started_at=now, ended_at=now, **kw,
-    )  # fmt: skip
+        round_id=uuid4(),
+        game_id="quiz_sample_space",
+        status=status,
+        trial_count=10,  # type: ignore[arg-type]
+        final_level=0.4,
+        started_at=now,
+        ended_at=now,
+        **kw,
+    )
 
 
 def test_no_round_and_calm_play_read_as_calm() -> None:
@@ -93,12 +99,14 @@ async def _profile_after(
     # Learned item difficulty is shared across users: start both from the same items.
     async with engine.begin() as conn:
         await conn.execute(
-            delete(t.item_difficulty).where(t.item_difficulty.c.game_id == "quick_draw")
+            delete(t.item_difficulty).where(t.item_difficulty.c.game_id == "quiz_sample_space")
         )
     user_id = await returning_user(engine)
     session_id = await runner.create_session(user_id, "ui")
-    spec = interrupt_of(await collect(runner, user_id, session_id, message="play Quick Draw"))
-    assert spec["game_id"] == "quick_draw"
+    spec = interrupt_of(
+        await collect(runner, user_id, session_id, message="play Quiz: Sample spaces and events")
+    )
+    assert spec["game_id"] == "quiz_sample_space"
     await play(runner, engine, user_id, session_id, spec, [True, False] * 5, behaviour=behaviour)
     async with engine.connect() as conn:
         twin = await read_twin(conn, user_id)

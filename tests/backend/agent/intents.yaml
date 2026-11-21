@@ -10,60 +10,60 @@
 - {text: "go", kind: play}
 - {text: "another one please", kind: play}
 - {text: "one more game", kind: play}
-- {text: "play Echo", kind: play, game: echo}
-- {text: "can we do quick draw?", kind: play, game: quick_draw}
-- {text: "I want to try Market Rush", kind: play, game: market_rush}
-- {text: "Spot the AI's mistake please", kind: play, game: spot_the_mistake}
-- {text: "let's do pattern gap", kind: play, game: pattern_gap}
-- {text: "a memory game", kind: play, dim: working_memory}
-- {text: "something for my focus", kind: play, dim: selective_attention}
-- {text: "give me a logic puzzle", kind: play, dim: reasoning}
-- {text: "train my reaction speed", kind: play, dim: processing_speed}
-- {text: "practice numbers", kind: play, dim: numerical_thinking}
+- {text: "play Quiz: Conditional probability", kind: play, game: quiz_conditional}
+- {text: "can we do Quiz: Sample spaces and events?", kind: play, game: quiz_sample_space}
+- {text: "I want to try Quiz: Counting outcomes", kind: play, game: quiz_counting}
+- {text: "Quiz: Conditional probability please", kind: play, game: quiz_conditional}
+- {text: "let's do Quiz: Expected value", kind: play, game: quiz_expectation}
+- {text: "a conditional probability game", kind: play, dim: conditional}
+- {text: "something for my sample spaces", kind: play, dim: sample_space}
+- {text: "give me a Bayes puzzle", kind: play, dim: bayes}
+- {text: "train my reaction equally likely", kind: play, dim: equally_likely}
+- {text: "practice counting", kind: play, dim: counting}
 - {text: "a game about football", kind: play}
 - {text: "something quick", kind: play, quick: true}
 - {text: "a short one, I only have 2 minutes", kind: play, quick: true}
 - {text: "warm me up", kind: play}
 - {text: "challenge me", kind: play}
-- {text: "play switch", kind: play, game: switch}
+- {text: "play Quiz: The binomial distribution", kind: play, game: quiz_binomial}
 
 # declining a suggestion (UW3) ----------------------------------------------------------------
-- {text: "Not memory today, something quick.", kind: play, avoid: [working_memory], quick: true}
-- {text: "no memory games please", kind: play, avoid: [working_memory]}
-- {text: "skip the maths", kind: play, avoid: [numerical_thinking]}
-- {text: "anything but reasoning", kind: play, avoid: [reasoning]}
-- {text: "I'm sick of speed games", kind: play, avoid: [processing_speed]}
-- {text: "something other than focus", kind: play, avoid: [selective_attention]}
-- {text: "I'd rather not do memory right now", kind: play, avoid: [working_memory]}
+- {text: "Not conditional probability today, something quick.", kind: play, avoid: [conditional], quick: true}
+- {text: "no conditional probability games please", kind: play, avoid: [conditional]}
+- {text: "skip the expectation", kind: play, avoid: [expectation]}
+- {text: "anything but bayes", kind: play, avoid: [bayes]}
+- {text: "I'm sick of equally likely games", kind: play, avoid: [equally_likely]}
+- {text: "something other than sample spaces", kind: play, avoid: [sample_space]}
+- {text: "I'd rather not do conditional probability right now", kind: play, avoid: [conditional]}
 - {text: "not that one, give me something else", kind: play}
 
 # chat: why (UW7) -----------------------------------------------------------------------------
-- {text: "Why memory again?", kind: chat, tool: explain}
+- {text: "Why conditional probability again?", kind: chat, tool: explain}
 - {text: "why did you pick that?", kind: chat, tool: explain}
 - {text: "Why this game", kind: chat, tool: explain}
 - {text: "how did you choose this one", kind: chat, tool: explain}
-- {text: "what made you suggest echo?", kind: chat, tool: explain}
+- {text: "what made you suggest quiz_conditional?", kind: chat, tool: explain}
 - {text: "explain your choice", kind: chat, tool: explain}
 - {text: "why so hard?", kind: chat, tool: explain}
 
 # chat: profile -------------------------------------------------------------------------------
 - {text: "How am I doing?", kind: chat, tool: read_profile}
-- {text: "what's my memory score", kind: chat, tool: read_profile, dim: working_memory}
+- {text: "what's my conditional probability score", kind: chat, tool: read_profile, dim: conditional}
 - {text: "show me my profile", kind: chat, tool: read_profile}
-- {text: "how good is my focus", kind: chat, tool: read_profile, dim: selective_attention}
+- {text: "how good is my sample spaces", kind: chat, tool: read_profile, dim: sample_space}
 - {text: "what are my strengths", kind: chat, tool: read_profile}
-- {text: "where am i at with reasoning", kind: chat, tool: read_profile, dim: reasoning}
+- {text: "where am i at with bayes", kind: chat, tool: read_profile, dim: bayes}
 - {text: "my results", kind: chat, tool: read_profile}
 
 # chat: history -------------------------------------------------------------------------------
-- {text: "how has my memory changed over the last month?", kind: chat, tool: get_history, dim: working_memory}
+- {text: "how has my conditional probability changed over the last month?", kind: chat, tool: get_history, dim: conditional}
 - {text: "show my progress this week", kind: chat, tool: get_history}
-- {text: "am I improving at speed?", kind: chat, tool: get_history, dim: processing_speed}
+- {text: "am I improving at equally likely?", kind: chat, tool: get_history, dim: equally_likely}
 - {text: "my history", kind: chat, tool: get_history}
 - {text: "have I got better since I started", kind: chat, tool: get_history}
-- {text: "show my speed over the past 30 days", kind: chat, tool: get_history, dim: processing_speed}
+- {text: "show my equally likely over the past 30 days", kind: chat, tool: get_history, dim: equally_likely}
 
-# chat: memory --------------------------------------------------------------------------------
+# chat: conditional probability --------------------------------------------------------------------------------
 - {text: "what do you remember about me?", kind: chat, tool: search_memory}
 - {text: "did I tell you about my exams?", kind: chat, tool: search_memory}
 - {text: "what do you know about me", kind: chat, tool: search_memory}
@@ -78,7 +78,7 @@
 - {text: "ok cool", kind: chat}
 
 # twin ----------------------------------------------------------------------------------------
-- {text: "Ask my twin when I focus best", kind: twin_chat}
+- {text: "Ask my twin when I sample spaces best", kind: twin_chat}
 - {text: "when am I sharpest?", kind: twin_chat}
 - {text: "am I better in the morning or the evening?", kind: twin_chat}
 - {text: "what's my best time of day", kind: twin_chat}
@@ -88,21 +88,21 @@
 
 # experiment ----------------------------------------------------------------------------------
 - {text: "I want to run an experiment", kind: experiment}
-- {text: "can we test if music helps me focus", kind: experiment}
+- {text: "can we test if music helps me sample spaces", kind: experiment}
 - {text: "let's see whether mornings are better for me, like a real test", kind: experiment}
 - {text: "start an experiment on sleep", kind: experiment}
 - {text: "compare morning and evening sessions for me", kind: experiment}
 
 # goals (UW11) --------------------------------------------------------------------------------
-- {text: "I want my memory to be solid before exams.", kind: goal, dim: working_memory}
-- {text: "set a goal for focus", kind: goal, dim: selective_attention}
-- {text: "my goal is to get faster", kind: goal, dim: processing_speed}
-- {text: "I want to improve my reasoning by next month", kind: goal, dim: reasoning}
-- {text: "aim for better maths by 15 November", kind: goal, dim: numerical_thinking}
-- {text: "help me get better at memory in 2 weeks", kind: goal, dim: working_memory}
+- {text: "I want my conditional probability to be solid before exams.", kind: goal, dim: conditional}
+- {text: "set a goal for sample spaces", kind: goal, dim: sample_space}
+- {text: "my goal is to improve equally likely outcomes", kind: goal, dim: equally_likely}
+- {text: "I want to improve my bayes by next month", kind: goal, dim: bayes}
+- {text: "aim for better expectation by 15 November", kind: goal, dim: expectation}
+- {text: "help me get better at conditional probability in 2 weeks", kind: goal, dim: conditional}
 - {text: "I'd like a goal", kind: goal}
-- {text: "target: spatial thinking by the end of the month", kind: goal, dim: spatial_thinking}
-- {text: "make my focus stronger before my exam", kind: goal, dim: selective_attention}
+- {text: "target: random variables thinking by the end of the month", kind: goal, dim: random_variables}
+- {text: "make my sample spaces stronger before my exam", kind: goal, dim: sample_space}
 
 # life context (UW9) --------------------------------------------------------------------------
 - {text: "I slept like 4 hours.", kind: life_context}
@@ -123,6 +123,6 @@
 - {text: "put me on push mode", kind: settings}
 - {text: "make the games easier from now on", kind: settings}
 - {text: "chill mode please", kind: settings}
-- {text: "stop suggesting memory this week", kind: settings, avoid: [working_memory]}
+- {text: "stop suggesting conditional probability this week", kind: settings, avoid: [conditional]}
 - {text: "turn the camera on", kind: settings}
 - {text: "be more of a friend", kind: settings}

@@ -7,7 +7,6 @@ against a real server process.
 
 import asyncio
 import os
-import random
 import re
 import secrets
 import socket
@@ -23,14 +22,12 @@ from uuid import UUID
 import httpx
 import httpx2
 import pytest
-import yaml
 from fastapi import FastAPI
 from mcp import Client
 from rich.console import Console
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from backend.agent.tools import TOOLS
 from backend.api.deps import engine_dep
 from backend.api.main import create_app
 from backend.db import tables as t
@@ -122,7 +119,7 @@ async def test_the_server_lists_the_converse_tools_and_needs_a_sign_in(app: Fast
     io, _ = scripted([])
     async with lodestar(app, "not-a-real-code", io) as client:
         names = {tool.name for tool in (await client.list_tools()).tools}
-        assert set(TOOLS) <= names
+        assert {"read_profile", "set_goal", "chat", "start_game"} <= names
         assert {"chat", "confirm", "finish_round", "goals"} <= names
         result = await client.call_tool("read_profile", {})
     assert result.is_error and NOT_SIGNED_IN in str(result.content)
@@ -134,8 +131,8 @@ async def test_uw19_profile_and_goal_match_the_web_app(app: FastAPI, aengine: As
     io, out = scripted(["y", "n"])
     async with lodestar(app, token, io) as client:
         await main.show_profile(client, io)
-        await main.set_goal(client, io, "working memory", 9, date(2026, 11, 3))
-        await main.set_goal(client, io, "inhibition", 9, date(2026, 11, 3))  # answered "n"
+        await main.set_goal(client, io, "conditional probability", 9, date(2026, 11, 3))
+        await main.set_goal(client, io, "independence", 9, date(2026, 11, 3))  # answered "n"
         await main.show_goals(client, io)
     text = out.getvalue()
 
@@ -148,8 +145,11 @@ async def test_uw19_profile_and_goal_match_the_web_app(app: FastAPI, aengine: As
             assert re.search(row, text), name
 
     [goal] = await web(app, token, "/goals")  # only the goal the user said yes to
-    assert goal["dim"] == "working_memory" and goal["due"] == "2026-11-03"
-    assert "Shall I set this goal?" in text and "[F1] Goal: Working memory range within" in text
+    assert goal["dim"] == "conditional" and goal["due"] == "2026-11-03"
+    assert (
+        "Shall I set this goal?" in text
+        and "[F1] Goal: Conditional probability range within" in text
+    )
     assert f"±{goal['target']}" in text.split("Rounds left")[-1]
     assert "haven't changed anything" in text
     async with aengine.connect() as conn:
@@ -168,7 +168,7 @@ async def test_uw19_chat_shows_the_profile_and_sets_a_goal(
 ) -> None:
     user_id = await returning_user(aengine)
     token = await sign_in(aengine, user_id)
-    io, out = scripted(["set a goal for working memory ±9 by 3 Nov", "y", "quit"])
+    io, out = scripted(["set a goal for conditional probability ±9 by 3 Nov", "y", "quit"])
     async with lodestar(app, token, io) as client:
         await Chat(client, io, WEB).run("chat", {"message": "show my profile"})
     text = out.getvalue()
@@ -176,55 +176,20 @@ async def test_uw19_chat_shows_the_profile_and_sets_a_goal(
     assert "Shall I set this goal?" in text and "Goal set" in text and "[y/n]" in text
     assert "narrower than ±" in text  # ±9 is tighter than the range can get: Lodestar says so
     [goal] = await web(app, token, "/goals")
-    assert goal["dim"] == "working_memory" and goal["target"] >= 9 and goal["due"].endswith("11-03")
+    assert goal["dim"] == "conditional" and goal["target"] >= 9 and goal["due"].endswith("11-03")
 
 
-async def test_text_game_played_in_the_terminal_is_scored(
-    app: FastAPI, aengine: AsyncEngine
-) -> None:
+async def test_quiz_played_through_mcp_is_scored(app: FastAPI, aengine: AsyncEngine) -> None:
     user_id = await returning_user(aengine)
     token = await sign_in(aengine, user_id)
-    words = " ".join(games.fallback_list({"seed": 0, "knobs": {"list_length": 99}}))
-    io, out = scripted(["y", "", words, "quit"])
+    io, _ = scripted([])
     async with lodestar(app, token, io) as client:
-        await Chat(client, io, WEB).run("start_game", {"game_id": "market_list"})
-    text = out.getvalue()
-    assert "Play Market List now?" in text
-    async with aengine.connect() as conn:
-        round_ = (
-            await conn.execute(
-                select(t.rounds).where(
-                    t.rounds.c.user_id == user_id, t.rounds.c.game_id == "market_list"
-                )
-            )
-        ).one()
-        trials = (
-            await conn.execute(select(t.trials).where(t.trials.c.round_id == round_.round_id))
-        ).all()
-    assert round_.status == "completed" and round_.scored_at is not None
-    assert trials and all(tr.correct for tr in trials)  # every word typed back
-    assert len({tr.trial_id for tr in trials}) == len(trials)
-
-
-async def test_a_browser_game_hands_the_session_to_the_web_app(
-    app: FastAPI, aengine: AsyncEngine
-) -> None:
-    user_id = await returning_user(aengine)
-    token = await sign_in(aengine, user_id)
-    io, out = scripted(["quit"])
-    async with lodestar(app, token, io) as client:
-        chat = Chat(client, io, WEB)
-        await chat.run("start_game", {"game_id": "arrow_storm"})
-    match = re.search(
-        r"open http://localhost:5173/\?session=([0-9a-f-]{36}) to play it", out.getvalue()
-    )
-    assert match, out.getvalue()
-    pending = await web(app, token, f"/sessions/{match.group(1)}/pending")
-    assert pending["pending"]["payload"]["spec"]["game_id"] == "arrow_storm"
+        turn = await call(client, "start_game", {"game_id": "quiz_conditional"})
+    assert "quiz_conditional" in str(turn)
 
 
 def test_terminal_games_match_the_registry() -> None:
-    assert {g.id for g in load_registry().games if g.terminal} == set(games.GAMES)
+    assert {g.plugin_id for g in load_registry().games if g.terminal} == set(games.GAMES)
 
 
 def answering(reply: Callable[[str], str], seconds: list[float] | None = None) -> Io:
@@ -241,72 +206,32 @@ def answering(reply: Callable[[str], str], seconds: list[float] | None = None) -
     return Io(console=io.console, read=read, pause=io.pause, clock=lambda: now[0])
 
 
-async def test_digits_back_in_the_terminal() -> None:
-    rng, length, n = random.Random(5), [3], [0]  # the game's own draws, mirrored
+async def test_quiz_and_explanation_in_the_terminal() -> None:
+    from backend.agent.learning import explain_content, quiz_content
 
-    def reply(prompt: str) -> str:
-        if "backwards" not in prompt:
-            return ""
-        digits = [rng.randint(0, 9) for _ in range(length[0])]
-        right = n[0] % 3 != 2  # every third answer wrong
-        n[0] += 1
-        if n[0] > 1:  # the first one is practice: the length stays
-            length[0] = max(2, min(9, length[0] + (1 if right else -1)))
-        back = "".join(str(d) for d in reversed(digits))
-        return " ".join(back) if right else back + "0"
-
-    spec = {"game_id": "digits_back", "round_id": "r", "seed": 5, "practice_trials": 1}
-    out = await games.play(answering(reply), {**spec, "knobs": {"length": 3}})
-    answers = out["answers"]
-    assert out["status"] == "completed" and len(answers) == 1 + 8
-    assert answers[0]["practice"] and not any(a["practice"] for a in answers[1:])
-    assert [a["correct"] for a in answers] == [i % 3 != 2 for i in range(9)]
-    assert [a["stimulus"]["length"] for a in answers[:4]] == [3, 3, 4, 3]
-    assert (
-        answers[0]["response"]["typed"] == "".join(map(str, answers[0]["stimulus"]["digits"]))[::-1]
+    course = load_registry().course
+    content = quiz_content(course, "conditional", 0.4, 7, set())
+    lines = []
+    for question in content["questions"]:
+        lines.extend([str(question["answer"] + 1), "3"])
+    io, _ = scripted(lines)
+    out = await games.play(
+        io, {"game_id": "quiz_conditional", "plugin": "quiz", "round_id": "r", "content": content}
     )
-    assert out["metrics"]["span"] == max(
-        a["stimulus"]["length"] for a in answers[1:] if a["correct"]
+    assert out["status"] == "completed" and all(a["correct"] for a in out["answers"])
+    assert all(a["confidence"] == 1 for a in out["answers"])
+    explanation = explain_content(course, "conditional", 0.4)
+    io, _ = scripted([". ".join(i["text"] for i in explanation["key_ideas"])])
+    out = await games.play(
+        io,
+        {
+            "game_id": "explain_conditional",
+            "plugin": "explain",
+            "round_id": "r",
+            "content": explanation,
+        },
     )
-
-
-async def test_quick_maths_in_the_terminal() -> None:
-    def reply(prompt: str) -> str:
-        a, op, b = prompt.rstrip("= ").split()
-        x, y = int(a), int(b)
-        return str({"+": x + y, "-": x - y, "×": x * y, "÷": x // y}[op])  # noqa: RUF001
-
-    spec = {"game_id": "quick_maths", "round_id": "r", "seed": 3, "practice_trials": 0}
-    io = answering(reply, seconds=[2, 2, 9])  # the third answer comes after the 8 s limit
-    out = await games.play(io, {**spec, "knobs": {"operations": 4, "operand_max": 20}})
-    answers = out["answers"]
-    assert len(answers) == 20 and {a["stimulus"]["op"] for a in answers} <= set(games.OPS)
-    assert [a["correct"] for a in answers[:4]] == [True, True, False, True]
-    assert answers[2]["rt_ms"] is None and answers[0]["stimulus"]["deadline_ms"] == 8000
-    assert all(a["response"]["typed"] == str(a["stimulus"]["answer"]) for a in answers)
-    assert out["metrics"]["accuracy"] == 19 / 20
-
-
-async def test_logic_lock_in_the_terminal() -> None:
-    facts = yaml.safe_load((games.GAMES_DIR / "logic_lock" / "config.yaml").read_text())["facts"]
-    rng, n = random.Random(9), [0]
-    said = {0: "yes", 1: "2", 2: "can’t tell"}  # noqa: RUF001
-
-    def reply(prompt: str) -> str:
-        right = games.make_lock(rng, facts, 3)["answer"]
-        n[0] += 1
-        if n[0] == 4:
-            return "q"
-        return said[right] if n[0] != 2 else said[(right + 1) % 3]
-
-    spec = {"game_id": "logic_lock", "round_id": "r", "seed": 9, "practice_trials": 1}
-    out = await games.play(answering(reply), {**spec, "knobs": {"premises": 3}})
-    answers = out["answers"]
-    assert out["status"] == "stopped" and [a["correct"] for a in answers] == [True, False, True]
-    first = answers[0]["stimulus"]
-    assert len(first["premises"]) == 3 and first["premises"][-1].endswith(".")
-    assert answers[0]["response"]["answer"] == games.ANSWERS[first["answer"]]
-    assert first["answer"] == {"forward": 0, "backward": 1}.get(first["form"], 2)
+    assert out["answers"][0]["response"]["score"] > 0
 
 
 async def test_a_write_tool_called_directly_asks_first(app: FastAPI, aengine: AsyncEngine) -> None:
@@ -376,11 +301,16 @@ async def test_uw19_cli_process(server: str, aengine: AsyncEngine, tmp_path: Any
 
     async def lodestar_cmd(*args: str, typed: str = "") -> str:
         proc = await asyncio.create_subprocess_exec(
-            sys.executable, "-m", "cli", *args,
-            cwd=ROOT, env=env,
-            stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
+            sys.executable,
+            "-m",
+            "cli",
+            *args,
+            cwd=ROOT,
+            env=env,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
-        )  # fmt: skip
+        )
         out, err = await asyncio.wait_for(proc.communicate(typed.encode()), timeout=180)
         assert proc.returncode == 0, (out + err).decode()
         return out.decode()
@@ -393,10 +323,10 @@ async def test_uw19_cli_process(server: str, aengine: AsyncEngine, tmp_path: Any
         measured = [v for v in twin["dims"] if v["n"]]
         assert measured and all(f"{pct(v['percent'])}%" in shown for v in measured)
         said = await lodestar_cmd(
-            "goal", "working memory", "--within", "9", "--by", "2026-11-03", typed="y\n"
+            "goal", "conditional probability", "--within", "9", "--by", "2026-11-03", typed="y\n"
         )
         assert "Goal set" in said
-        assert "Working memory" in await lodestar_cmd("goals")
+        assert "Conditional probability" in await lodestar_cmd("goals")
         chatted = await lodestar_cmd("chat", "show", "my", "profile", typed="quit\n")
         assert "Lodestar (Willow):" in chatted and "See you soon." in chatted
         goals = (await web_app.get("/goals")).json()

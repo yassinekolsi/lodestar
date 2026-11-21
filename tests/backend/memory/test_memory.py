@@ -47,10 +47,18 @@ async def test_users_never_see_each_other(memory: MemoryStore) -> None:
 
 async def test_recent_relevant_memory_ranks_above_an_old_one(memory: MemoryStore) -> None:
     user = uuid4()
-    await memory.write(user, "Felt tired during the evening memory games", importance=0.6,
-                       created_at=NOW - timedelta(days=60))  # fmt: skip
-    await memory.write(user, "Tired in the evening memory session again", importance=0.6,
-                       created_at=NOW - timedelta(days=1))  # fmt: skip
+    await memory.write(
+        user,
+        "Felt tired during the evening memory games",
+        importance=0.6,
+        created_at=NOW - timedelta(days=60),
+    )
+    await memory.write(
+        user,
+        "Tired in the evening memory session again",
+        importance=0.6,
+        created_at=NOW - timedelta(days=1),
+    )
     await memory.write(user, "Likes football", importance=0.6, created_at=NOW)
     hits = await memory.recall(user, "tired evening memory", limit=3)
     assert hits[0].text == "Tired in the evening memory session again"
@@ -69,8 +77,13 @@ async def test_mmr_avoids_near_copies(memory: MemoryStore) -> None:
 async def test_dedupe_merges_near_duplicates(memory: MemoryStore) -> None:
     user = uuid4()
     e1, e2 = uuid4(), uuid4()
-    await memory.write(user, "I have exams next week", importance=0.6, source_event_ids=[e1],
-                       created_at=NOW - timedelta(hours=2))  # fmt: skip
+    await memory.write(
+        user,
+        "I have exams next week",
+        importance=0.6,
+        source_event_ids=[e1],
+        created_at=NOW - timedelta(hours=2),
+    )
     await memory.write(user, "I have my exams next week", importance=0.9, source_event_ids=[e2])
     await memory.write(user, "Plays mostly at 21:00", importance=0.5)
     assert await merge_duplicates(memory, user, "episodic") == 1
@@ -87,24 +100,33 @@ async def test_consolidation_promotes_facts_and_rewrites_core(
     user = uuid4()
     notes = Notes(tmp_path)
     pref = {"kind": "preference", "importance": 0.9}
-    await memory.write(user, 'Said: "I prefer fewer timed games"', **pref,  # type: ignore[arg-type]
-                       created_at=NOW - timedelta(days=1))  # fmt: skip
-    await memory.write(user, 'Said: "I prefer fewer timed games please"', kind="preference",
-                       importance=0.9)  # fmt: skip
+    await memory.write(
+        user,
+        'Said: "I prefer fewer timed games"',
+        **pref,  # type: ignore[arg-type]
+        created_at=NOW - timedelta(days=1),
+    )
+    await memory.write(
+        user, 'Said: "I prefer fewer timed games please"', kind="preference", importance=0.9
+    )
     await memory.write(
         user, "Old routine note", importance=0.5, created_at=NOW - timedelta(days=45)
     )
     await memory.write(user, "Exam tomorrow", importance=0.7, expires_at=NOW - timedelta(hours=1))
     report = await consolidate_user(
-        memory, notes, user, summary="Session on 21 Oct: played Echo.",
-        header_lines=["Prefers the Willow coach"], now=NOW,
-    )  # fmt: skip
+        memory,
+        notes,
+        user,
+        summary="Session on 21 Oct: played Quiz: Conditional probability.",
+        header_lines=["Prefers the Willow coach"],
+        now=NOW,
+    )
     assert (
         report.merged == 1 and report.promoted == 1 and report.expired == 1 and report.decayed == 1
     )
     core = notes.read_core(user)
     assert core[0] == "Prefers the Willow coach" and "timed games" in core[1]
-    assert "played Echo" in (notes.read_journal(user, NOW.date()) or "")
+    assert "played Quiz: Conditional probability" in (notes.read_journal(user, NOW.date()) or "")
     facts = await memory.points(user, "facts")
     assert len(facts) == 1 and 0.6 <= facts[0].payload["confidence"] <= 0.9
 
@@ -124,8 +146,11 @@ async def test_langgraph_store_interface(memory: MemoryStore) -> None:
     store = QdrantStore(memory)
     user = str(uuid4())
     ns = ("users", user, "episodic")
-    await store.aput(ns, "m1", {"text": "Said she prefers fewer timed games", "kind": "preference",
-                                "importance": 0.8})  # fmt: skip
+    await store.aput(
+        ns,
+        "m1",
+        {"text": "Said she prefers fewer timed games", "kind": "preference", "importance": 0.8},
+    )
     item = await store.aget(ns, "m1")
     assert item is not None and item.value["text"].startswith("Said she prefers")
     hits = await store.asearch(ns, query="timed games")
@@ -137,22 +162,25 @@ async def test_langgraph_store_interface(memory: MemoryStore) -> None:
 
 
 async def test_knowledge_is_shared_and_filterable(memory: MemoryStore) -> None:
-    assert await memory.load_knowledge(load_knowledge_items()) == 6
-    hits = await memory.search_knowledge("how do I remember a long list", limit=2)
-    assert hits and hits[0].id == "K-chunking"
-    only = await memory.search_knowledge("focus", dim="sustained_attention")
-    assert {h.dim for h in only} == {"sustained_attention"}
+    items = load_knowledge_items()
+    assert items and await memory.load_knowledge(items) == len(items)
+    hits = await memory.search_knowledge("Bayes questions: turn percentages into counts", limit=2)
+    assert hits and hits[0].id == "K-natural-frequencies"
+    only = await memory.search_knowledge("conditional probability table", dim="conditional")
+    assert only and {h.dim for h in only} == {"conditional"}
 
 
 async def test_novelty_check_finds_recently_served_items(memory: MemoryStore) -> None:
     user = uuid4()
-    await memory.record_served(user, "market_rush", 0.4, uuid4(), "Two kilos of oranges and chilli")
+    await memory.record_served(
+        user, "quiz_counting", 0.4, uuid4(), "Two kilos of oranges and chilli"
+    )
     since = NOW - timedelta(days=30)
     same = await memory.max_similarity_served(
-        user, "market_rush", "Two kilos of oranges and chilli", since
+        user, "quiz_counting", "Two kilos of oranges and chilli", since
     )
     other_user = await memory.max_similarity_served(
-        uuid4(), "market_rush", "Two kilos of oranges", since
+        uuid4(), "quiz_counting", "Two kilos of oranges", since
     )
     assert same > 0.9 and other_user == 0.0
 
@@ -163,6 +191,6 @@ def test_notes_are_atomic_and_deletable(tmp_path: Path) -> None:
     notes.write_core(user, ["Prefers the Willow persona", "Usually plays in the evening"])
     assert notes.remove_core_line(user, "Usually plays in the evening")
     assert notes.read_core(user) == ["Prefers the Willow persona"]
-    notes.append_journal(user, date(2026, 10, 21), "Played Echo.")
+    notes.append_journal(user, date(2026, 10, 21), "Played Quiz: Conditional probability.")
     assert not list(tmp_path.rglob("*.tmp"))
     assert notes.delete_user(user) == 2 and not (tmp_path / str(user)).exists()
