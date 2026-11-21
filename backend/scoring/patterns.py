@@ -15,13 +15,14 @@ HOUR_BLOCKS = [(0, 6, "night"), (6, 10, "6-10"), (10, 14, "10-14"), (14, 18, "14
 
 # A plateau: at least this many days and answers of practice with no trend either way. Answers are
 # noisy, so the test is on means (the later half against the earlier half), with a cap on the
-# overall swing. A skill nobody plays isn't stuck, and one near the top has nowhere to go.
-PLATEAU_MIN_DAYS = 14
-PLATEAU_MIN_ANSWERS = 60
+# overall swing. A concept nobody studies isn't stuck, and one near the top has nowhere to go.
+# For a course concept checked with 5-question quizzes, 40 answers is 8 quizzes (docs/plan/19).
+PLATEAU_MIN_DAYS = 10
+PLATEAU_MIN_ANSWERS = 40
 PLATEAU_MAX_DRIFT = 0.08  # logit scale, between the two halves' means
 PLATEAU_MAX_SWING = 0.50  # logit scale, top to bottom
 PLATEAU_LOOKBACK_DAYS = 45
-PLATEAU_RECENT_DAYS = 14
+PLATEAU_RECENT_DAYS = 7
 PLATEAU_MAX_PERCENT = 85.0
 
 # A split: one skill near the top and another near the bottom, with ranges that don't overlap, so

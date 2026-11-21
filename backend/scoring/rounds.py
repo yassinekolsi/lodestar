@@ -7,7 +7,7 @@ from datetime import datetime
 from backend.contracts.trial import TrialEvent
 from backend.registry.models import Game, PerRoundGain
 from backend.scoring.hshs import hshs_success
-from backend.scoring.kalman_elo import Belief, add_process_noise, predict, update
+from backend.scoring.kalman_elo import Q_ROUND, Belief, add_process_noise, predict, update
 from backend.scoring.levels import b_for_level
 from backend.scoring.loadings import update_weight
 from backend.scoring.quality import (
@@ -61,6 +61,9 @@ def observed_score(game: Game, trial: TrialEvent, device_lag_ms: float = 0.0) ->
             return min(max(float(raw), 0.0), 1.0)
     if trial.correct is None:
         return None
+    if game.plugin_id == "quiz" and trial.correct and trial.hint_level:
+        # An answer found with hints says less: 1, 0.75, then 0.5 (docs/plan/19).
+        return max(0.5, 1.0 - 0.25 * trial.hint_level)
     if game.scoring == "hshs" and rt is not None:
         deadline = _deadline(game, trial)
         if deadline:
@@ -95,8 +98,12 @@ def score_round(
             for t in counted
         ],
         chance=chance,
+        rushed_ms=game.rushed_ms,
     )
-    updated = {dim: add_process_noise(beliefs[dim]) for dim in loadings}
+    # Process noise in proportion to how much the round says about each skill.
+    updated = {
+        dim: add_process_noise(beliefs[dim], q_round=Q_ROUND * loadings[dim]) for dim in loadings
+    }
     primary = max(loadings, key=lambda d: loadings[d]) if loadings else None
     scores: list[float] = []
     items: list[ItemObservation] = []

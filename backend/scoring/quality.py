@@ -42,7 +42,10 @@ def assess_quality(
     trials: Sequence[TrialSample],
     chance: float = 0.5,
     min_trials: int = 8,
+    rushed_ms: float = MASHING_MS,
 ) -> QualityReport:
+    """`rushed_ms` is the game's own floor: 200 ms for a reaction game, seconds for a question
+    that has to be read (docs/plan/19)."""
     scored = [t for t in trials if t.correct is not None]
     rts = [t.rt_ms for t in trials if t.rt_ms is not None]
     anticipations = sum(1 for rt in rts if rt < ANTICIPATION_MS)
@@ -53,16 +56,22 @@ def assess_quality(
         accuracy is not None
         and median_rt is not None
         and len(scored) >= MASHING_MIN_TRIALS
-        and median_rt < MASHING_MS
+        and median_rt < rushed_ms
         and accuracy < MASHING_MAX_ACCURACY
     ):
         return QualityReport(0.0, "random_clicking", anticipations, accuracy, median_rt)
+    # Impossibly fast and nearly always right: not a human playing honestly. Like mashing, this
+    # needs only a short round (a quiz is 5 questions).
+    if (
+        accuracy is not None
+        and median_rt is not None
+        and len(scored) >= MASHING_MIN_TRIALS
+        and median_rt < max(200.0, rushed_ms / 2)
+        and accuracy >= 0.9
+    ):
+        return QualityReport(0.0, "impossible_speed", anticipations, accuracy, median_rt)
     if len(scored) < min_trials or accuracy is None:
         return QualityReport(1.0, "too_few", anticipations, None, median_rt)
-
-    # Impossibly fast and nearly always right: not a human playing honestly.
-    if median_rt is not None and median_rt < 200.0 and accuracy >= 0.9:
-        return QualityReport(0.0, "impossible_speed", anticipations, accuracy, median_rt)
     # Many anticipations means responses aren't waiting for the stimulus.
     if rts and anticipations / len(rts) > 0.4:
         return QualityReport(0.0, "impossible_speed", anticipations, accuracy, median_rt)

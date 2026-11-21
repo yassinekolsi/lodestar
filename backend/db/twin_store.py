@@ -349,6 +349,7 @@ async def score_round_tx(
             context_weight=context_weight,
             device_lag_ms=lag,
             item_b=item_b,
+            chance=game.chance,
             practice=practice,
         )
         changes = [
