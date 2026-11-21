@@ -21,7 +21,6 @@ from backend.contracts.memory import MemoryHit
 from backend.contracts.session import Intent, SessionBudget, SessionPlan
 from backend.contracts.trial import TrialEvent
 from backend.contracts.twin import ForecastBand, LifeContextWindow, TwinSnapshot
-from backend.generation.blocks import CustomGameContent
 from backend.registry.models import Battery, Dimension, Game, LlmProvider
 
 OUT = Path("contracts")
@@ -46,7 +45,6 @@ CONTRACT_MODELS: list[type[BaseModel]] = [
     SessionPlan,
     LlmSelection,
     CredentialSummary,
-    CustomGameContent,
 ]
 
 REF = "#/components/schemas/{model}"

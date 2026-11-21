@@ -1,19 +1,9 @@
-"""Generators by game id. A game listed here needs content in its exercise spec."""
+"""Generators by game id. A game listed here needs generated content in its exercise spec.
+
+Course exercises don't: their questions come from the course (backend/agent/learning.py). The
+pipeline stays for content an LLM writes and code checks, such as questions drafted from an
+uploaded course (docs/plan/19, "What's next")."""
 
 from backend.generation.generators.base import Generator
-from backend.generation.generators.custom_blocks import CustomBlocksGenerator
-from backend.generation.generators.market_list import MarketListGenerator
-from backend.generation.generators.market_rush import MarketRushGenerator
-from backend.generation.generators.pattern_gap import PatternGapGenerator
-from backend.generation.generators.spot_the_mistake import SpotMistakeGenerator
 
-GENERATORS: dict[str, Generator] = {
-    g.game_id: g
-    for g in (
-        MarketRushGenerator(),
-        MarketListGenerator(),
-        PatternGapGenerator(),
-        SpotMistakeGenerator(),
-        CustomBlocksGenerator(),
-    )
-}
+GENERATORS: dict[str, Generator] = {}
