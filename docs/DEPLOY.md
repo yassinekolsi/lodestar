@@ -55,7 +55,7 @@ or two longer while it wakes. The connection pool checks connections before usin
    it afterwards, or saved keys can't be read). `LODESTAR_DEMO=1` keeps the "Demo person" button.
 
 4. Deploy. The first build takes a while: it builds the frontend and bakes the embedding and
-   speech models into the image, so nothing is downloaded while a student waits. When the health
+   models into the image, so nothing is downloaded while a student waits. When the health
    check (`/api/health`) passes, open the service URL and press **Look around as Alex**: the demo
    person is created on the first press, with a classmate group for the class view.
 
@@ -72,9 +72,16 @@ Render has no Ollama, so there are three cases:
 
 ### Memory and plan size
 
-The server uses about 500-600 MB once the embedding models are loaded. Render's Free and Starter
-instances stop at 512 MB, so under load Render may restart the service for memory. For a demo
-that is usually fine; for anything longer, choose the Standard plan in `render.yaml`.
+The hosted image enables `LODESTAR_LOW_MEMORY=1`. It runs embeddings with one worker and one
+passage per batch, serializes document reading, and keeps queued PDF originals in Postgres.
+Library listings fetch metadata without loading original PDFs or extracted pages. Growth
+forecasts and server Whisper transcription are disabled in this profile; device voice, Gemini
+OCR, document review, search and practice remain available. Local development keeps all models.
+
+The 512 MB tier has little headroom for simultaneous sessions or large files. Treat it as a
+small demo deployment, and watch Render's memory metrics during uploads. A larger instance is
+appropriate for a class using the app at once. Setting `LODESTAR_LOW_MEMORY=0` restores the
+additional models, but requires more memory; it does not increase the instance's limit.
 
 Lodestar's own notes about a student (`LODESTAR_MEMORY_DIR`) are files on the instance's disk,
 which Render clears on every deploy. Everything else lives in Neon and Qdrant and survives.

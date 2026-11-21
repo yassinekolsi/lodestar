@@ -27,6 +27,7 @@ class Settings(BaseModel, frozen=True):
     memory_dir: str
     registry_dir: str
     whisper_model: str = "base.en"
+    low_memory: bool = False  # hosted 512 MB profile; local development keeps every model
     demo: bool = True  # the "Demo" button: anyone who can reach the API may sign in as Alex
     # Who gets the built-in course: "demo" (the demo person and classmates) or "all" accounts.
     built_in_course: str = "demo"
@@ -59,6 +60,7 @@ def get_settings() -> Settings:
         memory_dir=os.environ.get("LODESTAR_MEMORY_DIR", "memory"),
         registry_dir=os.environ.get("LODESTAR_REGISTRY_DIR", "registry"),
         whisper_model=os.environ.get("LODESTAR_WHISPER_MODEL", "base.en"),
+        low_memory=os.environ.get("LODESTAR_LOW_MEMORY", "0") == "1",
         demo=os.environ.get("LODESTAR_DEMO", "1") != "0",
         built_in_course=os.environ.get("LODESTAR_BUILT_IN_COURSE", "demo").strip() or "demo",
     )

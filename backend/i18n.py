@@ -116,6 +116,14 @@ def with_language(system: str, locale: Locale | None = None) -> str:
 # Fixed sentences the backend writes itself (cards and templates) ------------------------------
 
 _TEXT: dict[str, dict[Locale, str]] = {
+    "host_voice_unavailable": {
+        "en": "Server voice is unavailable on this host. Use device voice or type.",
+        "fr": (
+            "La transcription sur ce serveur est indisponible. "
+            "Utilisez la voix de votre appareil ou écrivez."
+        ),
+        "tn": "الtranscription على الserveur موش متوفّرة. استعمل voix متاع جهازك ولا اكتب.",
+    },
     "notes": {"en": "Notes", "fr": "Notes", "tn": "Notes"},
     "hint_removed": {
         "en": "Two of the wrong answers are gone.",

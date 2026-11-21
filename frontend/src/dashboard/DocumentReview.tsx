@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { api } from '../api/client'
 import type { DocumentView } from '../api/types'
 import { CourseText } from '../lib/math'
+import { t, useLocale } from '../i18n'
 
 export function DocumentReview({
   doc,
@@ -12,6 +13,8 @@ export function DocumentReview({
   onSaved: (doc: DocumentView) => void
   onClose: () => void
 }) {
+  useLocale()
+  const panel = useRef<HTMLElement>(null)
   const [pages, setPages] = useState<{ page: number; text: string; warnings: string[] }[]>([])
   const [page, setPage] = useState(0)
   const [pdf, setPdf] = useState('')
@@ -19,6 +22,7 @@ export function DocumentReview({
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   useEffect(() => {
+    panel.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     let active = true
     let url = ''
     api.documentPages(doc.doc_id).then(
@@ -26,40 +30,42 @@ export function DocumentReview({
         if (active) setPages(p)
       },
       () => {
-        if (active) setError('Could not load extracted pages.')
+        if (active) setError(t('Could not load extracted pages.'))
       },
     )
-    api.documentOriginal(doc.doc_id).then(
-      (blob) => {
-        if (active) {
-          url = URL.createObjectURL(blob)
-          setPdf(url)
-        }
-      },
-      () => {
-        if (active) setError('The original PDF is unavailable. Compare against your local copy.')
-      },
-    )
+    if (doc.filename.toLowerCase().endsWith('.pdf'))
+      api.documentOriginal(doc.doc_id).then(
+        (blob) => {
+          if (active) {
+            url = URL.createObjectURL(blob)
+            setPdf(url)
+          }
+        },
+        () => {
+          if (active)
+            setError(t('The original PDF is unavailable. Compare against your local copy.'))
+        },
+      )
     return () => {
       active = false
       if (url) URL.revokeObjectURL(url)
     }
-  }, [doc.doc_id])
+  }, [doc.doc_id, doc.filename])
   const current = pages[page]
   const unresolved = pages.some((p) => p.text.includes('[unclear]'))
   return (
-    <section className="card document-review" aria-label="Review extracted pages">
+    <section ref={panel} className="card document-review" aria-label={t('Review extracted pages')}>
       <div className="documents__actions">
-        <h2>Check the course against the original</h2>
-        <button onClick={onClose}>Close review</button>
+        <h2>{t('Check the course against the original')}</h2>
+        <button onClick={onClose}>{t('Close review')}</button>
       </div>
       <p className="muted">
-        OCR can confuse a minus sign, exponent or probability bar. Check every page and edit any
-        mistakes before using this chapter for explanations or quizzes. The preview shows how
-        formulas will look to you.
+        {t(
+          'Compare the original with the extracted text. Correct any mistakes, then validate your chapter to start studying. You can edit the text directly; formulas update in the preview.',
+        )}
       </p>
       <label>
-        Page
+        {t('Page')}
         <select
           value={page}
           onChange={(e) => {
@@ -68,7 +74,7 @@ export function DocumentReview({
         >
           {pages.map((p, i) => (
             <option key={p.page} value={i}>
-              Page {p.page}
+              {t('Page {page}', { page: p.page })}
               {p.warnings.length ? ' · flagged' : ''}
             </option>
           ))}
@@ -80,9 +86,9 @@ export function DocumentReview({
           {pdf && (
             <>
               <a href={pdf} target="_blank" rel="noreferrer">
-                Open original PDF
+                {t('Open original PDF')}
               </a>
-              <iframe title="Original course PDF" src={`${pdf}#page=${String(page + 1)}`} />
+              <iframe title={t('Original course PDF')} src={`${pdf}#page=${String(page + 1)}`} />
             </>
           )}
         </div>
@@ -95,7 +101,7 @@ export function DocumentReview({
                 </p>
               ))}
               <label>
-                Extracted page text
+                {t('Extracted page text')}
                 <textarea
                   value={current.text}
                   onChange={(e) => {
@@ -107,7 +113,7 @@ export function DocumentReview({
                   }}
                 />
               </label>
-              <p className="eyebrow">Formula preview</p>
+              <p className="eyebrow">{t('Formula preview')}</p>
               <CourseText text={current.text} />
             </>
           )}
@@ -115,7 +121,7 @@ export function DocumentReview({
       </div>
       {unresolved && (
         <p className="notice">
-          Replace all [unclear] markers by checking the original before approving.
+          {t('Replace all [unclear] markers by checking the original before approving.')}
         </p>
       )}
       <label>
@@ -126,7 +132,7 @@ export function DocumentReview({
             setChecked(e.target.checked)
           }}
         />
-        I checked every page and formula against the original.
+        {t('I checked every page and formula against the original.')}
       </label>
       <button
         className="primary"
@@ -139,13 +145,17 @@ export function DocumentReview({
               doc.doc_id,
               pages.map((p) => p.text),
             )
-            .then(onSaved, () => {
-              setError('Could not save the reviewed pages. Please try again.')
+            .then(onSaved, (e: unknown) => {
+              setError(
+                e instanceof Error
+                  ? e.message
+                  : t('Could not save the reviewed pages. Please try again.'),
+              )
               setBusy(false)
             })
         }}
       >
-        Save reviewed chapter
+        {t('Validate chapter')}
       </button>
     </section>
   )

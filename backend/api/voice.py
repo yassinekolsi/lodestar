@@ -20,6 +20,7 @@ from backend.api.deps import CurrentUser, Engine, RegistryDep
 from backend.config import get_settings
 from backend.contracts.common import Contract
 from backend.db.consent_store import granted_switches
+from backend.i18n import text as localized
 
 log = logging.getLogger(__name__)
 router = APIRouter(prefix="/voice", tags=["voice"])
@@ -62,6 +63,8 @@ def transcribe(audio: np.ndarray, model_name: str) -> str:
 async def post_transcribe(
     request: Request, user_id: CurrentUser, engine: Engine, registry: RegistryDep
 ) -> Transcript:
+    if get_settings().low_memory:
+        raise HTTPException(503, localized("host_voice_unavailable"))
     async with engine.connect() as conn:
         consent = await granted_switches(conn, user_id, registry.consent)
     if "microphone" not in consent:

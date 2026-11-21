@@ -191,7 +191,7 @@ class ReviewInput(Contract):
 async def document_pages(doc_id: UUID, conn: Conn, user_id: CurrentUser) -> list[ReviewPage]:
     row = (
         await conn.execute(
-            select(t.documents).where(
+            select(*(c for c in t.documents.c if c.name != "source_pdf")).where(
                 t.documents.c.doc_id == doc_id, t.documents.c.user_id == user_id
             )
         )
@@ -275,7 +275,7 @@ async def review_document(
         await user_scope(conn, user_id)
         doc = (
             await conn.execute(
-                select(t.documents)
+                select(*(c for c in t.documents.c if c.name != "source_pdf"))
                 .where(t.documents.c.doc_id == doc_id, t.documents.c.user_id == user_id)
                 .with_for_update()
             )
@@ -326,7 +326,7 @@ async def review_document(
                 update(t.documents)
                 .where(t.documents.c.doc_id == doc_id, t.documents.c.user_id == user_id)
                 .values(indexed=indexed)
-                .returning(t.documents)
+                .returning(*(c for c in t.documents.c if c.name != "source_pdf"))
             )
         ).one()
     return library._view(row)

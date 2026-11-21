@@ -26,7 +26,10 @@ ENV UV_COMPILE_BYTECODE=1 \
     FASTEMBED_CACHE_PATH=/opt/fastembed \
     HF_HOME=/opt/hf \
     LODESTAR_WEB_DIR=/app/web \
-    LODESTAR_MEMORY_DIR=/app/memory
+    LODESTAR_MEMORY_DIR=/app/memory \
+    LODESTAR_LOW_MEMORY=1 \
+    OMP_NUM_THREADS=1 \
+    OPENBLAS_NUM_THREADS=1
 
 # LightGBM (growth forecast, docs/plan/10) needs the OpenMP runtime.
 RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 \
@@ -34,11 +37,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 \
 
 WORKDIR /app
 COPY pyproject.toml uv.lock .python-version README.md ./
-RUN uv sync --frozen --no-dev --no-install-project --extra whisper
-# The embedding models and the private-voice speech model ship in the image: no download on the
+RUN uv sync --frozen --no-dev --no-install-project
+# The embedding models ship in the image: no download on the
 # first request, and nothing fetched while a student waits.
-RUN python -c "from fastembed import TextEmbedding, SparseTextEmbedding; TextEmbedding('BAAI/bge-small-en-v1.5'); SparseTextEmbedding('Qdrant/bm25')" \
-    && python -c "from faster_whisper import WhisperModel; WhisperModel('base.en', device='cpu', compute_type='int8')" \
+RUN mkdir -p /opt/hf && python -c "from fastembed import TextEmbedding, SparseTextEmbedding; TextEmbedding('BAAI/bge-small-en-v1.5', threads=1); SparseTextEmbedding('Qdrant/bm25', threads=1)" \
     && chmod -R a+rX /opt/fastembed /opt/hf
 
 RUN useradd --create-home --uid 1000 lodestar && mkdir -p /app/memory && chown lodestar /app/memory

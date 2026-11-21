@@ -28,7 +28,7 @@ import type {
   TwinView,
 } from './types'
 
-import { getLocale } from '../i18n'
+import { getLocale, t } from '../i18n'
 
 const TOKEN_KEY = 'lodestar.token'
 export const API_BASE = '/api'
@@ -77,7 +77,10 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   headers.set(LOCALE_HEADER, getLocale())
   const response = await fetch(`${API_BASE}${path}`, { ...init, headers })
   if (!response.ok) {
-    let detail = response.statusText
+    let detail =
+      response.status >= 500
+        ? t('The server is temporarily unavailable. Please try again shortly.')
+        : response.statusText
     try {
       const body = (await response.json()) as { detail?: unknown }
       if (typeof body.detail === 'string') detail = body.detail

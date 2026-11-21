@@ -65,7 +65,8 @@ def _view(r: Any, searchable: bool | None = None) -> DocumentView:
         concepts=dict(r.concepts or {}),
         created_at=r.created_at,
         searchable=r.indexed if searchable is None else searchable,
-        extraction_method=(r.extraction or {}).get("method", "text"),
+        extraction_method=getattr(r, "extraction_method", None)
+        or (getattr(r, "extraction", None) or {}).get("method", "text"),
         review_required=r.review_required,
         status=r.status,
         progress=r.progress,
@@ -127,7 +128,7 @@ async def save(
                     passages=len(rows),
                     concepts=doc.concepts(),
                 )
-                .returning(t.documents)
+                .returning(*(c for c in t.documents.c if c.name != "source_pdf"))
             )
         ).one()
         if rows:
@@ -163,7 +164,10 @@ async def save(
 
 async def documents(conn: AsyncConnection, user_id: UUID) -> list[DocumentView]:
     rows = await conn.execute(
-        select(t.documents)
+        select(
+            *(c for c in t.documents.c if c.name not in {"source_pdf", "extraction"}),
+            t.documents.c.extraction["method"].astext.label("extraction_method"),
+        )
         .where(t.documents.c.user_id == user_id)
         .order_by(t.documents.c.created_at.desc())
     )
@@ -333,7 +337,7 @@ async def start(
                     pages=pages,
                     passages=0,
                 )
-                .returning(t.documents)
+                .returning(*(c for c in t.documents.c if c.name != "source_pdf"))
             )
         ).one()
     return _view(row)
@@ -436,7 +440,7 @@ async def approve(
         await user_scope(conn, user_id)
         doc = (
             await conn.execute(
-                select(t.documents)
+                select(*(c for c in t.documents.c if c.name != "source_pdf"))
                 .where(t.documents.c.user_id == user_id, t.documents.c.doc_id == doc_id)
                 .with_for_update()
             )
@@ -484,7 +488,7 @@ async def approve(
                 update(t.documents)
                 .where(t.documents.c.user_id == user_id, t.documents.c.doc_id == doc_id)
                 .values(indexed=indexed)
-                .returning(t.documents)
+                .returning(*(c for c in t.documents.c if c.name != "source_pdf"))
             )
         ).one()
     return _view(row)

@@ -63,6 +63,22 @@ async def test_transcribe_needs_the_microphone_switch_and_a_wav(
     assert bad.status_code == 422
 
 
+async def test_small_host_refuses_voice_before_loading_the_model(
+    client: httpx.AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    settings = get_settings().model_copy(update={"low_memory": True})
+    monkeypatch.setattr(voice, "get_settings", lambda: settings)
+
+    def unexpected(*args: object) -> None:
+        pytest.fail("Whisper must not be loaded in the 512 MB profile")
+
+    monkeypatch.setattr(voice, "transcribe", unexpected)
+    headers = await signup(client, microphone=True)
+    reply = await client.post("/voice/transcribe", content=b"audio", headers=headers)
+    assert reply.status_code == 503
+    assert "device voice" in reply.json()["detail"]
+
+
 @pytest.mark.skipif(not HAS_WHISPER, reason="needs the whisper extra (uv sync --extra whisper)")
 async def test_private_voice_round_trip_from_a_recording(client: httpx.AsyncClient) -> None:
     headers = await signup(client, microphone=True)

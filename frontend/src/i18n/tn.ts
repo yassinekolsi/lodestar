@@ -1,3 +1,5 @@
+import { LIBRARY_TN } from './library'
+
 /** Tunisian Arabic (Derja), in Arabic script. Keys are the English text (see ./index.ts).
  *
  * Written the way Tunisian students talk and text: Derja for the conversation, French for course
@@ -398,4 +400,5 @@ export const TN: Record<string, string> = {
   'Quiz me on my notes': 'اختبرني على الnotes متاعي',
   'Open Documents': 'حلّ الdocuments',
   'A quiz made from your own pages': 'quiz معمول من الpages متاعك',
+  ...LIBRARY_TN,
 }

@@ -50,7 +50,8 @@ log = logging.getLogger(__name__)
 async def _memory(settings: Settings) -> tuple[MemoryStore | None, QdrantStore | None]:
     """Qdrant-backed memory, or (None, None) if Qdrant is down: sessions continue without it."""
     try:
-        memory = MemoryStore(qdrant_client(settings, timeout=5), Embedder())
+        embedder = Embedder(threads=1, batch_size=1) if settings.low_memory else Embedder()
+        memory = MemoryStore(qdrant_client(settings, timeout=5), embedder)
         await memory.ensure_collections()
         await memory.load_knowledge(load_knowledge_items())
     except Exception:
@@ -71,6 +72,8 @@ async def _bundled_models(engine: AsyncEngine) -> None:
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     redaction.install()
     settings = get_settings()
+    if settings.low_memory:
+        log.info("Low-memory profile: serialized embeddings; growth forecast and server voice off")
     engine = get_async_engine()
     reg = load_registry()
     pool = checkpoint_pool(libpq_url())
@@ -87,7 +90,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         memory=memory,
         notes=Notes(settings.memory_dir),
         content=ContentService(engine, llm, memory),
-        forecaster=await GrowthForecaster.load_active(engine),
+        forecaster=None if settings.low_memory else await GrowthForecaster.load_active(engine),
         engagement=await load_engagement(engine),
     )
     app.state.services = services

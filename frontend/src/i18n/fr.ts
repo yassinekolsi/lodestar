@@ -1,3 +1,5 @@
+import { LIBRARY_FR } from './library'
+
 /** French. Keys are the English text (see ./index.ts). Numbers keep their decimal point, like the
  * course and the coach's facts. */
 export const FR: Record<string, string> = {
@@ -410,4 +412,5 @@ export const FR: Record<string, string> = {
   'Quiz me on my notes': 'Interroge-moi sur mes notes',
   'Open Documents': 'Ouvrir Documents',
   'A quiz made from your own pages': 'Un quiz tiré de tes propres pages',
+  ...LIBRARY_FR,
 }

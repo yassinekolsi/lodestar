@@ -13,8 +13,12 @@ task, so start-up marks anything still `processing` as failed (library.interrupt
 import asyncio
 import logging
 from uuid import UUID
+from weakref import WeakKeyDictionary
+
+from sqlalchemy import select
 
 from backend.agent.context import Services
+from backend.db import tables as t
 from backend.documents import library
 from backend.documents.ingest import UnreadableDocument
 from backend.documents.ocr import Transcription, extract_document
@@ -22,6 +26,7 @@ from backend.registry.models import Registry
 
 log = logging.getLogger(__name__)
 _TASKS: set[asyncio.Task[None]] = set()
+_SLOTS: WeakKeyDictionary[asyncio.AbstractEventLoop, asyncio.Semaphore] = WeakKeyDictionary()
 
 
 def launch(
@@ -34,7 +39,15 @@ def launch(
     force_ocr: bool,
 ) -> asyncio.Task[None]:
     task = asyncio.create_task(
-        read(services, registry, user_id, doc_id, data, filename, force_ocr),
+        read(
+            services,
+            registry,
+            user_id,
+            doc_id,
+            None if filename.lower().endswith(".pdf") else data,
+            filename,
+            force_ocr,
+        ),
         name=f"read-document-{doc_id}",
     )
     _TASKS.add(task)
@@ -47,16 +60,48 @@ async def read(
     registry: Registry,
     user_id: UUID,
     doc_id: UUID,
+    data: bytes | None,
+    filename: str,
+    force_ocr: bool,
+) -> None:
+    # One PDF at a time keeps parser/embedding peaks bounded on a small host. Queued PDFs
+    # live in Postgres, not in a growing queue of in-memory byte arrays.
+    loop = asyncio.get_running_loop()
+    slot = _SLOTS.setdefault(loop, asyncio.Semaphore(1))
+    async with slot:
+        if data is None:
+            try:
+                async with services.engine.connect() as conn:
+                    data = await conn.scalar(
+                        select(t.documents.c.source_pdf).where(
+                            t.documents.c.user_id == user_id, t.documents.c.doc_id == doc_id
+                        )
+                    )
+            except Exception:
+                log.warning("could not load queued document %s", doc_id)
+                await library.fail(
+                    services.engine,
+                    user_id,
+                    doc_id,
+                    "Could not load this file for reading. Please upload it again.",
+                )
+                return
+            if data is None:
+                return  # Removed while waiting to read.
+        await _read(services, registry, user_id, doc_id, data, filename, force_ocr)
+
+
+async def _read(
+    services: Services,
+    registry: Registry,
+    user_id: UUID,
+    doc_id: UUID,
     data: bytes,
     filename: str,
     force_ocr: bool,
 ) -> None:
-    done = 0
-
-    async def on_page(_: int, __: Transcription) -> None:
-        nonlocal done
-        done += 1
-        await library.set_progress(services.engine, user_id, doc_id, done)
+    async def on_page(index: int, _: Transcription) -> None:
+        await library.set_progress(services.engine, user_id, doc_id, index + 1)
 
     try:
         doc = await extract_document(

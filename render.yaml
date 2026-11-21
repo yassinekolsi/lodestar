@@ -8,14 +8,15 @@ services:
     runtime: docker
     dockerfilePath: ./Dockerfile
     dockerContext: .
-    # Free works for a demo, but the server uses about 500-600 MB once the embedding models are
-    # loaded, and Free and Starter stop at 512 MB. If Render restarts it for memory, use Standard.
+    # The root image enables the bounded low-memory profile for this 512 MB service.
     plan: free
     # Next to the Neon project (AWS us-east-2 is Ohio): a request makes many small queries.
     region: ohio
     healthCheckPath: /api/health
     autoDeploy: true
     envVars:
+      - key: LODESTAR_LOW_MEMORY
+        value: "1"
       # Neon: the direct (not "-pooler") connection string, with ?sslmode=require. The LangGraph
       # checkpointer uses prepared statements, which a transaction pooler doesn't keep.
       - key: DATABASE_URL
