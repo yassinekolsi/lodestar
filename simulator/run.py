@@ -21,9 +21,10 @@ from backend.scoring.rounds import score_round
 from simulator.population import SimUser
 from simulator.responses import answer
 
-TRIALS_PER_ROUND = 12
-ONBOARDING_TRIALS = 10
-ROUNDS_PER_SESSION = 3
+# A course quiz is 5 questions (backend/agent/learning.py) and a study session about four quizzes.
+TRIALS_PER_ROUND = 5
+ONBOARDING_TRIALS = 5
+ROUNDS_PER_SESSION = 4
 START = datetime(2026, 9, 1, 19, 0, tzinfo=UTC)
 
 

@@ -114,11 +114,14 @@ def bad_data_detection(runs: list[UserRun]) -> Detection:
     return Detection(precision, recall)
 
 
-# docs/plan/15 targets.
-MIN_R_AT_3 = 0.8
+# docs/plan/15 targets, restated for a course (docs/plan/19): a round is a 5-question quiz, not
+# 12 answers, so recovery is judged after 10 study sessions (about two weeks of four quizzes a
+# session) and placement after one 5-question quiz per chapter foundation.
+MIN_R = 0.8
+RECOVERY_SESSION = 10
 COVERAGE_RANGE = (0.75, 0.85)
 SUCCESS_TARGET, SUCCESS_TOL = 0.80, 0.05
-ONBOARDING_SIGMA_MAX = 0.8
+ONBOARDING_SIGMA_MAX = 0.9
 DETECTION_MIN = (0.9, 0.8)  # precision, recall
 
 
@@ -146,14 +149,15 @@ def gate(runs: list[UserRun], bad_runs: list[UserRun], registry: Registry) -> Ga
     onboard = onboarding_sigma(runs, registry.core_skills())
     det = bad_data_detection(bad_runs)
     checks = [
-        (f"1. Recovery r after 3 sessions (mean over {len(dims)} established skills)",
-         f"{rec[3].mean_r:.3f}", f"> {MIN_R_AT_3}", rec[3].mean_r > MIN_R_AT_3),
+        (f"1. Recovery r after {RECOVERY_SESSION} sessions (mean over {len(dims)} concepts)",
+         f"{rec[RECOVERY_SESSION].mean_r:.3f}", f"> {MIN_R}",
+         rec[RECOVERY_SESSION].mean_r > MIN_R),
         ("2. 80% ranges containing the true skill (sessions 3 and 10)",
          f"{cov:.3f}", f"{COVERAGE_RANGE[0]}-{COVERAGE_RANGE[1]}",
          COVERAGE_RANGE[0] <= cov <= COVERAGE_RANGE[1]),
         ("3. Achieved success in Balanced mode", f"{succ.overall:.3f}",
          f"{SUCCESS_TARGET} +/- {SUCCESS_TOL}", abs(succ.overall - SUCCESS_TARGET) <= SUCCESS_TOL),
-        ("4. Mean sigma after onboarding, worst core skill", f"{max(onboard.values()):.3f}",
+        ("4. Mean sigma after placement, worst core concept", f"{max(onboard.values()):.3f}",
          f"< {ONBOARDING_SIGMA_MAX}", max(onboard.values()) < ONBOARDING_SIGMA_MAX),
         ("5. Bad-data detection precision / recall", f"{det.precision:.2f} / {det.recall:.2f}",
          f"> {DETECTION_MIN[0]} / > {DETECTION_MIN[1]}",

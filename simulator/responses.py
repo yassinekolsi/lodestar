@@ -31,10 +31,13 @@ def answer(
     rng: np.random.Generator,
     miss_run: int = 0,
 ) -> SimAnswer:
+    # A question has to be read: honest answers take as many times longer as the game's rushed
+    # floor is above a reaction game's (200 ms), so a quiz answer takes seconds (docs/plan/19).
+    read = max(1.0, game.rushed_ms / 200.0)
     if user.kind == "cheater":
         return SimAnswer(True, float(rng.uniform(60, 140)))
     if user.kind == "random_clicker":
-        return SimAnswer(bool(rng.random() < 0.5), float(rng.uniform(160, 380)))
+        return SimAnswer(bool(rng.random() < game.chance), float(rng.uniform(160, 380)))
 
     theta = user.theta(primary_dim) - fatigue
     if user.kind == "frustration_prone":
@@ -44,7 +47,7 @@ def answer(
         theta += float(draw) * user.trial_noise
     p = user.guess + (1 - user.guess) * logistic(user.discrimination * (theta - b))
     if rng.random() < user.lapse:
-        return SimAnswer(bool(rng.random() < 0.5), float(rng.uniform(250, 1200)))
+        return SimAnswer(bool(rng.random() < game.chance), float(rng.uniform(250, 1200)) * read)
 
     if deadline_ms:
         # Timed games measure pace: answers are almost always right, and ability shows as
@@ -57,5 +60,5 @@ def answer(
         return SimAnswer(correct, rt + user.device_lag_ms)
 
     correct = bool(rng.random() < p)
-    rt = BASE_RT_MS * math.exp(-0.15 * theta + float(rng.normal(0, 0.3)))
+    rt = BASE_RT_MS * read * math.exp(-0.15 * theta + float(rng.normal(0, 0.3)))
     return SimAnswer(correct, max(rt, 160.0) + user.device_lag_ms)
