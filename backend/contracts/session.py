@@ -47,6 +47,8 @@ class Intent(Contract):
 
 
 ToolName = Literal[
+    "teach",
+    "mistakes",
     "read_profile",
     "get_history",
     "search_memory",

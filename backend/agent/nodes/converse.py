@@ -49,24 +49,24 @@ from backend.db import tables as t
 from backend.db.twin_store import read_twin
 
 HELP = (
-    "I can explain my choices, show how your skills are going, set a goal, or note how your day "
-    "is going. Say 'play' to start a round."
+    "I can explain any part of the course from your notes, show what you keep getting wrong, quiz "
+    "you where it helps most, and tell you why I picked it. Say 'practise' to start."
 )
 SMALL_TALK: list[tuple[re.Pattern[str], str]] = [
     (
         re.compile(r"^\s*(hi|hello|hey)\b", re.I),
-        "Hi! Say 'play' when you're ready, or ask me how your skills are going.",
+        "Hi! Say 'practise' when you're ready, or ask me about any part of the course.",
     ),
     (re.compile(r"^\s*(thanks?|thank (you|u))\b", re.I), "Any time."),
     (
         re.compile(r"\b(who are you|what can you do|how do (the|these) games work)\b", re.I),
-        "I'm Lodestar, a practice coach. I pick short games for the skill I know least about, keep "
-        "them hard but doable, and explain every choice. You can also ask how a skill is going, "
-        "set a goal, or tell me how your day is.",
+        "I'm Lodestar, a study coach for your course. I find which concepts aren't sticking and "
+        "why, explain them from your own notes, quiz you at the right level and bring things back "
+        "before you forget them. Every choice I make comes with its reason.",
     ),
     (
         re.compile(r"^\s*(ok(ay)?|cool|nice|bye|good night)\b", re.I),
-        "Okay. I'm here when you want a round.",
+        "Okay. I'm here when you want to practise.",
     ),
 ]
 SWITCHES = (
@@ -74,7 +74,8 @@ SWITCHES = (
     "does before you turn it on."
 )
 WHICH_SKILL = (
-    "Which skill would you like a goal for? For example memory, focus, speed or reasoning."
+    "Which concept would you like a goal for? For example conditional probability or Bayes' "
+    "theorem, and when is the exam?"
 )
 WHICH_SETTING = (
     "I can switch your coach (Willow, Spark, Sage or Buddy) or the difficulty mode (Chill, "
@@ -126,9 +127,10 @@ async def _free_chat(ctx: LodestarContext, state: LodestarState, text: str) -> T
     memories = [MemoryItem(id=f"M{i + 1}", text=m.text) for i, m in enumerate(state.memories[:2])]
     instruction = (
         f'Reply to this message from the user in at most 3 sentences: "{text}". You are Lodestar, '
-        "a practice coach with short brain games: you explain your picks, show progress, set "
-        "goals and note how the user's day is going. If they ask for something else, say kindly "
-        "what you can do. Only use a fact if it helps, and cite it."
+        "a study coach for a university course: you explain concepts from the course notes, show "
+        "the mix-ups behind wrong answers, quiz at the right level, explain your picks and set "
+        "goals for exams. If they ask for something else, say kindly what you can do. Only use a "
+        "fact if it helps, and cite it."
     )
     packet = FactsPacket(facts=await _profile_facts(ctx), memories=memories)
     return ToolOutcome(facts=packet, instruction=instruction)
@@ -178,6 +180,10 @@ async def converse(state: LodestarState, runtime: Runtime[LodestarContext]) -> d
             outcome = ToolOutcome(reply=SWITCHES if asks_for_switches(text) else WHICH_SETTING)
         else:
             call = propose_settings(ctx, args, call_id)
+    elif intent.tool == "teach":
+        call = _call("teach", {"dim": intent.dim, "question": text}, call_id)
+    elif intent.tool == "mistakes":
+        call = _call("mistakes", {"dim": intent.dim, "question": text}, call_id)
     elif intent.tool == "explain":
         call = _call("explain", {"question": text}, call_id)
     elif intent.tool == "read_profile":

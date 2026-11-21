@@ -24,6 +24,7 @@ from backend.agent.context import LodestarContext
 from backend.agent.intents import game_in
 from backend.agent.slots import LifeEvent, named_day
 from backend.agent.state import LodestarState
+from backend.agent.study_tools import MistakesArgs, TeachArgs, mistakes, teach
 from backend.agent.telemetry import emit
 from backend.contracts.common import Contract, DimensionId, GameId, Persona, SuccessMode
 from backend.contracts.events import (
@@ -1005,7 +1006,7 @@ async def update_settings(
     return ToolOutcome(name="update_settings", facts=call.facts, reply=reply), state_update
 
 
-DEFAULT_EXPERIMENT_GAMES = ["quick_draw", "arrow_storm", "echo"]
+DEFAULT_EXPERIMENT_GAMES = ["quiz_counting", "quiz_addition_rule", "quiz_independence"]
 
 
 async def propose_experiment(ctx: LodestarContext, call_id: UUID) -> ToolCall:
@@ -1097,6 +1098,8 @@ TOOLS: dict[str, ToolSpec] = {
         ),
         ToolSpec("start_game", StartGameArgs, False, start_game, "Start a round"),
         ToolSpec("explain", ExplainArgs, False, explain, "Why Lodestar chose something"),
+        ToolSpec("teach", TeachArgs, False, teach, "A concept, from the course notes"),
+        ToolSpec("mistakes", MistakesArgs, False, mistakes, "The mix-ups behind wrong answers"),
         ToolSpec(
             "session_history", SessionHistoryArgs, False, session_history, "Past rounds, by day"
         ),

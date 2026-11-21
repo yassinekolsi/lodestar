@@ -19,19 +19,22 @@ from backend.contracts.session import Intent, IntentKind
 from backend.llm.factory import LlmFactory, NoModelAvailable
 from backend.registry.models import Registry
 
-# Words people use for a skill, mapped to the dimension Lodestar trains for it. Order matters:
-# "short-term memory" must win over "memory".
-SKILL_WORDS: list[tuple[re.Pattern[str], str]] = [
-    (re.compile(r"\bshort[- ]term memory\b", re.I), "short_term_memory"),
-    (re.compile(r"\bmemory\b|\bremember(ing)?\b", re.I), "working_memory"),
-    (re.compile(r"\b(speed|faster|fast|reaction|quicker)\b", re.I), "processing_speed"),
-    (re.compile(r"\b(focus|attention|concentrat\w*)\b", re.I), "selective_attention"),
-    (re.compile(r"\b(self[- ]control|impulse\w*|holding back)\b", re.I), "inhibition"),
-    (re.compile(r"\b(logic|reasoning|puzzles?)\b", re.I), "reasoning"),
-    (re.compile(r"\b(maths?|numbers?|arithmetic)\b", re.I), "numerical_thinking"),
-    (re.compile(r"\b(spatial( thinking)?|shapes?|rotat\w*)\b", re.I), "spatial_thinking"),
-    (re.compile(r"\b(flexib\w*|switching|multitask\w*)\b", re.I), "cognitive_flexibility"),
-]
+# Words people use for a concept come from the course itself (`aliases` in registry/courses/),
+# so a new course needs no code here. Longer phrases win: "law of total probability" before
+# "probability", "conditional probability" before "conditional".
+SKILL_WORDS: list[tuple[re.Pattern[str], str]] = []
+
+
+def _concept_words(registry: Registry) -> list[tuple[re.Pattern[str], str]]:
+    phrases = [
+        (phrase.lower(), concept.id)
+        for course in registry.courses
+        for concept in course.concepts
+        for phrase in [concept.name, *concept.aliases]
+    ]
+    phrases.sort(key=lambda p: -len(p[0]))
+    return [(re.compile(rf"(?<![\w]){re.escape(p)}(?![\w])", re.I), c) for p, c in phrases]
+
 
 _DECLINE = re.compile(
     r"\b(not|no|skip|without|anything but|other than|instead of|rather not|don'?t want|"
@@ -45,15 +48,10 @@ _ELSE = re.compile(
     r"\b(something else|another (one|game)|different (one|game)|not that one)\b", re.I
 )
 _THEME = re.compile(r"\babout ([a-z][a-z ]{2,30})$", re.I)
-# "Make me a game where I remember a phone number while doing maths" (docs/plan/08).
-_CUSTOM = re.compile(
-    r"\b((make|invent|create|build|design|dream up) (me |us )?(a |an |my own |a new )?"
-    r"(\w+ )?game|(my own|custom|new kind of) game|a game (where|in which|that))\b",
-    re.I,
-)
-CUSTOM_GAME = "custom_blocks"
 
 ToolChoice = Literal[
+    "teach",
+    "mistakes",
     "explain",
     "read_profile",
     "get_history",
@@ -125,6 +123,28 @@ _KINDS: list[tuple[IntentKind, re.Pattern[str]]] = [
 ]
 _CHAT_TOOLS: list[tuple[ToolChoice, re.Pattern[str]]] = [
     (
+        "mistakes",
+        re.compile(
+            r"\b(my mistakes|what mistakes|which mistakes|mistakes? (do|did) i|errors? (do|did) i|"
+            r"keep (getting|doing|making)\b.{0,40}\b(wrong|mistakes?)|"
+            r"(get|getting|got) .{0,30}\bwrong|what am i (doing|getting) wrong|"
+            r"where do i go wrong|misconceptions?|(confus|mix)\w* up)\b",
+            re.I,
+        ),
+    ),
+    (
+        "teach",
+        re.compile(
+            r"\b(i (don'?t|do not|can'?t) (get|understand|see)|don'?t understand|"
+            r"what (is|are|does|do) (a |an |the )?|what'?s (a |an |the )?|teach me|"
+            r"explain (to me |again |it |how |what |why )?(?!(your|that|this|the) (choice|pick|"
+            r"decision))|help me (understand|with)|confused (about|by|with)|stuck (on|with)|"
+            r"lost (on|with)|how (do|does|can|should) (i|you|we|it) (compute|calculate|find|solve|"
+            r"use|apply|work)|walk me through|go over)\b",
+            re.I,
+        ),
+    ),
+    (
         "explain",
         re.compile(
             r"\b(why|how did you (choose|pick|decide)|what made you|explain (your|that|this|the) "
@@ -178,7 +198,8 @@ _CHAT_TOOLS: list[tuple[ToolChoice, re.Pattern[str]]] = [
     ),
 ]
 _PLAY = re.compile(
-    r"\b(play|game|round|start|train|practi[cs]e|let'?s (go|do)|go|again|another|one more|"
+    r"\b(quiz( me)?|test me|questions? on|exercises?|revise|review|study|"
+    r"play|game|round|start|train|practi[cs]e|let'?s (go|do)|go|again|another|one more|"
     r"ready|warm (me )?up|challenge me|give me|try|do some|can we do|something (quick|for))\b",
     re.I,
 )
@@ -196,16 +217,16 @@ class Routed:
 
 
 def skills_in(text: str, registry: Registry | None = None) -> list[str]:
+    """Concepts named in the text, in the order of the longest, most specific phrases."""
     found: list[str] = []
-    lowered = text.lower()
+    patterns = list(SKILL_WORDS)
     if registry is not None:
+        patterns = _concept_words(registry) + patterns
         for d in registry.dimensions:
-            if d.name.lower() in lowered and d.id not in found:
+            if d.name.lower() in text.lower() and d.id not in found:
                 found.append(d.id)
-    for pattern, dim in SKILL_WORDS:
+    for pattern, dim in patterns:
         if pattern.search(text) and dim not in found:
-            if dim == "working_memory" and "short_term_memory" in found:
-                continue
             found.append(dim)
     return found
 
@@ -260,13 +281,14 @@ def classify(text: str, trigger: str, registry: Registry | None = None) -> Route
         dims = skills_in(pause.group("rest"), registry) if pause else []
         return Routed(Intent(kind="settings", text=stripped, avoid_dims=dims), sure=True)
     tool = chat_tool(stripped)
+    if tool in ("teach", "mistakes"):
+        dims = skills_in(stripped, registry)
+        intent = Intent(kind="chat", text=stripped, tool=tool, dim=dims[0] if dims else None)
+        return Routed(intent, sure=True)
     if tool == "explain" and not _CONTEST.search(stripped):
         return Routed(Intent(kind="chat", text=stripped, tool=tool), sure=True)
     if _CONTEST.search(stripped):
         return Routed(Intent(kind="chat", text=stripped, tool="contest"), sure=True)
-    if _CUSTOM.search(stripped) and game in (None, CUSTOM_GAME):
-        # A game made to order: the request text becomes the recipe brief.
-        return Routed(Intent(kind="play", text=stripped, game_id=CUSTOM_GAME), sure=True)
     other = bool(_ELSE.search(stripped))
     if avoid or other:
         # Turning a skill down is still a request to play something (UW3).
@@ -322,17 +344,20 @@ class RouterOutput(Contract):
     quick: bool = False
 
 
-ROUTER_PROMPT = """You route messages for Lodestar, a practice coach with short brain games.
+ROUTER_PROMPT = """You route messages for Lodestar, a study coach for a university course.
 Pick the kind:
-- play: wants to play now, names a game or skill, or turns one down ("not memory today")
-- chat: anything else said to Lodestar. tool = explain (asks why Lodestar chose something),
+- play: wants to practise now (a quiz, an exercise), names a concept to practise, or turns one
+  down ("not counting today")
+- chat: anything else said to Lodestar. tool = teach (doesn't understand a concept of the course
+  or asks what something means), mistakes (asks what they keep getting wrong), explain (asks why
+  Lodestar chose something),
   read_profile (asks about their skills now), get_history (asks how a skill changed over time),
   search_memory (asks what Lodestar remembers about them), session_history (asks which games they
   played or how a past session went), forecast_range (asks what a skill or score will be in the
   future), contest (disagrees with a result, or says a distraction spoiled it), or null.
 - twin_chat: asks their Twin about their own patterns (best time of day, what helps them)
 - experiment: wants to test something about themselves over several sessions
-- goal: wants to reach a level in a skill by a date
+- goal: wants to reach a level in a concept by a date (an exam)
 - life_context: tells how their life is going (sleep, exams, stress, feeling unwell)
 - settings: wants to change the coach, difficulty mode, camera or microphone
 Reply with one JSON object and nothing else, shaped like:

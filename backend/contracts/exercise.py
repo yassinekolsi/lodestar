@@ -21,6 +21,9 @@ class ExerciseSpec(Contract):
 
     round_id: UUID
     game_id: GameId
+    plugin: str | None = Field(
+        default=None, description="Browser plugin to run, when it isn't the game's own id"
+    )
     mode: PlayMode
     target_p: Probability = Field(description="Success rate the level aims for")
     level: Level

@@ -12,7 +12,7 @@ from langgraph.runtime import Runtime
 from langgraph.types import interrupt
 from sqlalchemy import any_, func, literal, select
 
-from backend.agent import experiments, why
+from backend.agent import experiments, learning, why
 from backend.agent.affect import estimate, recent_cues
 from backend.agent.context import LodestarContext
 from backend.agent.nodes.perceive import read_twin_snapshot
@@ -83,7 +83,6 @@ def formats_by_dim(
             game.kind == "game"
             and game.origin != "custom"
             and game.available
-            and game.id != "callback"  # it needs a Market List from earlier in the session
             and allowed(game, consent)
         ):
             for dim in game.primary_dims:
@@ -158,44 +157,6 @@ def _themed_game(registry: Registry, pool: dict[str, list[Game]], intent: Any) -
         near = [g for g in games if registry.dimension(g.primary_dims[0]).group == group]
         games = near or games
     return games[0] if games else None
-
-
-def _callback_due(
-    registry: Registry, state: LodestarState, consent: frozenset[str] | None, avoid: set[str]
-) -> bool:
-    """Callback recalls this session's Market List once its delay has passed, once a session."""
-    game = registry.game("callback")
-    if not game.available or not allowed(game, consent) or game.primary_dims[0] in avoid:
-        return False
-    if any(r.game_id == game.id for r in state.rounds):
-        return False
-    delay = timedelta(minutes=knobs_for(game, 0.0)["delay_min"])
-    now = datetime.now(UTC)
-    return any(
-        r.game_id == "market_list" and r.status != "stopped" and now - r.ended_at >= delay
-        for r in state.rounds
-    )
-
-
-async def _market_list_words(ctx: LodestarContext) -> list[str]:
-    """The words of this session's latest Market List round, in the order they were shown."""
-    async with ctx.services.engine.connect() as conn:
-        rows = (
-            await conn.execute(
-                select(t.trials.c.round_id, t.trials.c.stimulus)
-                .where(
-                    t.trials.c.user_id == ctx.user_id,
-                    t.trials.c.session_id == ctx.session_id,
-                    t.trials.c.game_id == "market_list",
-                    t.trials.c.practice.is_(False),
-                )
-                .order_by(t.trials.c.ts)
-            )
-        ).all()
-    if not rows:
-        return []
-    latest = [r.stimulus for r in rows if r.round_id == rows[-1].round_id]
-    return [s["word"] for s in sorted(latest, key=lambda s: s["position"])]
 
 
 async def _abandon(ctx: LodestarContext, round_id: Any) -> None:
@@ -322,6 +283,30 @@ def _break_plateau(
     return game.primary_dims[0], game, reason
 
 
+def _quiz(options: list[Game]) -> Game | None:
+    """A course concept is checked with a quiz first."""
+    return next((g for g in options if g.plugin_id == "quiz"), None)
+
+
+CONSOLIDATE_SCORE = 0.8
+
+
+def _consolidate(
+    registry: Registry, state: LodestarState, formats: dict[str, list[Game]]
+) -> Game | None:
+    """After a strong quiz, explain the same concept back once this session (self-explanation)."""
+    last = state.last_round
+    if last is None or last.mean_score is None or last.mean_score < CONSOLIDATE_SCORE:
+        return None
+    if registry.game(last.game_id).plugin_id != "quiz" or last.quality_verdict in FLAGGED:
+        return None
+    dim = registry.game(last.game_id).primary_dims[0]
+    explain = next((g for g in formats.get(dim, []) if g.plugin_id == "explain"), None)
+    if explain is None or any(r.game_id == explain.id for r in state.rounds):
+        return None
+    return explain
+
+
 def _split_pick(patterns: Any, pool: dict[str, list[Game]], played: int) -> Any:
     """In a split profile rounds take turns: foundation first, then advanced. None when there is
     no split, or today's choices leave out one side."""
@@ -369,7 +354,28 @@ async def plan_next(state: LodestarState, runtime: Runtime[LodestarContext]) -> 
             conn, ctx.user_id, registry, ctx.services.norms, formats, now
         )
         played_at = await last_played(conn, ctx.user_id)
+        recent = (
+            await learning.recent_answers(conn, registry, ctx.user_id, now)
+            if registry.courses
+            else {}
+        )
     plateaus = {p.dim: p for p in patterns.plateaus}
+    beliefs = {d: _belief(state, d) for d in (state.twin.dims if state.twin else {})}
+    course = registry.course if registry.courses else None
+    asked_gap = (
+        learning.find_gap(course, beliefs, recent, ctx.services.norms, concept=intent.dim)
+        if course is not None
+        and intent is not None
+        and intent.dim
+        and registry.course_of(intent.dim)
+        else None
+    )
+    found_gap = (
+        learning.find_gap(course, beliefs, recent, ctx.services.norms)
+        if course is not None and not state.onboarding
+        else None
+    )
+    consolidate = _consolidate(registry, state, formats)
     samples = await _bandit_samples(ctx, state, pool)
     bandit_by_dim = bandit.skill_gains(
         samples, {d: [g.id for g in games] for d, games in pool.items()}
@@ -411,13 +417,6 @@ async def plan_next(state: LodestarState, runtime: Runtime[LodestarContext]) -> 
     switched_off = requested is not None and not allowed(requested, ctx.consent)
     if switched_off:
         requested = None
-    no_list = (
-        requested is not None
-        and requested.id == "callback"
-        and not any(r.game_id == "market_list" for r in state.rounds)
-    )
-    if no_list:
-        requested = None
     wanted_dim = intent.dim if intent and (intent.dim in by_dim or intent.dim in plateaus) else None
     force_assess = False
     track: str | None = None
@@ -427,10 +426,6 @@ async def plan_next(state: LodestarState, runtime: Runtime[LodestarContext]) -> 
         game = _pick(pool[dim], last_game, seed)
         off = registry.game(intent.game_id).name
         reason = f"{off} is switched off in your privacy settings, so here's {game.name} instead."
-    elif no_list:
-        game = registry.game("market_list")
-        dim = game.primary_dims[0]
-        reason = "Callback asks about a Market List from earlier, so let's start with Market List."
     elif requested is not None and requested.origin == "custom":
         dim, game = requested.primary_dims[0], requested
         # docs/plan/08: block-built games count at low weight, and Lodestar says so.
@@ -445,6 +440,11 @@ async def plan_next(state: LodestarState, runtime: Runtime[LodestarContext]) -> 
         dim, game = themed.primary_dims[0], themed
         kind = registry.dimension(intent.dim).group if intent.dim else "game"
         reason = f"{intent.theme.capitalize()} {kind}, coming up: {game.name}."
+    elif asked_gap is not None and course is not None and asked_gap.prereq in by_dim:
+        dim = asked_gap.prereq
+        game = _quiz(by_dim[dim]) or _pick(by_dim[dim], last_game, seed)
+        reason = learning.gap_reason(course, asked_gap, asked=True)
+        evidence.append(f"gap:{asked_gap.concept}:{asked_gap.prereq}")
     elif wanted_dim is not None and wanted_dim in plateaus:
         dim, game, reason = _break_plateau(wanted_dim, plateaus, registry, formats, played_at, seed)
         track = "new_format"
@@ -488,20 +488,41 @@ async def plan_next(state: LodestarState, runtime: Runtime[LodestarContext]) -> 
         game = registry.game(state.onboarding[0])
         dim = game.primary_dims[0]
         total = len(state.onboarding) + len(state.rounds)
-        reason = f"Warm-up game {len(state.rounds) + 1} of {total}: {game.name}."
+        reason = (
+            f"Placement check {len(state.rounds) + 1} of {total}: {game.name}. It tells me where "
+            "you are, so I don't make you redo what you already know."
+        )
         update["onboarding"] = state.onboarding[1:]
         force_assess = True
-    elif _callback_due(registry, state, ctx.consent, avoid):
-        game = registry.game("callback")
-        dim = game.primary_dims[0]
-        reason = (
-            "Earlier you learned a market list. Let's see which words you still remember: Callback."
-        )
     elif last is not None and last.quality_verdict in FLAGGED:
         # The last round said nothing about the person, so ask again.
         game = registry.game(last.game_id)
         dim = game.primary_dims[0]
         reason = f"That last round didn't count, so let's take {game.name} again at your own pace."
+    elif (
+        found_gap is not None
+        and course is not None
+        and found_gap.prereq in pool
+        and found_gap.prereq not in last_dims
+    ):
+        dim = found_gap.prereq
+        game = _quiz(pool[dim]) or _pick(pool[dim], last_game, seed)
+        reason = learning.gap_reason(course, found_gap, asked=False)
+        if dim in plateaus:
+            # Quizzes alone haven't moved it: same concept, other format, new approach.
+            _, game, stuck = _break_plateau(dim, plateaus, registry, formats, played_at, seed)
+            reason = f"{reason} {stuck}"
+            track = "new_format"
+        evidence.append(f"gap:{found_gap.concept}:{found_gap.prereq}")
+    elif consolidate is not None:
+        game = consolidate
+        dim = game.primary_dims[0]
+        assert last is not None
+        name = registry.dimension(dim).name
+        reason = (
+            f"That went well ({round((last.mean_score or 0) * 100)}% on {name.lower()}). Now "
+            "explain it in your own words: if you can explain it, it stays with you."
+        )
     elif (split_pick := _split_pick(patterns, pool, len(state.rounds))) is not None:
         side = split_pick
         dim, game = side.dim, registry.game(str(side.game_id))
@@ -530,14 +551,20 @@ async def plan_next(state: LodestarState, runtime: Runtime[LodestarContext]) -> 
         belief = _belief(state, dim)
         name = registry.dimension(dim).name
         days = _days_since(belief, now)
+        pct = ctx.services.norms.percentile(dim, belief)
         if belief.n == 0:
-            reason = f"{name} is a skill I haven't measured yet."
+            reason = f"{name} is a concept I haven't checked yet."
         elif dim in state.goal_dims:
-            reason = f"{name} is part of your goal, and it's the skill I'd learn most from now."
+            reason = f"{name} is part of your goal, and it's the concept I'd learn most from now."
+        elif days is not None and learning.review_due(belief, pct, now):
+            reason = (
+                f"Time to review {name.lower()}: you last practised it {days:.0f} days ago, and a "
+                "short look now keeps it from fading before the exam."
+            )
         else:
             when = "today" if days is not None and days < 1 else f"{days:.0f} days ago"
             reason = (
-                f"{name} is the skill I'm least sure about right now, "
+                f"{name} is the concept I'm least sure about right now, "
                 f"and you last practised it {when}."
             )
         if easing and state.engagement is not None:
@@ -679,18 +706,29 @@ async def prepare_exercise(
             level=level,
             loadings=loadings,
         )
-    words = await _market_list_words(ctx) if game.id == "callback" else []
+    course = registry.course_of(game.primary_dims[0])
+    if content is None and course is not None and game.plugin_id in ("quiz", "explain"):
+        concept = game.primary_dims[0]
+        if game.plugin_id == "quiz":
+            async with ctx.services.engine.connect() as conn:
+                seen = await learning.seen_questions(conn, ctx.user_id, game.id)
+            course_content = learning.quiz_content(course, concept, level, seed, seen)
+        else:
+            course_content = learning.explain_content(course, concept, level)
+    else:
+        course_content = None
     picked = next((d for d in reversed(state.decisions) if d.node == "plan_next"), None)
     evidence = picked.evidence if picked else []
     spec = ExerciseSpec(
         round_id=round_id,
         game_id=game.id,
+        plugin=game.plugin_id,
         mode=state.plan.mode,
         target_p=state.plan.target_p,
         level=level,
         difficulty_b=b_for_level(level),
         knobs=knobs,
-        content=content.content if content else ({"words": words} if words else None),
+        content=content.content if content else course_content,
         content_item_id=content.item_id if content else None,
         theme=theme,
         seed=seed,

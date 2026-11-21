@@ -31,16 +31,19 @@ from backend.scoring.patterns import (
     find_split,
 )
 
-# What to try differently, by family of skills: a change of approach, not only of game.
+# What to try differently when a concept is stuck, by chapter of the course: a change of
+# approach, not only of exercise (docs/plan/19).
 STRATEGY = {
-    "attention": "Say the target to yourself before each round, and look away for one slow breath "
-    "between rounds.",
-    "control": "Slow down for the first few answers, then let your speed build back up.",
-    "memory": "Group the items into small chunks, or link them into a little picture.",
-    "reasoning": "Say the rule out loud before you answer, and check it on the next item.",
-    "language": "Work it out in words first, then commit to an answer.",
-    "speed": "Aim for a steady rhythm instead of your fastest possible answer.",
+    "chapter_1": "Write out the sample space or a small list of outcomes before you count; most "
+    "counting mistakes show up as soon as the list is on paper.",
+    "chapter_2": "Turn every probability into counts: imagine 1,000 people, fill a two-way table "
+    "or a tree, and read the answer off the counts. Say which group you are dividing by.",
+    "chapter_3": "Write the distribution as a small table of values and probabilities first, then "
+    "compute from the table, one column at a time.",
 }
+DEFAULT_STRATEGY = (
+    "Explain the idea out loud in your own words before answering, then check it on one example."
+)
 ADVANCED_TARGET = TARGET_P["push"]
 FOUNDATION_TARGET = TARGET_P["chill"]
 MAX_PLATEAUS = 3
@@ -125,7 +128,7 @@ async def read_patterns(
                 game_id=game.id if game else None,
                 game_name=game.name if game else None,
                 same_skill=same,
-                strategy=STRATEGY.get(definition.group, STRATEGY["reasoning"]),
+                strategy=STRATEGY.get(definition.group, DEFAULT_STRATEGY),
             )
         )
 

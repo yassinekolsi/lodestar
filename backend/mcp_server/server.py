@@ -44,6 +44,7 @@ from backend.contracts.common import (
     GameId,
     Milliseconds,
     Persona,
+    Probability,
     SuccessMode,
 )
 from backend.contracts.exercise import ExerciseSpec, RoundResult, RoundStatus, StopReason
@@ -154,10 +155,17 @@ class TrialAnswer(Contract):
     response: dict[str, JsonValue] | None = None
     correct: bool | None
     rt_ms: Milliseconds | None = None
+    hint_level: int = Field(default=0, ge=0)
+    confidence: Probability | None = None
     ts: AwareDatetime
 
 
 # Helpers --------------------------------------------------------------------------------------
+
+
+def _question_level(stimulus: dict[str, JsonValue], level: float) -> float:
+    own = stimulus.get("level")
+    return float(own) if isinstance(own, int | float) and 0 <= own <= 1 else level
 
 
 def _facts(packet: FactsPacket) -> list[FactOut]:
@@ -382,13 +390,16 @@ def build_server(get_runner: Callable[[], SessionRunner]) -> MCPServer:
                 round_id=round_id,
                 session_id=session_id,
                 game_id=spec.game_id,
-                level=spec.level,
+                # A course question carries its own difficulty, as in the browser.
+                level=_question_level(a.stimulus, spec.level),
                 trial_index=a.trial_index,
                 practice=a.practice,
                 stimulus=a.stimulus,
                 response=a.response,
                 correct=a.correct,
                 rt_ms=a.rt_ms,
+                hint_level=a.hint_level,
+                confidence=a.confidence,
                 ts=a.ts,
             )
             for a in answers
