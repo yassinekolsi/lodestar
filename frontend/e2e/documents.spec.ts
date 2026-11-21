@@ -65,13 +65,11 @@ test('reviews a whole multi-page chapter and validates it without a checkbox', a
     'Whole chapter\n\nA stack is a collection where the last item added is removed first. A queue is a collection where the first item added is removed first.'
   const second =
     'Conditional probability\n\nThe probability of A given B is $P(A|B)=P(A \\cap B)/P(B)$. The event B must have positive probability. This formula relates the intersection of two events to a conditional probability.'
-  await page
-    .getByLabel('Upload course files')
-    .setInputFiles({
-      name: 'whole-chapter.md',
-      mimeType: 'text/markdown',
-      buffer: Buffer.from(first + '\f' + second),
-    })
+  await page.getByLabel('Upload course files').setInputFiles({
+    name: 'whole-chapter.md',
+    mimeType: 'text/markdown',
+    buffer: Buffer.from(first + '\f' + second),
+  })
   await page
     .getByRole('button', { name: 'Review pages and formulas', exact: true })
     .click({ timeout: 30000 })
