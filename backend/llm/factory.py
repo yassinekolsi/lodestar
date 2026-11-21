@@ -9,7 +9,6 @@ import asyncio
 import base64
 import json
 import logging
-import os
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any, TypeVar
@@ -28,12 +27,10 @@ from backend.db import tables as t
 from backend.db.consent_store import granted_switches
 from backend.db.llm_store import (
     get_credential,
-    save_credential,
     set_credential_status,
-    set_selection,
 )
 from backend.llm.deidentify import scrub_messages
-from backend.llm.providers import build_chat_model, list_models
+from backend.llm.providers import build_chat_model
 from backend.llm.stub import Responder, StubChatModel
 from backend.llm.vault import Vault
 from backend.registry.models import Registry
@@ -262,12 +259,13 @@ class LlmFactory:
             ],
             "generationConfig": {
                 "temperature": 0,
+                "maxOutputTokens": 65536,
                 "responseMimeType": "application/json",
                 "responseJsonSchema": schema.model_json_schema(),
             },
         }
         try:
-            async with httpx.AsyncClient(timeout=120) as client:
+            async with httpx.AsyncClient(timeout=240) as client:
                 for attempt in range(3):
                     response = await client.post(
                         f"{self.api_base('gemini')}/models/{model}:generateContent",
@@ -307,26 +305,6 @@ class LlmFactory:
             ValidationError,
         ):
             raise ValueError("Gemini could not read this page. Try again later.") from None
-
-    async def import_gemini_environment(self, user_id: UUID) -> list[str]:
-        """Explicit local setup command: seal the supplied environment key for one user."""
-        key = os.environ.get("GEMINI_API_KEY", "").strip()
-        if not key:
-            raise ValueError("GEMINI_API_KEY is not configured.")
-        async with httpx.AsyncClient(timeout=30) as client:
-            models = await list_models(
-                self.registry.provider("gemini"), key, self.api_base("gemini"), client
-            )
-        model = "gemini-3.5-flash-lite"
-        if model not in models:
-            return models
-        sealed = self.vault.seal(user_id, "gemini", key)
-        async with self.engine.begin() as conn:
-            await save_credential(conn, user_id, "gemini", sealed, "ok")
-            await set_selection(
-                conn, user_id, LlmSelection(mode="hosted", provider="gemini", model=model)
-            )
-        return models
 
     async def structured(
         self,

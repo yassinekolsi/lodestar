@@ -26,16 +26,13 @@ every generated answer. Uploaded chapters do not automatically become a validate
 map. The curated probability course remains the source of concept mastery and gap decisions.
 
 Validation: `tests/backend/agent/test_documents.py`, `frontend/e2e/documents.spec.ts` and the key
-isolation and account-data tests. The seven supplied local PDFs are demo inputs, not repository
-assets. `python -m backend.documents.import_demo /src` imports them inside the development app.
+isolation and account-data tests.
 
 ## Review findings
 
-The 29 probability scan pages received Gemini transcription and a second visual pass. Comparing
+The 29 probability scan pages received Gemini transcription. Comparing
 selected original pages manually still found wrong handwritten denominators, a table cell and
 table headings. Corrections were applied to the local demo; chapter 3 pages 10 and 12 retain
 uncertainty flags. All probability scans remain behind review. There is no measured OCR accuracy
 claim, and a successful formula rendering check does not establish mathematical correctness.
 
-Use `python -m backend.documents.audit /src /src/.artifacts/ocr-review` to export private review
-notes and page images (the image export needs Poppler). These artifacts remain ignored.

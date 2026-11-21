@@ -51,6 +51,8 @@ class Extracted:
     method: str = "text"
     warnings: dict[str, list[str]] = field(default_factory=dict)
     review_required: bool = False
+    # Language code (en, fr, tn) -> the text of each page in that language, when Gemini read it.
+    translations: dict[str, list[str]] = field(default_factory=dict)
 
     def concepts(self) -> dict[str, list[int]]:
         """Concept -> the pages that mention it, in order."""

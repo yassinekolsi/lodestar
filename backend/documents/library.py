@@ -64,7 +64,7 @@ def _view(r: Any, searchable: bool | None = None) -> DocumentView:
         passages=r.passages,
         concepts=dict(r.concepts or {}),
         created_at=r.created_at,
-        searchable=r.indexed if searchable is None else searchable,
+        searchable=(r.indexed and r.status == "ready") if searchable is None else searchable,
         extraction_method=getattr(r, "extraction_method", None)
         or (getattr(r, "extraction", None) or {}).get("method", "text"),
         review_required=r.review_required,
@@ -122,6 +122,7 @@ async def save(
                         "method": doc.method,
                         "pages": doc.page_texts,
                         "warnings": doc.warnings,
+                        "translations": doc.translations,
                     },
                     review_required=doc.review_required,
                     pages=doc.pages,
@@ -353,8 +354,15 @@ async def set_progress(engine: AsyncEngine, user_id: UUID, doc_id: UUID, pages_d
         )
 
 
-async def finish(engine: AsyncEngine, user_id: UUID, doc_id: UUID, doc: Extracted) -> None:
-    """The pages are read: store them, waiting for the student to check and validate them."""
+async def finish(
+    engine: AsyncEngine,
+    memory: MemoryStore | None,
+    user_id: UUID,
+    doc_id: UUID,
+    doc: Extracted,
+) -> None:
+    """The pages are read: store them and embed them right away, so validating is instant. Search
+    and quizzes still skip the document until the student validates it."""
     rows = [
         {
             "passage_id": uuid4(),
@@ -390,25 +398,56 @@ async def finish(engine: AsyncEngine, user_id: UUID, doc_id: UUID, doc: Extracte
                         "method": doc.method,
                         "pages": doc.page_texts,
                         "warnings": doc.warnings,
+                        "translations": doc.translations,
                     },
                     review_required=True,
                     status="review",
                     error=None,
                 )
-                .returning(t.documents.c.subject_id)
+                .returning(t.documents.c.subject_id, t.documents.c.title)
             )
         ).one_or_none()
-        if row is not None:
-            await append_event(
-                conn,
-                LibraryChanged(
-                    user_id=user_id,
-                    ts=datetime.now(UTC),
-                    payload=LibraryPayload(
-                        action="document_uploaded", doc_id=doc_id, subject_id=row.subject_id
-                    ),
+        if row is None:
+            return
+        await append_event(
+            conn,
+            LibraryChanged(
+                user_id=user_id,
+                ts=datetime.now(UTC),
+                payload=LibraryPayload(
+                    action="document_uploaded", doc_id=doc_id, subject_id=row.subject_id
                 ),
-            )
+            ),
+        )
+    await index(engine, memory, user_id, doc_id, row.title, rows)
+
+
+async def index(
+    engine: AsyncEngine,
+    memory: MemoryStore | None,
+    user_id: UUID,
+    doc_id: UUID,
+    title: str,
+    rows: list[dict[str, Any]],
+) -> bool:
+    """Embed the passages into Qdrant and record whether it worked. Postgres stays the source of
+    truth: if Qdrant is down the document is still usable and is indexed again later."""
+    indexed = False
+    if memory is not None:
+        try:
+            await memory.delete_document(user_id, doc_id)
+            await memory.write_passages(user_id, doc_id, title, rows)
+            indexed = True
+        except Exception:
+            log.warning("Qdrant unavailable; document saved without its index", exc_info=True)
+    async with engine.begin() as conn:
+        await user_scope(conn, user_id)
+        await conn.execute(
+            update(t.documents)
+            .where(t.documents.c.user_id == user_id, t.documents.c.doc_id == doc_id)
+            .values(indexed=indexed)
+        )
+    return indexed
 
 
 async def fail(engine: AsyncEngine, user_id: UUID, doc_id: UUID, reason: str) -> None:
@@ -473,8 +512,8 @@ async def approve(
                 payload=LibraryPayload(action="document_reviewed", doc_id=doc_id),
             ),
         )
-    indexed = False
-    if memory is not None:
+    indexed = bool(doc.indexed)
+    if not indexed and memory is not None:
         try:
             await memory.delete_document(user_id, doc_id)
             await memory.write_passages(user_id, doc_id, doc.title, rows)

@@ -222,7 +222,9 @@ export interface SessionStart {
 
 export const api = {
   documentPages: (id: string) =>
-    request<{ page: number; text: string; warnings: string[] }[]>(`/documents/${id}/pages`),
+    request<
+      { page: number; text: string; warnings: string[]; translations?: Record<string, string> }[]
+    >(`/documents/${id}/pages`),
   reviewDocument: (id: string, pages: string[]) =>
     request<DocumentView>(`/documents/${id}/review`, {
       method: 'PUT',

@@ -189,6 +189,13 @@ const COPY = [
   [' · flagged', ' · à vérifier', ' · يلزم تتثبّت'],
   ['Open original PDF', 'Ouvrir le PDF original', 'حلّ الـPDF الأصلي'],
   ['Original course PDF', 'PDF original du cours', 'الـPDF الأصلي متاع الـcours'],
+  ['Read in', 'Lire en', 'اقرا بـ'],
+  ['Original', 'Original', 'الأصلي'],
+  [
+    'Translations come from the same reading.',
+    'Les traductions viennent de la même lecture.',
+    'الترجمات جاية من نفس القراية.',
+  ],
   ['Extracted page text', 'Texte extrait de la page', 'النص المقروء من الصفحة'],
   ['Formula preview', 'Aperçu des formules', 'معاينة الفورمولات'],
   [

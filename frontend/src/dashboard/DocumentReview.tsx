@@ -4,6 +4,13 @@ import type { DocumentView } from '../api/types'
 import { CourseText } from '../lib/math'
 import { t, useLocale } from '../i18n'
 
+const LANGUAGE_LABELS: Record<'original' | 'en' | 'fr' | 'tn', () => string> = {
+  original: () => t('Original'),
+  en: () => 'English',
+  fr: () => 'Français',
+  tn: () => 'تونسي',
+}
+
 export function DocumentReview({
   doc,
   onSaved,
@@ -13,9 +20,12 @@ export function DocumentReview({
   onSaved: (doc: DocumentView) => void
   onClose: () => void
 }) {
-  useLocale()
+  const locale = useLocale()
   const panel = useRef<HTMLElement>(null)
-  const [pages, setPages] = useState<{ page: number; text: string; warnings: string[] }[]>([])
+  const [pages, setPages] = useState<
+    { page: number; text: string; warnings: string[]; translations?: Record<string, string> }[]
+  >([])
+  const [reading, setReading] = useState<string>('original')
   const [pdf, setPdf] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -90,6 +100,25 @@ export function DocumentReview({
         )}
       </p>
       {loading && <p role="status">{t('Loading your chapter…')}</p>}
+      {pages.some((p) => p.translations && Object.keys(p.translations).length) && (
+        <div className="document-review__languages" role="group" aria-label={t('Read in')}>
+          {(['original', 'en', 'fr', 'tn'] as const).map((lang) => (
+            <button
+              key={lang}
+              aria-pressed={reading === lang}
+              className={reading === lang ? 'primary' : ''}
+              onClick={() => {
+                setReading(lang)
+              }}
+            >
+              {LANGUAGE_LABELS[lang]()}
+            </button>
+          ))}
+          {reading === 'original' && locale !== 'en' && (
+            <span className="muted small">{t('Translations come from the same reading.')}</span>
+          )}
+        </div>
+      )}
       <div className={`document-review__pages${pdf ? '' : ' document-review__pages--text'}`}>
         {pdf && (
           <div className="document-review__original">
@@ -107,8 +136,13 @@ export function DocumentReview({
                   {warning}
                 </p>
               ))}
-              <div className="document-review__text">
-                <CourseText text={p.text} />
+              <div
+                className="document-review__text"
+                dir={reading === 'tn' && p.translations?.tn ? 'rtl' : undefined}
+              >
+                <CourseText
+                  text={(reading !== 'original' && p.translations?.[reading]) || p.text}
+                />
               </div>
               <details open={p.text.includes('[unclear]') || undefined}>
                 <summary>{t('Edit extracted text')}</summary>

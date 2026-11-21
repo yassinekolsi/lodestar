@@ -2,7 +2,7 @@
 with page citations, delete."""
 
 from datetime import UTC, datetime
-from typing import Annotated, Any
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import (
@@ -190,6 +190,8 @@ class ReviewPage(Contract):
     page: int
     text: str
     warnings: list[str]
+    # en / fr / tn -> this page in that language, from the same Gemini reading.
+    translations: dict[str, str] = Field(default_factory=dict)
 
 
 class ReviewInput(Contract):
@@ -221,10 +223,16 @@ async def document_pages(doc_id: UUID, conn: Conn, user_id: CurrentUser) -> list
         ).all()
         texts = ["\n".join(p.text for p in rows if p.page == i) for i in range(1, row.pages + 1)]
     warnings = extraction.get("warnings", {})
+    translated = extraction.get("translations", {})
     return [
         ReviewPage(
             page=i + 1,
             text=repair_math(text),
+            translations={
+                lang: versions[i]
+                for lang, versions in translated.items()
+                if i < len(versions) and versions[i].strip()
+            },
             warnings=[
                 w
                 for w in warnings.get(str(i + 1), [])
@@ -302,6 +310,28 @@ async def review_document(
         if len(body.pages) != doc.pages:
             raise HTTPException(422, "Keep the original page count so citations stay correct.")
         extraction = {**(doc.extraction or {}), "pages": body.pages, "reviewed": True}
+        unchanged = (
+            doc.indexed
+            and [repair_math(p) for p in (doc.extraction or {}).get("pages", [])] == body.pages
+        )
+        if unchanged:
+            # Already embedded when it was read: validating is instant.
+            result = await conn.execute(
+                update(t.documents)
+                .where(t.documents.c.doc_id == doc_id)
+                .values(extraction=extraction, review_required=False, status="ready")
+                .returning(*(c for c in t.documents.c if c.name != "source_pdf"))
+            )
+            reviewed = result.one()
+            await append_event(
+                conn,
+                LibraryChanged(
+                    user_id=user_id,
+                    ts=datetime.now(UTC),
+                    payload=LibraryPayload(action="document_reviewed", doc_id=doc_id),
+                ),
+            )
+            return library._view(reviewed)
         await conn.execute(
             delete(t.document_passages).where(
                 t.document_passages.c.doc_id == doc_id, t.document_passages.c.user_id == user_id
@@ -331,29 +361,11 @@ async def review_document(
             ),
         )
     if services.memory:
-        background_tasks.add_task(_index_reviewed, services, user_id, doc_id, doc.title, rows)
-    return library._view(reviewed)
-
-
-async def _index_reviewed(
-    services: Services, user_id: UUID, doc_id: UUID, title: str, rows: list[dict[str, Any]]
-) -> None:
-    """The reviewed source is committed and returned before embedding work begins."""
-    indexed = False
-    if services.memory:
-        try:
-            await services.memory.delete_document(user_id, doc_id)
-            await services.memory.write_passages(user_id, doc_id, title, rows)
-            indexed = True
-        except Exception:
-            pass  # Postgres holds the reviewed source even if the search service is offline.
-    async with services.engine.begin() as conn:
-        await user_scope(conn, user_id)
-        await conn.execute(
-            update(t.documents)
-            .where(t.documents.c.doc_id == doc_id, t.documents.c.user_id == user_id)
-            .values(indexed=indexed)
+        # Edited pages: re-embed after the response, the reviewed text is already saved.
+        background_tasks.add_task(
+            library.index, services.engine, services.memory, user_id, doc_id, doc.title, rows
         )
+    return library._view(reviewed)
 
 
 @router.delete("/documents/{doc_id}", status_code=204)

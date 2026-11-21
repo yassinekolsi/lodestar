@@ -3514,6 +3514,10 @@ export interface components {
       page: number
       /** Text */
       text: string
+      /** Translations */
+      translations?: {
+        [key: string]: string
+      }
       /** Warnings */
       warnings: string[]
     }

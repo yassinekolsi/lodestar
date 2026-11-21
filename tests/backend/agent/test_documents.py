@@ -6,6 +6,7 @@ from uuid import UUID, uuid4
 
 import httpx
 import pytest
+from pydantic import BaseModel
 from sqlalchemy import select
 
 from backend.api.deps import engine_dep
@@ -14,6 +15,13 @@ from backend.db import tables as t
 from backend.documents import ingest, library, questions
 from backend.documents.math_text import math_issues, repair_math
 from backend.registry.loader import load_registry
+
+
+class Transcription(BaseModel):
+    """A small structured-output schema for the Gemini transport tests."""
+
+    text: str
+    uncertainties: list[str]
 
 
 def test_chunking_preserves_headings_pages_and_bounds() -> None:
@@ -98,32 +106,40 @@ def test_math_blocks_survive_chunking_and_bad_delimiters_need_review() -> None:
     assert math_issues(r"$\left\{A, B\}$")
 
 
-async def test_scanned_page_uses_gemini_twice_and_stays_out_of_study(monkeypatch) -> None:
+async def test_scanned_pdf_is_read_and_translated_in_one_gemini_call(monkeypatch) -> None:
     import io
     from unittest.mock import AsyncMock
 
     from pypdf import PdfWriter
 
-    from backend.documents.ocr import Transcription, extract_document
+    from backend.documents.ocr import DocumentReading, PageReading, extract_document
 
     writer = PdfWriter()
     writer.add_blank_page(width=200, height=200)
+    writer.add_blank_page(width=200, height=200)
     buffer = io.BytesIO()
     writer.write(buffer)
+
+    def page(n: int, text: str, unsure: list[str]) -> PageReading:
+        return PageReading(
+            page=n, text=text, en=text, fr=text + " fr", tn=text + " tn", uncertainties=unsure
+        )
+
     factory = SimpleNamespace(
         gemini_pdf_page=AsyncMock(
-            side_effect=[
-                Transcription(text=r"$P(A)=\frac{1}{6}$", uncertainties=[]),
-                Transcription(
-                    text=r"$P(A)=\frac{1}{4}$ [unclear]", uncertainties=["Unclear denominator."]
-                ),
-            ]
+            return_value=DocumentReading(
+                pages=[
+                    page(1, r"$P(A)=rac{1}{6}$", []),
+                    page(2, r"$P(A)=rac{1}{4}$ [unclear]", ["Unclear denominator."]),
+                ]
+            )
         )
     )
     doc = await extract_document(buffer.getvalue(), "scan.pdf", load_registry(), factory, uuid4())
-    assert factory.gemini_pdf_page.await_count == 2
+    assert factory.gemini_pdf_page.await_count == 1
     assert doc.review_required and doc.method == "gemini-3.5-flash-lite"
-    assert doc.warnings["1"] and r"\frac{1}{4}" in doc.page_texts[0]
+    assert doc.warnings["2"] and r"rac{1}{4}" in doc.page_texts[1]
+    assert doc.translations["fr"][0].endswith(" fr") and doc.translations["tn"][1].endswith(" tn")
 
 
 async def test_subject_upload_quiz_ownership_events_and_delete(aengine) -> None:
@@ -248,7 +264,6 @@ async def test_gemini_factory_requires_consent_and_hides_invalid_provider_data(
     import json
 
     from backend.db.llm_store import save_credential
-    from backend.documents.ocr import Transcription
     from backend.llm.factory import LlmFactory
     from tests.backend.agent.conftest import grant, new_user, test_settings
     from tests.backend.llm import fake_provider as provider_module
@@ -305,7 +320,6 @@ async def test_gemini_ocr_accepts_the_operator_key_only_with_cloud_consent(aengi
     from pydantic import SecretStr
 
     from backend.db.llm_store import save_credential
-    from backend.documents.ocr import Transcription
     from backend.llm.factory import LlmFactory
     from tests.backend.agent.conftest import grant, new_user, test_settings
     from tests.backend.llm import fake_provider as provider_module

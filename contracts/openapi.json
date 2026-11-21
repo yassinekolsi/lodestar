@@ -5803,6 +5803,13 @@
             "title": "Text",
             "type": "string"
           },
+          "translations": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Translations",
+            "type": "object"
+          },
           "warnings": {
             "items": {
               "type": "string"

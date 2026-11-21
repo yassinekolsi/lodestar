@@ -21,7 +21,7 @@ from backend.agent.context import Services
 from backend.db import tables as t
 from backend.documents import library
 from backend.documents.ingest import UnreadableDocument
-from backend.documents.ocr import Transcription, extract_document
+from backend.documents.ocr import extract_document
 from backend.registry.models import Registry
 
 log = logging.getLogger(__name__)
@@ -100,14 +100,20 @@ async def _read(
     filename: str,
     force_ocr: bool,
 ) -> None:
-    async def on_page(index: int, _: Transcription) -> None:
-        await library.set_progress(services.engine, user_id, doc_id, index + 1)
+    async def on_progress(pages_done: int) -> None:
+        await library.set_progress(services.engine, user_id, doc_id, pages_done)
 
     try:
         doc = await extract_document(
-            data, filename, registry, services.llm, user_id, force_gemini=force_ocr, on_page=on_page
+            data,
+            filename,
+            registry,
+            services.llm,
+            user_id,
+            force_gemini=force_ocr,
+            on_progress=on_progress,
         )
-        await library.finish(services.engine, user_id, doc_id, doc)
+        await library.finish(services.engine, services.memory, user_id, doc_id, doc)
     except UnreadableDocument as exc:
         await library.fail(services.engine, user_id, doc_id, str(exc))
     except Exception:
