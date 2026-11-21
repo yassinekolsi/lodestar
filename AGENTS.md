@@ -11,7 +11,7 @@ These rules apply to every coding agent (and every human) working in this repo. 
 5. **Every prediction is shown as a range,** never a single number.
 6. **A scored round is one transaction** (events, trials, round, profile, history) with a per-user advisory lock. Never update `twin.events`; it's append-only.
 7. **Every Qdrant query on user data filters by `user_id`.** A helper enforces this; never call the client directly from feature code. The shared `knowledge` collection (team-written tips, no user data) is the only exception and has its own read-only helper.
-8. **English only** in the UI, docs and repo (challenge rule).
+8. **Code, docs and commit messages in English; the UI in English, French and Tunisian Arabic (Derja).** Every string on screen goes through `t()` (`frontend/src/i18n`) with its French and Derja translation, or the i18n test fails. Text the backend writes uses `backend/i18n.py`. Course translations live in `registry/courses/i18n/` and keep the course's ids, answers and tags.
 9. **User API keys are secrets.** They are stored encrypted in `app.llm_credentials` and decrypted only inside the LLM factory. Never put a key in graph state, runtime context, checkpoints, traces, logs, events, exports or error messages. The UI shows only the last 4 characters. A test enforces this.
 
 ## Conventions

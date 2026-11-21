@@ -2,6 +2,7 @@ import { button, el, itemsToTimeline, makePlugin, markAnswer } from '../../taskh
 import type { GameModule, TrialRecord } from '../../taskhost/types'
 import { scored } from '../shared/ask'
 import { renderMath } from '../../lib/renderMath'
+import { t } from '../../i18n'
 
 /** One course question, as the backend serves it (backend/agent/learning.py, quiz_content). */
 export interface QuizQuestion {
@@ -40,6 +41,12 @@ export const SURE = [
   { label: 'Sure', value: 1 },
 ] as const
 
+/** Course text (French for a Derja speaker) inside a right-to-left page reads left to right. */
+function course<T extends HTMLElement>(node: T): T {
+  node.dir = 'auto'
+  return node
+}
+
 /** Waits for a click on one of the buttons (or its number key); resolves with its index. */
 function pick(buttons: HTMLButtonElement[], keys: boolean): Promise<number> {
   return new Promise((resolve) => {
@@ -63,18 +70,18 @@ function pick(buttons: HTMLButtonElement[], keys: boolean): Promise<number> {
 
 const QuizPlugin = makePlugin<QuizItem>('lodestar-quiz', async ({ stage, item, e2e }) => {
   const q = item.question
-  const head = el('p', 'quiz-head', `Question ${String(item.number)} of ${String(item.of)}`)
-  const stem = el('p', 'quiz-stem', q.stem)
+  const head = el('p', 'quiz-head', t('Question {n} of {of}', { n: item.number, of: item.of }))
+  const stem = course(el('p', 'quiz-stem', q.stem))
   stem.dataset['testid'] = 'quiz-stem'
   const options = q.options.map((o, i) => {
     const b = button(`${String(i + 1)}. ${o.text}`, `choice-${String(i)}`, 'quiz-option')
-    return b
+    return course(b)
   })
   const list = el('div', 'quiz-options')
   list.append(...options)
-  const hintBox = el('p', 'quiz-hint')
+  const hintBox = course(el('p', 'quiz-hint'))
   hintBox.setAttribute('aria-live', 'polite')
-  const hint = button('Hint', 'quiz-hint', 'quiz-hint-button')
+  const hint = button(t('Hint'), 'quiz-hint', 'quiz-hint-button')
   const tools = el('div', 'quiz-tools')
   tools.append(hint)
   stage.append(head, stem, list, hintBox, tools)
@@ -109,8 +116,8 @@ const QuizPlugin = makePlugin<QuizItem>('lodestar-quiz', async ({ stage, item, e
 
   // How sure?
   const sureRow = el('div', 'quiz-sure')
-  sureRow.append(el('span', 'quiz-sure__q', 'How sure are you?'))
-  const sureButtons = SURE.map((s, i) => button(s.label, `sure-${String(i)}`, 'quiz-sure__b'))
+  sureRow.append(el('span', 'quiz-sure__q', t('How sure are you?')))
+  const sureButtons = SURE.map((s, i) => button(t(s.label), `sure-${String(i)}`, 'quiz-sure__b'))
   sureRow.append(...sureButtons)
   stage.append(sureRow)
   const sure = SURE[await pick(sureButtons, false)]?.value ?? 0.75
@@ -123,20 +130,34 @@ const QuizPlugin = makePlugin<QuizItem>('lodestar-quiz', async ({ stage, item, e
   if (!correct) options[choice]?.classList.add('quiz-option--wrong')
   const box = el('div', correct ? 'quiz-feedback quiz-feedback--right' : 'quiz-feedback')
   box.dataset['testid'] = 'quiz-feedback'
-  box.append(el('p', 'quiz-feedback__title', correct ? 'Right.' : 'Not quite.'))
+  box.append(el('p', 'quiz-feedback__title', correct ? t('Right.') : t('Not quite.')))
   const fix = tag ? q.fixes[tag] : undefined
   if (!correct && fix) {
     const m = el('p', 'quiz-feedback__misconception')
     m.dataset['testid'] = 'quiz-misconception'
+    const said = el('span', '', `${fix.text}. ${fix.fix}`)
+    said.dir = 'auto'
     m.append(
-      el('strong', '', sure >= 0.75 ? 'A common mix-up, and you were sure: ' : 'A common mix-up: '),
-      document.createTextNode(`${fix.text}. ${fix.fix}`),
+      el(
+        'strong',
+        '',
+        sure >= 0.75 ? t('A common mix-up, and you were sure:') + ' ' : t('A common mix-up:') + ' ',
+      ),
+      said,
     )
     box.append(m)
   }
-  box.append(el('p', 'quiz-feedback__explain', q.explain))
-  box.append(el('p', 'quiz-feedback__ref', `Notes ${item.section.id}, ${item.section.title}`))
-  const next = button(item.number === item.of ? 'Finish' : 'Next', 'quiz-next', 'primary')
+  box.append(course(el('p', 'quiz-feedback__explain', q.explain)))
+  box.append(
+    course(
+      el(
+        'p',
+        'quiz-feedback__ref',
+        t('Notes {id}, {title}', { id: item.section.id, title: item.section.title }),
+      ),
+    ),
+  )
+  const next = button(item.number === item.of ? t('Finish') : t('Next'), 'quiz-next', 'primary')
   box.append(next)
   stage.append(box)
   renderMath(box)

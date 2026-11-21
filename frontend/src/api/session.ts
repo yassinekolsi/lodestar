@@ -1,4 +1,4 @@
-import { API_BASE } from './client'
+import { API_BASE, withLang } from './client'
 import type { AgentEvent, RoundResult } from './types'
 
 type Listener = (event: AgentEvent) => void
@@ -16,7 +16,9 @@ export class SessionSocket {
 
   private url(): string {
     const scheme = window.location.protocol === 'https:' ? 'wss' : 'ws'
-    return `${scheme}://${window.location.host}${API_BASE}/sessions/${this.sessionId}/stream`
+    return withLang(
+      `${scheme}://${window.location.host}${API_BASE}/sessions/${this.sessionId}/stream`,
+    )
   }
 
   connect(): Promise<void> {

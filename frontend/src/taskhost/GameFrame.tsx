@@ -5,6 +5,7 @@ import type { ExerciseSpec, RoundResult } from '../api/types'
 import { coachSays, stopSpeaking } from '../voice/tts'
 import type { GameModule, Score } from './types'
 import { TaskHost, type TaskControls } from './TaskHost'
+import { t } from '../i18n'
 
 interface Props {
   spec: ExerciseSpec
@@ -32,22 +33,27 @@ export function GameFrame({ spec, sessionId, game, skills, onFinish, reason }: P
 
   // Voice coaching (docs/plan/12): when Lodestar speaks, it reads the instructions out loud.
   useEffect(() => {
-    coachSays(`${game.name}. ${game.instructions}`)
+    coachSays(`${t(game.name)}. ${t(game.instructions)}`)
     return stopSpeaking
   }, [game])
 
+  // The question on screen, not the questions finished: "2 / 5" while the second one is up,
+  // the same number the exercise shows ("Question 2 of 5").
+  const [done, total] = progress
+  const onScreen = total ? Math.min(done + 1, total) : 0
+
   return (
-    <section className="game-frame" aria-label={game.name} ref={frame}>
+    <section className="game-frame" aria-label={t(game.name)} ref={frame}>
       <header className="game-frame__header">
-        <h2 className="game-frame__title">{game.name}</h2>
-        <ul className="chips" aria-label="Skills">
+        <h2 className="game-frame__title">{t(game.name)}</h2>
+        <ul className="chips" aria-label={t('Concepts')}>
           {skills.map((s) => (
             <li key={s}>{s}</li>
           ))}
         </ul>
         {started && (
           <p className="game-frame__progress" aria-live="polite">
-            {progress[0]} / {progress[1]}
+            {onScreen} / {total}
           </p>
         )}
       </header>
@@ -62,22 +68,22 @@ export function GameFrame({ spec, sessionId, game, skills, onFinish, reason }: P
       {!started ? (
         <div className="game-frame__intro">
           {reason && <div className="game-frame__reason">{reason}</div>}
-          <p className="game-frame__how">{game.instructions}</p>
-          <p className="game-frame__keys">{game.keysHint}</p>
+          <p className="game-frame__how">{t(game.instructions)}</p>
+          <p className="game-frame__keys">{t(game.keysHint)}</p>
           {spec.practice_trials > 0 && (
-            <p className="muted">The first {spec.practice_trials} are practice.</p>
+            <p className="muted">{t('The first {n} are practice.', { n: spec.practice_trials })}</p>
           )}
           <button
             type="button"
             className="primary"
             onClick={() => {
               stopSpeaking()
-              coachSays('Ready. Go!')
+              coachSays(t('Ready. Go!'))
               setStarted(true)
             }}
             autoFocus
           >
-            Start
+            {t('Start')}
           </button>
         </div>
       ) : (
@@ -101,10 +107,10 @@ export function GameFrame({ spec, sessionId, game, skills, onFinish, reason }: P
         <div
           className="game-frame__offer"
           role="dialog"
-          aria-label="Easier?"
+          aria-label={t('Easier?')}
           data-testid="easier-offer"
         >
-          <p>That looked tough. Want it a bit easier?</p>
+          <p>{t('That looked tough. Want it a bit easier?')}</p>
           <button
             type="button"
             className="primary"
@@ -113,7 +119,7 @@ export function GameFrame({ spec, sessionId, game, skills, onFinish, reason }: P
               controls.current?.stop('eased')
             }}
           >
-            Yes, easier
+            {t('Yes, easier')}
           </button>
           <button
             type="button"
@@ -122,7 +128,7 @@ export function GameFrame({ spec, sessionId, game, skills, onFinish, reason }: P
               controls.current?.resume()
             }}
           >
-            Keep going
+            {t('Keep going')}
           </button>
         </div>
       )}
@@ -138,21 +144,21 @@ export function GameFrame({ spec, sessionId, game, skills, onFinish, reason }: P
               setPaused(!paused)
             }}
           >
-            {paused ? 'Resume' : 'Pause'}
+            {paused ? t('Resume') : t('Pause')}
           </button>
           <button
             type="button"
             className="ghost small"
             onClick={() => controls.current?.stop('eased')}
           >
-            Too hard?
+            {t('Too hard?')}
           </button>
           <button
             type="button"
             className="ghost small"
             onClick={() => controls.current?.stop('stopped')}
           >
-            Quit
+            {t('Quit')}
           </button>
         </footer>
       )}

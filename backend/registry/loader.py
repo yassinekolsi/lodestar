@@ -16,6 +16,21 @@ def _read(path: Path) -> Any:
         return yaml.safe_load(f)
 
 
+def _translations(root: Path, courses: list[Course]) -> dict[str, list[Course]]:
+    """registry/courses/i18n/<course>.<locale>.yaml: the text of a course in another language.
+    Each translated course is validated like the original (one right answer per question, known
+    tags), so a broken translation stops the server at startup, not in front of a student."""
+    out: dict[str, list[Course]] = {}
+    by_id = {c.id: c for c in courses}
+    for path in sorted((root / "courses" / "i18n").glob("*.*.yaml")):
+        course_id, locale = path.stem.split(".", 1)
+        if course_id not in by_id:
+            raise ValueError(f"{path.name}: no course {course_id}")
+        translated = by_id[course_id].localized(_read(path) or {})
+        out.setdefault(locale, []).append(Course.model_validate(translated.model_dump()))
+    return out
+
+
 def load_registry_from(root: Path) -> Registry:
     games = [_read(p) for p in sorted((root / "games").glob("*.yaml"))]
     dimensions = _read(root / "dimensions.yaml") or []
@@ -29,6 +44,7 @@ def load_registry_from(root: Path) -> Registry:
             "dimensions": dimensions,
             "games": games,
             "courses": courses,
+            "translations": _translations(root, courses),
             "providers": _read(root / "llm_providers.yaml"),
             "batteries": _read(root / "batteries.yaml"),
             "consent": _read(root / "consent.yaml"),

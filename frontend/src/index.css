@@ -4691,3 +4691,100 @@ button.primary.pick__go {
     height: 80vh;
   }
 }
+
+/* Languages (src/i18n): the picker, and Derja written right to left ---------------------------- */
+.lang-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.lang-picker__b {
+  min-height: 0;
+  padding: 0.25rem 0.625rem;
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  background: var(--color-card);
+  color: var(--color-ink-2);
+  font-size: 0.8125rem;
+  font-weight: 450;
+}
+.lang-picker__b[aria-pressed='true'] {
+  border-color: var(--color-ink);
+  background: var(--color-ink);
+  color: #fff;
+}
+.lang-picker--rail {
+  margin: 0 0 0.5rem;
+  padding: 0 0.5rem;
+}
+.brand--solo + .lang-picker {
+  justify-content: center;
+  margin: 0 0 1rem;
+}
+.settings__language {
+  margin: 0 0 1.25rem;
+}
+.settings__language .lang-picker {
+  margin-top: 0.5rem;
+}
+
+/* Inter has no Arabic letters: use the system's Arabic face, Inter for the Latin words. */
+:root[lang='ar-TN'] {
+  --font-sans:
+    'Noto Sans Arabic', 'Segoe UI', Tahoma, 'Geeza Pro', 'Inter Variable', system-ui, sans-serif;
+  --font-display: var(--font-sans);
+}
+:root[lang='ar-TN'] body {
+  line-height: 1.7;
+}
+[dir='rtl'] .rail {
+  border-right: none;
+  border-left: 1px solid var(--color-line);
+}
+[dir='rtl'] .rail__item,
+[dir='rtl'] .action,
+[dir='rtl'] .trace td {
+  text-align: start;
+}
+[dir='rtl'] .demo-toggle__track {
+  margin-left: 0;
+  margin-right: auto;
+}
+[dir='rtl'] .demo-toggle__track::after {
+  left: auto;
+  right: 2px;
+}
+[dir='rtl'] .demo-toggle[aria-checked='true'] .demo-toggle__track::after {
+  transform: translateX(-0.75rem);
+}
+[dir='rtl'] .turn-card,
+[dir='rtl'] .pick,
+[dir='rtl'] .result {
+  margin-left: 0;
+  margin-right: var(--gutter);
+}
+[dir='rtl'] .onboarding button.ghost {
+  margin-left: 0;
+  margin-right: 0.5rem;
+}
+[dir='rtl'] .labels__ask {
+  margin-right: 0;
+  margin-left: 0.25rem;
+}
+[dir='rtl'] .pick__go svg {
+  transform: scaleX(-1);
+}
+/* Formulas read left to right in every language. */
+.katex,
+.katex-display {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+/* Arabic letters join: any letter-spacing pulls a word apart. */
+:root[lang='ar-TN'] * {
+  letter-spacing: 0 !important;
+}
+[dir='rtl'] .toast {
+  right: auto;
+  left: 1.25rem;
+}

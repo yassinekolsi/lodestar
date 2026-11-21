@@ -10,6 +10,7 @@ gaps and review timing. Pure functions plus two read-only queries; code decides,
 
 import random
 import re
+import unicodedata
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -19,6 +20,7 @@ from uuid import UUID
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncConnection
 
+from backend import i18n
 from backend.db import tables as t
 from backend.registry.course import Concept, Course, Question
 from backend.registry.models import Registry
@@ -41,7 +43,22 @@ _STOP = {
     "is", "it", "its", "of", "on", "or", "than", "that", "the", "then", "this",
     "to", "with", "when", "what", "you", "your", "only", "all", "into", "can", "does", "doesn",
     "don", "t", "s", "up", "one", "two",
+    # French (backend/i18n.py), written without accents like the words they are compared with.
+    "le", "la", "les", "un", "une", "des", "du", "de", "d", "l", "et", "ou", "est", "sont", "en",
+    "au", "aux", "par", "pour", "avec", "sans", "que", "qui", "ce", "cette", "son", "sa", "ses",
+    "se", "ne", "pas", "plus", "il", "elle", "tout", "toute", "tous", "chaque", "dans",
+    "sur", "quand", "seulement", "deux", "fois", "puis", "ca", "c", "qu", "n", "y",
 }  # fmt: skip
+
+
+def words_of(text: str) -> list[str]:
+    """Lowercase letters-only words, accents removed, in any script: "Réunion" and "reunion" are
+    the same word, and Arabic script counts too. The browser does the same
+    (frontend/src/games/explain, wordsOf)."""
+    flat = "".join(
+        ch for ch in unicodedata.normalize("NFKD", text) if unicodedata.category(ch) != "Mn"
+    )
+    return re.findall(r"[^\W\d_]+", flat.lower())
 
 
 # Exercises ------------------------------------------------------------------------------------
@@ -92,8 +109,9 @@ def quiz_content(
                 "answer": answer,
                 "explain": q.explain,
                 "hints": [
-                    f"Notes {section['id']}, {section['title']}: {concept.key_ideas[0]}.",
-                    "Two of the wrong answers are gone.",
+                    f"{i18n.text('notes')} {section['id']}, {section['title']}: "
+                    f"{concept.key_ideas[0]}.",
+                    i18n.text("hint_removed"),
                 ],
                 "remove": removed,
                 "fixes": fixes,
@@ -111,23 +129,22 @@ def quiz_content(
 def idea_words(idea: str) -> list[str]:
     """The words that show a key idea was mentioned (first 5 letters, so "multiply" matches
     "multiplying")."""
-    words = re.findall(r"[a-z]+", idea.lower())
-    return sorted({w[:5] for w in words if w not in _STOP and len(w) > 1})
+    return sorted({w[:5] for w in words_of(idea) if w not in _STOP and len(w) > 1})
 
 
 def explain_content(course: Course, concept_id: str, level: float) -> dict[str, Any]:
     """Explain it back: the prompt and the key ideas the rubric looks for."""
     concept = course.concept(concept_id)
-    audience = "a classmate who missed the lecture" if level < 0.5 else "a friend who has an exam"
+    key = "explain_prompt_low" if level < 0.5 else "explain_prompt_high"
+    name = concept.name
+    if i18n.current() == "en":  # "Explain conditional probability", mid-sentence
+        name = f"{name[0].lower()}{name[1:]}"
     return {
         "course": course.id,
         "concept": concept.id,
         "concept_name": concept.name,
         "section": _section(course, concept),
-        "prompt": (
-            f"Explain {concept.name[0].lower()}{concept.name[1:]} to {audience}, in your own "
-            "words. A few sentences and one example is enough."
-        ),
+        "prompt": i18n.text(key, name=name),
         "key_ideas": [{"text": idea, "words": idea_words(idea)} for idea in concept.key_ideas],
     }
 
@@ -135,7 +152,7 @@ def explain_content(course: Course, concept_id: str, level: float) -> dict[str, 
 def rubric_score(text: str, key_ideas: Sequence[Mapping[str, Any]]) -> tuple[float, list[bool]]:
     """Share of key ideas mentioned (an idea counts when half its words appear), scaled down for
     very short answers. The same rule runs in the browser (frontend/src/games/explain)."""
-    found = {w[:5] for w in re.findall(r"[a-z]+", text.lower())}
+    found = {w[:5] for w in words_of(text)}
     hits = []
     for idea in key_ideas:
         words = list(idea["words"])

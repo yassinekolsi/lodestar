@@ -7,6 +7,7 @@ from statistics import median
 from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import distinct, func, select
 
+from backend import i18n
 from backend.agent import learning
 from backend.agent.nodes.play import formats_by_dim
 from backend.agent.patterns import read_patterns
@@ -29,6 +30,29 @@ from backend.scoring.norms import Norms
 router = APIRouter(tags=["course"])
 SOLID_PERCENT = 70.0
 CLASS_MISTAKES = 6
+
+# The teacher's suggestions, in the language of the request (backend/i18n.py).
+_SUGGEST: dict[i18n.Locale, dict[str, str]] = {
+    "en": {
+        "revisit": "Revisit notes {section} ({name}): {n} of {total} students are below {below}%",
+        "mixup": ', and "{text}" shows up in {n} students\' answers',
+        "quiet": "{n} of {total} students haven't studied in the last 7 days. Lodestar offers "
+        "them short, easy sessions when they come back.",
+    },
+    "fr": {
+        "revisit": "Revoir les notes {section} ({name}) : {n} étudiants sur {total} sont sous "
+        "{below}%",
+        "mixup": ", et « {text} » revient dans les réponses de {n} étudiants",
+        "quiet": "{n} étudiants sur {total} n'ont pas travaillé ces 7 derniers jours. Lodestar "
+        "leur propose des séances courtes et faciles à leur retour.",
+    },
+    "tn": {
+        "revisit": "عاودوا الnotes {section} ({name}) : {n} طلبة من {total} تحت {below}%",
+        "mixup": "، و« {text} » تتعاود في أجوبة {n} طلبة",
+        "quiet": "{n} طلبة من {total} ما قراوش في الـ7 أيام اللي فاتو. Lodestar يعطيهم "
+        "séances قصيرة وساهلة كي يرجعو.",
+    },
+}
 
 
 def _state(belief: Belief | None, norms: Norms, dim: str) -> ConceptState:
@@ -199,23 +223,23 @@ async def class_view(engine: Engine, user_id: CurrentUser, registry: RegistryDep
         (c for c in concepts if c.students >= 3),
         key=lambda c: (-c.struggling / c.students, c.median_percent or 0),
     )
+    say = _SUGGEST[i18n.current()]
     for c in hardest[:2]:
         top = next((m for m in mistakes if m.concept == c.id), None)
-        line = (
-            f"Revisit notes {c.section} ({c.name}): {c.struggling} of {c.students} "
-            f"students are below {round(learning.STRUGGLING_PERCENT)}%"
+        line = say["revisit"].format(
+            section=c.section,
+            name=c.name,
+            n=c.struggling,
+            total=c.students,
+            below=round(learning.STRUGGLING_PERCENT),
         )
         if top is not None:
-            line += (
-                f', and "{top.text[:1].lower()}{top.text[1:]}" shows up in {top.students} '
-                "students' answers"
+            line += say["mixup"].format(
+                text=f"{top.text[:1].lower()}{top.text[1:]}", n=top.students
             )
         suggestions.append(line + ".")
     if students and active < students:
-        suggestions.append(
-            f"{students - active} of {students} students haven't studied in the last 7 days. "
-            "Lodestar offers them short, easy sessions when they come back."
-        )
+        suggestions.append(say["quiet"].format(n=students - active, total=students))
     return ClassView(
         course=course.name,
         students=students,

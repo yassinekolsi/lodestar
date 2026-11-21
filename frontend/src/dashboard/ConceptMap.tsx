@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import type { ConceptStatus, CourseMapView } from '../api/types'
+import { t } from '../i18n'
 
 /** The course as a map (docs/plan/19): every concept, what it builds on (the lines), how well the
  * student knows it (the colour and the range bar), and what Lodestar noticed: a plateau, a review
@@ -77,25 +78,29 @@ export function ConceptMap({
       <div className="concept-map__summary">
         {daysToExam !== null && (
           <p className="pill">
-            <strong>{daysToExam}</strong> days to the exam
+            <strong>{daysToExam}</strong> {t('days to the exam')}
           </p>
         )}
         <p className="pill">
-          <strong>{course.concepts.filter((c) => c.state === 'solid').length}</strong> of{' '}
-          {course.concepts.length} concepts solid
+          <strong>{course.concepts.filter((c) => c.state === 'solid').length}</strong>{' '}
+          {t('of {n} concepts solid', { n: course.concepts.length })}
         </p>
         <p className="pill">
-          <strong>{struggling.length}</strong> not sticking yet
+          <strong>{struggling.length}</strong> {t('not sticking yet')}
         </p>
       </div>
       {gap && (
         <p className="concept-map__gap" data-testid="gap-banner">
-          <strong>The gap:</strong> {name(gap.concept)} won&apos;t stick while{' '}
-          {name(gap.prereq).toLowerCase()}, which it builds on, is still shaky. That&apos;s where
-          Lodestar starts.
+          <strong>{t('The gap:')}</strong>{' '}
+          {t(
+            "{concept} won't stick while {prereq}, which it builds on, is still shaky. That's where Lodestar starts.",
+            { concept: name(gap.concept), prereq: name(gap.prereq).toLowerCase() },
+          )}
         </p>
       )}
-      <div className="concept-map__scroll">
+      {/* The map's geometry is drawn left to right in every language, so the lines meet the
+          boxes; the text inside each box follows its own direction. */}
+      <div className="concept-map__scroll" dir="ltr">
         <svg
           className="concept-map__lines"
           width={width}
@@ -144,7 +149,9 @@ export function ConceptMap({
                   }}
                 >
                   <span className="concept-node__top">
-                    <span className="concept-node__name">{c.name}</span>
+                    <span className="concept-node__name" dir="auto">
+                      {c.name}
+                    </span>
                     <span className="concept-node__section">{c.section}</span>
                   </span>
                   {c.percent !== null && c.low !== null && c.high !== null ? (
@@ -171,22 +178,26 @@ export function ConceptMap({
                       </span>
                     </span>
                   ) : (
-                    <span className="concept-node__value muted small">Not checked yet</span>
+                    <span className="concept-node__value muted small">{t('Not checked yet')}</span>
                   )}
-                  <span className="concept-node__tags">
+                  <span className="concept-node__tags" dir="auto">
                     <span className="concept-tag" style={{ color: s.tone }}>
-                      {s.label}
+                      {t(s.label)}
                     </span>
                     {(c.blocking ?? []).length > 0 && (
                       <span className="concept-tag concept-tag--gap">
-                        Gap under {(c.blocking ?? []).map((b) => name(b)).join(', ')}
+                        {t('Gap under {names}', {
+                          names: (c.blocking ?? []).map((b) => name(b)).join(', '),
+                        })}
                       </span>
                     )}
-                    {c.plateau && <span className="concept-tag concept-tag--plateau">Plateau</span>}
-                    {c.review_due && <span className="concept-tag">Review due</span>}
+                    {c.plateau && (
+                      <span className="concept-tag concept-tag--plateau">{t('Plateau')}</span>
+                    )}
+                    {c.review_due && <span className="concept-tag">{t('Review due')}</span>}
                     {c.mistakes > 0 && (
                       <span className="concept-tag" title={c.mistake ?? ''}>
-                        {c.mistakes} mix-ups
+                        {c.mistakes === 1 ? t('1 mix-up') : t('{n} mix-ups', { n: c.mistakes })}
                       </span>
                     )}
                   </span>
@@ -197,9 +208,9 @@ export function ConceptMap({
         </ol>
       </div>
       <p className="muted small">
-        Mastery is the chance of getting a typical question on the concept right, with its 80%
-        range. A line means the lower concept builds on the upper one. Tap a concept for its curve,
-        its notes and what Lodestar plans next.
+        {t(
+          'Mastery is the chance of getting a typical question on the concept right, with its 80% range. A line means the lower concept builds on the upper one. Tap a concept for its curve, its notes and what Lodestar plans next.',
+        )}
       </p>
     </div>
   )

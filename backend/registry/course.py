@@ -118,6 +118,60 @@ class Course(Contract):
     def section(self, section_id: str) -> Section:
         return next(s for s in self.sections if s.id == section_id)
 
+    def localized(self, overlay: dict[str, Any]) -> Course:
+        """This course with its text replaced by a translation (registry/courses/i18n/). The
+        overlay holds text only, keyed by id: names, notes, key ideas, questions, options,
+        explanations and misconceptions. Ids, levels, answers, tags and prerequisites stay the
+        course's own, so scoring and the profile are the same in every language. Anything the
+        overlay leaves out stays in the original language."""
+        sections = overlay.get("sections", {})
+        concepts = overlay.get("concepts", {})
+
+        def section(s: Section) -> Section:
+            o = sections.get(s.id, {})
+            return s.model_copy(update={k: o[k] for k in ("title", "text") if k in o})
+
+        def question(q: Question, o: dict[str, Any]) -> Question:
+            update: dict[str, Any] = {k: o[k] for k in ("stem", "explain") if k in o}
+            if "options" in o:
+                texts = list(o["options"])
+                if len(texts) != len(q.options):
+                    raise ValueError(f"{q.id}: the translation has {len(texts)} options")
+                update["options"] = [
+                    opt.model_copy(update={"text": str(t)})
+                    for opt, t in zip(q.options, texts, strict=True)
+                ]
+            return q.model_copy(update=update)
+
+        def misconception(m: Misconception, o: dict[str, Any]) -> Misconception:
+            return m.model_copy(update={k: o[k] for k in ("text", "fix") if k in o})
+
+        def concept(c: Concept) -> Concept:
+            o = concepts.get(c.id, {})
+            update: dict[str, Any] = {k: o[k] for k in ("name", "plain") if k in o}
+            if "key_ideas" in o:
+                if len(o["key_ideas"]) != len(c.key_ideas):
+                    raise ValueError(f"{c.id}: the translation changes the number of key ideas")
+                update["key_ideas"] = list(o["key_ideas"])
+            # Aliases add up: a French or Derja speaker may still type the English name.
+            update["aliases"] = [*c.aliases, *o.get("aliases", [])]
+            ms = o.get("misconceptions", {})
+            update["misconceptions"] = [
+                misconception(m, ms.get(m.id, {})) for m in c.misconceptions
+            ]
+            qs = o.get("questions", {})
+            update["questions"] = [question(q, qs.get(q.id, {})) for q in c.questions]
+            return c.model_copy(update=update)
+
+        update: dict[str, Any] = {
+            "sections": [section(s) for s in self.sections],
+            "concepts": [concept(c) for c in self.concepts],
+        }
+        for key in ("name", "audience"):
+            if key in overlay:
+                update[key] = overlay[key]
+        return self.model_copy(update=update)
+
     def chapter(self, concept: Concept) -> str:
         return f"chapter_{concept.section.split('.')[0]}"
 

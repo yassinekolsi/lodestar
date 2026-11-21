@@ -11,6 +11,8 @@ import {
 import { canSpeak, setVoiceKind, speakReplies, voiceKind, type VoiceKind } from '../voice/tts'
 import { maskedKey, saveWakeSetup, WAKE_LABEL, wakeSetup } from '../voice/wake'
 import { Glyph, Heading, type GlyphName } from './icons'
+import { LanguagePicker } from './LanguagePicker'
+import { t } from '../i18n'
 
 type Tab = 'privacy' | 'voice' | 'ai' | 'data' | 'terminal'
 
@@ -58,10 +60,10 @@ function Privacy() {
                   onChange={(e) => void toggle(s.id, e.target.checked)}
                 />
                 <span>
-                  <strong>{s.title}</strong>
+                  <strong>{t(s.title)}</strong>
                   {s.required && <span className="muted"> (needed)</span>}
                   <br />
-                  <span className="muted">{s.plain}</span>
+                  <span className="muted">{t(s.plain)}</span>
                 </span>
               </label>
             </li>
@@ -761,15 +763,24 @@ export function Settings({
 }) {
   const [tab, setTab] = useState<Tab>('privacy')
   const tabs: [Tab, string, GlyphName][] = [
-    ['privacy', 'Privacy', 'shield'],
-    ['voice', 'Voice', 'mic'],
-    ['ai', 'AI provider', 'spark'],
-    ['data', 'Memory & data', 'database'],
-    ['terminal', 'Terminal', 'terminal'],
+    ['privacy', t('Privacy'), 'shield'],
+    ['voice', t('Voice'), 'mic'],
+    ['ai', t('AI provider'), 'spark'],
+    ['data', t('Memory & data'), 'database'],
+    ['terminal', t('Terminal'), 'terminal'],
   ]
   return (
     <section className="card settings" data-testid="settings">
-      <h2>Settings</h2>
+      <h2>{t('Settings')}</h2>
+      <div className="settings__language">
+        <Heading icon="chat">{t('Language')}</Heading>
+        <p className="muted small">
+          {t(
+            'The interface and the coach. In Derja, the course itself stays in French, the way it is taught in Tunisia.',
+          )}
+        </p>
+        <LanguagePicker />
+      </div>
       <div className="tabs" role="tablist">
         {tabs.map(([id, label, icon]) => (
           <button

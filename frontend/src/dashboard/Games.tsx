@@ -2,6 +2,7 @@ import { useState } from 'react'
 
 import type { Registry } from '../api/types'
 import { FAMILIES } from './families'
+import { t } from '../i18n'
 
 /** The practice library (docs/plan/19): every concept of the course, by chapter, with its quiz
  * and its explain-it-back. Picking one goes to the conversation, as if the student had asked for
@@ -19,9 +20,10 @@ export function Games({ registry, onPlay }: { registry: Registry; onPlay: (ask: 
       <section className="games__library">
         <div className="games__head">
           <h2>
-            {concepts.length} concepts <span className="muted">to practise</span>
+            {t('{n} concepts', { n: concepts.length })}{' '}
+            <span className="muted">{t('to practise')}</span>
           </h2>
-          <div className="games__filters" role="group" aria-label="Chapter">
+          <div className="games__filters" role="group" aria-label={t('Chapter')}>
             <button
               type="button"
               className="chip chip--small"
@@ -30,7 +32,7 @@ export function Games({ registry, onPlay }: { registry: Registry; onPlay: (ask: 
                 setChapter(null)
               }}
             >
-              All
+              {t('All')}
             </button>
             {chapters.map((f) => (
               <button
@@ -42,7 +44,7 @@ export function Games({ registry, onPlay }: { registry: Registry; onPlay: (ask: 
                   setChapter(f)
                 }}
               >
-                {FAMILIES[f]?.label ?? f}
+                {t(FAMILIES[f]?.label ?? f)}
               </button>
             ))}
           </div>
@@ -62,8 +64,10 @@ export function Games({ registry, onPlay }: { registry: Registry; onPlay: (ask: 
                     {c.note?.match(/section (\S+)\./)?.[1] ?? c.name.slice(0, 1)}
                   </span>
                 </div>
-                <h3>{c.name}</h3>
-                <p className="game-card__does">{c.plain}</p>
+                <h3 dir="auto">{c.name}</h3>
+                <p className="game-card__does" dir="auto">
+                  {c.plain}
+                </p>
                 <div className="game-card__actions">
                   {quiz && (
                     <button
@@ -73,7 +77,7 @@ export function Games({ registry, onPlay }: { registry: Registry; onPlay: (ask: 
                         onPlay(`play ${quiz.name}`)
                       }}
                     >
-                      Quiz
+                      {t('Quiz')}
                     </button>
                   )}
                   {explain && (
@@ -84,7 +88,7 @@ export function Games({ registry, onPlay }: { registry: Registry; onPlay: (ask: 
                         onPlay(`play ${explain.name}`)
                       }}
                     >
-                      Explain it back
+                      {t('Explain it back')}
                     </button>
                   )}
                 </div>

@@ -11,6 +11,7 @@ import { Glyph } from './icons'
 import { PERSONAS } from './personas'
 import { AgentCardView, WhyLines, TrackTag } from './StressCases'
 import type { FeedItem, Surface, useSession } from './useSession'
+import { greeting, t, useLocale } from '../i18n'
 
 export type Panel =
   | 'documents'
@@ -33,9 +34,30 @@ function askFromUrl(): string | undefined {
   return ask?.trim() ? ask.trim() : undefined
 }
 
-function greeting(now: Date): string {
-  const h = now.getHours()
-  return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening'
+/** Things to try on the home screen. Each is sent as typed, so each one is written the way a
+ * student would ask it in that language; the router understands all three (backend/agent/intents). */
+const ASKS: Record<'en' | 'fr' | 'tn', string[]> = {
+  en: [
+    'Quiz me on my notes',
+    "I don't get Bayes' theorem",
+    'Why did you pick my last exercise?',
+    'What exactly will my Bayes score be next month?',
+    "That wasn't fair, the room was noisy",
+  ],
+  fr: [
+    'Interroge-moi sur mes notes',
+    'Je ne comprends pas le théorème de Bayes',
+    'Pourquoi tu as choisi mon dernier exercice ?',
+    'Quel sera exactement mon score en Bayes le mois prochain ?',
+    "C'est pas juste, il y avait du bruit",
+  ],
+  tn: [
+    'اختبرني على الnotes متاعي',
+    'ما فهمتش théorème de Bayes',
+    'علاش اخترت التمرين اللي فات ؟',
+    'ma fhemtech el probabilité conditionnelle',
+    'موش عادل، كان فما حس برشا',
+  ],
 }
 
 export function Star({ size = 32 }: { size?: number }) {
@@ -65,13 +87,13 @@ function AfterGameLabels({
   const guessed = monitor && (monitor.chosen === 'ease' || monitor.chosen === 'break')
   return (
     <div className="labels">
-      <div className="mood" role="group" aria-label="Mood">
-        <span className="labels__ask">How did that feel?</span>
+      <div className="mood" role="group" aria-label={t('Mood')}>
+        <span className="labels__ask">{t('How did that feel?')}</span>
         {(
           [
-            ['good', '😀 Good'],
-            ['ok', '😐 OK'],
-            ['tough', '😣 Tough'],
+            ['good', `😀 ${t('Good')}`],
+            ['ok', `😐 ${t('OK')}`],
+            ['tough', `😣 ${t('Tough')}`],
           ] as const
         ).map(([value, label]) => (
           <button
@@ -91,7 +113,7 @@ function AfterGameLabels({
       </div>
       {guessed && !answered && (
         <p className="was-i-right">
-          I thought that one was hard for you. Was I right?{' '}
+          {t('I thought that one was hard for you. Was I right?')}{' '}
           <button
             type="button"
             className="chip chip--small"
@@ -100,7 +122,7 @@ function AfterGameLabels({
               send('was_i_right', 'yes', { decision_id: monitor.decisionId })
             }}
           >
-            Yes
+            {t('Yes')}
           </button>{' '}
           <button
             type="button"
@@ -110,7 +132,7 @@ function AfterGameLabels({
               send('was_i_right', 'no', { decision_id: monitor.decisionId })
             }}
           >
-            No
+            {t('No')}
           </button>
         </p>
       )}
@@ -142,7 +164,7 @@ function SurfaceCard({
   }, [what])
 
   let body: ReactNode = null
-  let open: { label: string; panel: Panel } = { label: 'Open', panel: 'twin' }
+  let open: { label: string; panel: Panel } = { label: t('Open'), panel: 'twin' }
   if (what === 'twin' && registry && twin) {
     body = (
       <NightSky
@@ -155,34 +177,34 @@ function SurfaceCard({
         }}
       />
     )
-    open = { label: dim ? 'See this skill' : 'See every skill', panel: 'twin' }
+    open = { label: dim ? t('See this concept') : t('See every concept'), panel: 'twin' }
   } else if (what === 'goals') {
     body = <Goals goals={goals} testId="goals-inline" />
-    open = { label: 'Open charts', panel: 'progress' }
+    open = { label: t('Open charts'), panel: 'progress' }
   } else if (what === 'progress' && progress) {
     body = (
       <ul className="stats">
         <li>
           <strong>{progress.stats.streak_days}</strong>
-          <span>day streak</span>
+          <span>{t('day streak')}</span>
         </li>
         <li>
           <strong>{progress.stats.rounds_this_week}</strong>
-          <span>exercises this week</span>
+          <span>{t('exercises this week')}</span>
         </li>
         <li>
           <strong>
             {progress.stats.skills_measured}/{progress.stats.skills_total}
           </strong>
-          <span>concepts checked</span>
+          <span>{t('concepts checked')}</span>
         </li>
       </ul>
     )
-    open = { label: 'Open charts', panel: 'progress' }
+    open = { label: t('Open charts'), panel: 'progress' }
   } else if (what === 'experiments') {
     body =
       experiments.length === 0 ? (
-        <p className="muted">No experiments yet.</p>
+        <p className="muted">{t('No experiments yet.')}</p>
       ) : (
         <ul className="lines">
           {experiments.slice(0, 3).map((e) => (
@@ -198,14 +220,14 @@ function SurfaceCard({
           ))}
         </ul>
       )
-    open = { label: 'Open the lab', panel: 'experiments' }
+    open = { label: t('Open the lab'), panel: 'experiments' }
   }
   if (!body) return null
   const title = {
-    twin: 'Your Brain Twin',
-    goals: 'Goals',
-    progress: 'Your week',
-    experiments: 'Lab',
+    twin: t('Your concepts'),
+    goals: t('Goals'),
+    progress: t('Your week'),
+    experiments: t('Lab'),
   }[what]
   return (
     <article className="turn-card surface" data-surface={what}>
@@ -247,6 +269,7 @@ export function Conversation({
   setWhy: (decisionId: string) => void
   onOpen: (panel: Panel, dim?: string) => void
 }) {
+  const locale = useLocale()
   const { state, start, answer, play, finish, resumeSaved, skipSaved } = session
   const coach = PERSONAS.find((p) => p.id === persona) ?? {
     name: 'Lodestar',
@@ -308,7 +331,7 @@ export function Conversation({
           return (
             <p className="record">
               <span className="record__mark" aria-hidden="true" />
-              Offered <strong>{name}</strong>
+              {t('Offered')} <strong>{name}</strong>
             </p>
           )
         }
@@ -333,15 +356,20 @@ export function Conversation({
         return (
           <article className="pick" data-testid="suggestion">
             <div className="pick__body">
-              <p className="pick__meta">{state.phase === 'after' ? 'Up next' : 'Your game'}</p>
+              <p className="pick__meta">
+                {state.phase === 'after' ? t('Up next') : t('Your exercise')}
+              </p>
               <h2>{name}</h2>
               {typeof item.spec.content?.['concept_name'] === 'string' && (
-                <p className="muted">From {item.spec.content['concept_name']}</p>
+                <p className="muted">
+                  {t('From {name}', { name: item.spec.content['concept_name'] })}
+                </p>
               )}
-              {game && <p className="pick__how">{game.instructions}</p>}
+              {game && <p className="pick__how">{t(game.instructions)}</p>}
               <div className="why-box" data-testid="why-box">
                 <p className="why-box__title">
-                  Why this game{item.spec.track ? ' ' : ''}
+                  {t('Why this exercise')}
+                  {item.spec.track ? ' ' : ''}
                   {item.spec.track && <TrackTag track={item.spec.track} level={item.spec.level} />}
                 </p>
                 <p className="reason">
@@ -354,7 +382,7 @@ export function Conversation({
                         if (item.decision) setWhy(item.decision)
                       }}
                     >
-                      See every option
+                      {t('See every option')}
                     </button>
                   )}
                 </p>
@@ -363,13 +391,13 @@ export function Conversation({
             </div>
             {game ? (
               <button type="button" className="primary pick__go" onClick={play}>
-                {state.phase === 'after' ? 'Next game' : "Let's go"}
+                {state.phase === 'after' ? t('Next exercise') : t("Let's go")}
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M5 12h14M13 6l6 6-6 6" />
                 </svg>
               </button>
             ) : (
-              <p role="alert">This game isn&apos;t ready in the browser yet.</p>
+              <p role="alert">{t("This exercise isn't ready in the browser yet.")}</p>
             )}
           </article>
         )
@@ -384,7 +412,7 @@ export function Conversation({
           )?.spec.game_id
         const gameName = gameId
           ? (registry?.games.find((g) => g.id === gameId)?.name ?? gameId)
-          : 'Round'
+          : t('Round')
         const dims = gameId
           ? Object.keys(registry?.games.find((g) => g.id === gameId)?.dims ?? {})
           : []
@@ -409,13 +437,13 @@ export function Conversation({
               <p className="result__game">{gameName}</p>
               {item.flagged && (
                 <span className="stress-tag stress-tag--rushed" data-testid="not-counted">
-                  Not counted
+                  {t('Not counted')}
                 </span>
               )}
               {item.score && item.score.total > 0 && (
                 <p className="result__score">
                   <strong>{item.score.right}</strong>
-                  <span>/ {item.score.total} right</span>
+                  <span>{t('/ {total} right', { total: item.score.total })}</span>
                 </p>
               )}
             </div>
@@ -426,7 +454,10 @@ export function Conversation({
                     <span>{registry?.dimensions.find((d) => d.id === v.dim)?.name ?? v.dim}</span>
                     <strong>{Math.round(v.percent)}%</strong>
                     <span className="muted">
-                      likely {Math.round(v.percent_low)}–{Math.round(v.percent_high)}%
+                      {t('likely {low}–{high}%', {
+                        low: Math.round(v.percent_low),
+                        high: Math.round(v.percent_high),
+                      })}
                     </span>
                   </li>
                 ))}
@@ -443,11 +474,11 @@ export function Conversation({
                     <Glyph name={coach.icon} />
                   </span>
                   <strong>{coach.name}</strong>
-                  <span className="muted">your coach</span>
+                  <span className="muted">{t('your coach')}</span>
                 </p>
               )}
               {item.says.length === 0 && live && (
-                <p className="muted thinking">Looking at your round</p>
+                <p className="muted thinking">{t('Looking at your answers')}</p>
               )}
               {!item.flagged && facts[0] && (
                 <p className="coach__main">
@@ -466,7 +497,7 @@ export function Conversation({
               )}
               {facts.length > 1 && (
                 <details className="result__more">
-                  <summary>How I worked this out</summary>
+                  <summary>{t('How I worked this out')}</summary>
                   {facts.slice(1).map((line, j) => (
                     <p key={j}>
                       <Cited text={line.text} refs={line.refs} onWhy={setWhy} />
@@ -503,11 +534,11 @@ export function Conversation({
       case 'ended':
         return (
           <article className="turn-card ended">
-            <p className="eyebrow">Session done</p>
-            <p>Nice work. Come back whenever you like; I&apos;ll pick up from here.</p>
+            <p className="eyebrow">{t('Session done')}</p>
+            <p>{t("Nice work. Come back whenever you like; I'll pick up from here.")}</p>
             {i === state.feed.length - 1 && state.phase === 'ended' && (
               <button type="button" className="primary" onClick={() => void start()}>
-                Start another session
+                {t('Start another session')}
               </button>
             )}
           </article>
@@ -516,29 +547,29 @@ export function Conversation({
   }
 
   return (
-    <section className="thread" data-testid="chat" aria-label="Talk to Lodestar">
+    <section className="thread" data-testid="chat" aria-label={t('Talk to Lodestar')}>
       {heroShown ? (
         <header className="hero">
           <span className="hero__orb" aria-hidden="true" />
           <h1>{greeting(now)}</h1>
           <p className="hero__lede">
-            I&apos;m Lodestar, your study coach. Bring your C++, probability or other course notes.
-            I help you understand the ideas, check what sticks, and work through the mix-ups behind
-            your answers.
+            {t(
+              "I'm Lodestar, your study coach. Bring your C++, probability or other course notes. I help you understand the ideas, check what sticks, and work through the mix-ups behind your answers.",
+            )}
           </p>
           {progress && (
-            <ul className="pills" aria-label="Your week">
+            <ul className="pills" aria-label={t('Your week')}>
               <li>
-                <strong>{progress.stats.streak_days}</strong> day streak
+                <strong>{progress.stats.streak_days}</strong> {t('day streak')}
               </li>
               <li>
-                <strong>{progress.stats.rounds_this_week}</strong> exercises this week
+                <strong>{progress.stats.rounds_this_week}</strong> {t('exercises this week')}
               </li>
               <li>
                 <strong>
                   {progress.stats.skills_measured}/{progress.stats.skills_total}
                 </strong>{' '}
-                concepts checked
+                {t('concepts checked')}
               </li>
             </ul>
           )}
@@ -551,9 +582,9 @@ export function Conversation({
                   onOpen('documents')
                 }}
               >
-                <span className="action__title">Upload your course</span>
+                <span className="action__title">{t('Upload your course')}</span>
                 <span className="action__text">
-                  Add subjects and chapters, then learn from your own pages
+                  {t('Add subjects and chapters, then learn from your own pages')}
                 </span>
               </button>
               <button
@@ -566,35 +597,33 @@ export function Conversation({
                     <path d="M7 4.5v15l12-7.5z" />
                   </svg>
                 </span>
-                <span className="action__title">Start studying</span>
-                <span className="action__text">The concept that needs you most, at your level</span>
+                <span className="action__title">{t('Start studying')}</span>
+                <span className="action__text">
+                  {t('The concept that needs you most, at your level')}
+                </span>
               </button>
               <button
                 type="button"
                 className="action"
-                title="The mix-ups behind your wrong answers, and the fix for each"
-                onClick={() => void start('What do I keep getting wrong?')}
+                title={t('The mix-ups behind your wrong answers, and the fix for each')}
+                onClick={() => void start(t('What do I keep getting wrong?'))}
               >
                 <span className="action__icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24">
                     <path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-5-5" />
                   </svg>
                 </span>
-                <span className="action__title">My mistakes</span>
-                <span className="action__text">What I keep getting wrong, and how to fix it</span>
+                <span className="action__title">{t('My mistakes')}</span>
+                <span className="action__text">
+                  {t('What I keep getting wrong, and how to fix it')}
+                </span>
               </button>
             </div>
           )}
           {state.phase === 'home' && (
-            <div className="ask-chips" aria-label="Try asking">
-              <span className="muted small">Try asking</span>
-              {[
-                'Quiz me on my notes',
-                "I don't get Bayes' theorem",
-                'Why did you pick my last exercise?',
-                'What exactly will my Bayes score be next month?',
-                "That wasn't fair, the room was noisy",
-              ].map((ask) => (
+            <div className="ask-chips" aria-label={t('Try asking')}>
+              <span className="muted small">{t('Try asking')}</span>
+              {ASKS[locale].map((ask) => (
                 <button
                   key={ask}
                   type="button"
@@ -628,18 +657,20 @@ export function Conversation({
 
       {state.phase === 'resumable' && state.spec && (
         <article className="turn-card" data-testid="resume">
-          <p className="eyebrow">Welcome back</p>
+          <p className="eyebrow">{t('Welcome back')}</p>
           <p>
-            You were in the middle of{' '}
-            {registry?.games.find((g) => g.id === state.spec?.game_id)?.name ?? state.spec.game_id}.
-            Resume or skip?
+            {t('You were in the middle of {name}. Resume or skip?', {
+              name:
+                registry?.games.find((g) => g.id === state.spec?.game_id)?.name ??
+                state.spec.game_id,
+            })}
           </p>
           <div className="actions">
             <button type="button" className="primary" onClick={() => void resumeSaved()}>
-              Resume
+              {t('Resume')}
             </button>
             <button type="button" onClick={() => void skipSaved()}>
-              Skip
+              {t('Skip')}
             </button>
           </div>
         </article>
@@ -649,7 +680,7 @@ export function Conversation({
         <article
           className="turn-card confirm"
           role="dialog"
-          aria-label="Lodestar asks"
+          aria-label={t('Lodestar asks')}
           data-testid="confirm"
         >
           <div className="said">
@@ -660,10 +691,10 @@ export function Conversation({
           </div>
           <div className="actions">
             <button type="button" className="primary" onClick={() => void answer(true)}>
-              Yes
+              {t('Yes')}
             </button>
             <button type="button" onClick={() => void answer(false)}>
-              No
+              {t('No')}
             </button>
           </div>
         </article>
@@ -679,15 +710,15 @@ export function Conversation({
               <i />
             </span>
             {state.phase === 'starting' && state.feed.length <= 1
-              ? 'Choosing your first game'
-              : 'Thinking'}
+              ? t('Choosing your first exercise')
+              : t('Thinking')}
           </p>
         </div>
       )}
 
       {state.phase === 'error' && (
         <p role="alert" className="turn-card">
-          Couldn&apos;t reach Lodestar: {state.error}
+          {t("Couldn't reach Lodestar:")} {state.error}
         </p>
       )}
 

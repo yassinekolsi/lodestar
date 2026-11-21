@@ -6,7 +6,6 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from qdrant_client import AsyncQdrantClient
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from backend.agent.context import Services
@@ -29,10 +28,11 @@ from backend.api import (
     voice,
 )
 from backend.api.llm import llm_factory_dep
-from backend.config import Settings, get_settings
+from backend.config import Settings, get_settings, qdrant_client
 from backend.db.engine import get_async_engine, libpq_url
 from backend.documents import library
 from backend.generation.pipeline import ContentService
+from backend.i18n import LocaleMiddleware
 from backend.llm import redaction
 from backend.llm.factory import LlmFactory
 from backend.mcp_server.server import build_server
@@ -50,7 +50,7 @@ log = logging.getLogger(__name__)
 async def _memory(settings: Settings) -> tuple[MemoryStore | None, QdrantStore | None]:
     """Qdrant-backed memory, or (None, None) if Qdrant is down: sessions continue without it."""
     try:
-        memory = MemoryStore(AsyncQdrantClient(url=settings.qdrant_url, timeout=5), Embedder())
+        memory = MemoryStore(qdrant_client(settings, timeout=5), Embedder())
         await memory.ensure_collections()
         await memory.load_knowledge(load_knowledge_items())
     except Exception:
@@ -120,6 +120,8 @@ def create_app(*, with_lifespan: bool = True) -> FastAPI:
     app.include_router(voice.router)
     app.include_router(experiments.router)
     app.include_router(insights.router)
+    # The language of every reply (backend/i18n.py): a header, or ?lang= on a WebSocket.
+    app.add_middleware(LocaleMiddleware)
     app.dependency_overrides[llm_factory_dep] = lambda: app.state.services.llm
     # The MCP tool server for the CLI (UW19), on the same runner as the web app's sessions.
     app.state.mcp = build_server(lambda: app.state.runner)

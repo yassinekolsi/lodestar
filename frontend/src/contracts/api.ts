@@ -3482,6 +3482,10 @@ export interface components {
       priors?: components['schemas']['SkillPriors'] | null
       /** Providers */
       providers: components['schemas']['LlmProvider'][]
+      /** Translations */
+      translations?: {
+        [key: string]: components['schemas']['Course'][]
+      }
     }
     /** ResumeInput */
     ResumeInput: {

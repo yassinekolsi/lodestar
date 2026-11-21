@@ -2,14 +2,30 @@ import { useState } from 'react'
 
 import { Orb } from '../voice/Orb'
 import type { useSession } from './useSession'
+import { t, useLocale, type Locale } from '../i18n'
 
-/** Things people often say, one tap away. Each is sent as if typed. */
-const STARTERS = [
-  'Something quick',
-  'Quiz me on conditional probability',
-  'How am I doing this week?',
-  'When do I study best?',
-]
+/** Things people often say, one tap away. Each is sent as if typed, in the student's language;
+ * the router understands all three (backend/agent/intents.py). */
+const STARTERS: Record<Locale, string[]> = {
+  en: [
+    'Something quick',
+    'Quiz me on conditional probability',
+    'How am I doing this week?',
+    'When do I study best?',
+  ],
+  fr: [
+    'Quelque chose de rapide',
+    'Interroge-moi sur la probabilité conditionnelle',
+    "Comment je m'en sors cette semaine ?",
+    'Quand est-ce que je suis le plus efficace ?',
+  ],
+  tn: [
+    'حاجة صغيرة بالزربة',
+    'عطيني أسئلة على الprobabilité conditionnelle',
+    'كيفاش ماشي هالجمعة ؟',
+    'وقتاش نكون خير ؟',
+  ],
+}
 
 /** Where you talk to Lodestar: type or tap the microphone, with a few starters. Hidden while a game
  * is running so keys go to the game. */
@@ -20,6 +36,7 @@ export function Composer({
   session: ReturnType<typeof useSession>
   onVoice: (text: string) => void
 }) {
+  const locale = useLocale()
   const { state, send, nextGame } = session
   const [text, setText] = useState('')
   const waiting = state.busy || state.phase === 'starting'
@@ -29,11 +46,11 @@ export function Composer({
     <div className="composer__chips">
       {canPlay && (
         <button type="button" className="chip chip--strong" onClick={() => void nextGame()}>
-          Play a game
+          {t('Another exercise')}
         </button>
       )}
       {quiet &&
-        STARTERS.map((s) => (
+        STARTERS[locale].map((s) => (
           <button
             key={s}
             type="button"
@@ -60,7 +77,7 @@ export function Composer({
         }}
       >
         <label className="sr-only" htmlFor="say">
-          Say something to Lodestar
+          {t('Say something to Lodestar')}
         </label>
         <input
           id="say"
@@ -68,8 +85,11 @@ export function Composer({
           value={text}
           maxLength={2000}
           autoComplete="off"
+          dir="auto"
           placeholder={
-            quiet ? 'Ask about the course, or say what you want to study' : 'Reply to Lodestar'
+            quiet
+              ? t('Ask about the course, or say what you want to study')
+              : t('Reply to Lodestar')
           }
           onChange={(e) => {
             setText(e.target.value)
@@ -80,8 +100,8 @@ export function Composer({
           <button
             type="submit"
             className="send"
-            aria-label="Send"
-            title="Send"
+            aria-label={t('Send')}
+            title={t('Send')}
             disabled={!text.trim() || waiting}
           >
             <svg viewBox="0 0 24 24" aria-hidden="true">

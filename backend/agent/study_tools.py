@@ -13,6 +13,7 @@ from uuid import UUID
 
 from pydantic import Field
 
+from backend import i18n
 from backend.agent import learning
 from backend.agent.context import LodestarContext
 from backend.agent.state import LodestarState
@@ -52,7 +53,87 @@ def _first_lower(text: str) -> str:
 
 def which_concept(course: Course) -> str:
     names = ", ".join(c.name.lower() for c in course.concepts[4:8])
-    return f"Which part of {course.name}? For example {names}."
+    return i18n.text("which_concept", course=course.name, names=names)
+
+
+# The replies used when no model answers (a template built only from facts), in each language.
+# Facts stay in English for the model, which is told to answer in the student's language.
+_SAY: dict[str, dict[i18n.Locale, str]] = {
+    "no_course": {
+        "en": "Upload your course notes and I'll answer from them.",
+        "fr": "Importe tes notes de cours et je répondrai à partir d'elles.",
+        "tn": "حطّ الnotes متاع الcours متاعك ونجاوبك منهم.",
+    },
+    "also_upload": {
+        "en": " You can also upload your own notes or slides in Documents, and I'll answer "
+        "from them.",
+        "fr": " Tu peux aussi importer tes notes ou tes slides dans Documents, et je répondrai à "
+        "partir d'elles.",
+        "tn": " تنجم زادة تحط الnotes ولا الslides متاعك في Documents، ونجاوبك منهم.",
+    },
+    "doc_from": {
+        "en": 'From your document "{title}", page {page}: {excerpt} [F1]',
+        "fr": "D'après ton document « {title} », page {page} : {excerpt} [F1]",
+        "tn": "من الdocument متاعك « {title} »، page {page} : {excerpt} [F1]",
+    },
+    "doc_more": {
+        "en": " Page {page} says more [F2].",
+        "fr": " La page {page} en dit plus [F2].",
+        "tn": " الpage {page} فيها أكثر [F2].",
+    },
+    "doc_covers": {
+        "en": 'Your document "{title}" covers it on page {page}: {excerpt} [F1]',
+        "fr": "Ton document « {title} » en parle page {page} : {excerpt} [F1]",
+        "tn": "الdocument متاعك « {title} » يحكي عليها في page {page} : {excerpt} [F1]",
+    },
+    "notes_from": {
+        "en": "From your notes ({sid}, {stitle}): {passage} [{ref}]",
+        "fr": "D'après tes notes ({sid}, {stitle}) : {passage} [{ref}]",
+        "tn": "من الnotes متاعك ({sid}، {stitle}) : {passage} [{ref}]",
+    },
+    "mixup": {
+        "en": " The mix-up I see most in your answers: {text} [{ref}]. ",
+        "fr": " La confusion que je vois le plus dans tes réponses : {text} [{ref}]. ",
+        "tn": " الغلطة اللي نشوفها برشا في الأجوبة متاعك : {text} [{ref}]. ",
+    },
+    "builds": {
+        "en": " It builds on {name}, which is still shaky [{ref}], so that's worth a look first.",
+        "fr": " Ça repose sur « {name} », qui est encore fragile [{ref}] : ça vaut le coup d'y "
+        "jeter un œil d'abord.",
+        "tn": " هاذي مبنية على « {name} »، اللي مازالت موش ثابتة [{ref}]، يستاهل تراجعها قبل.",
+    },
+    "offer": {
+        "en": " Want five questions on it?",
+        "fr": " Tu veux cinq questions là-dessus ?",
+        "tn": " تحب خمسة أسئلة عليها ؟",
+    },
+    "no_pattern": {
+        "en": "I haven't seen a pattern in your wrong answers yet. A few quizzes and I'll be able "
+        "to tell a slip from a real mix-up.",
+        "fr": "Je n'ai pas encore vu de schéma dans tes erreurs. Encore quelques quiz et je saurai "
+        "faire la différence entre une étourderie et une vraie confusion.",
+        "tn": "مازلت ما شفتش حاجة تتعاود في الغلطات متاعك. شوية quiz أخرين ونعرف نفرّق بين "
+        "غلطة سهو وغلطة فهم.",
+    },
+    "most": {
+        "en": "The mix-up I see most: {text}, {count} times on {concept}, {confident} of them "
+        "when you were sure [F1]. ",
+        "fr": "La confusion que je vois le plus : {text}, {count} fois en « {concept} », dont "
+        "{confident} quand tu étais sûr [F1]. ",
+        "tn": "الغلطة اللي نشوفها برشا : {text}، {count} مرات في « {concept} »، منهم {confident} "
+        "وانت متأكد [F1]. ",
+    },
+    "next": {
+        "en": " Next: {text} [F2].",
+        "fr": " Ensuite : {text} [F2].",
+        "tn": " ومن بعد : {text} [F2].",
+    },
+    "and": {"en": "{a} and {b}", "fr": "{a} et {b}", "tn": "{a} و {b}"},
+}
+
+
+def _say(key: str, **values: object) -> str:
+    return _SAY[key][i18n.current()].format(**values)
 
 
 def _passage(course: Course, concept: Concept) -> str:
@@ -139,15 +220,8 @@ async def teach(
 
     if concept is None or course is None:
         if not hits:
-            reply = (
-                which_concept(course)
-                if course is not None
-                else "Upload your course notes and I'll answer from them."
-            )
-            reply += (
-                " You can also upload your own notes or slides in Documents, and I'll answer "
-                "from them."
-            )
+            reply = which_concept(course) if course is not None else _say("no_course")
+            reply += _say("also_upload")
             return ToolOutcome(name="teach", reply=reply), {}
         facts = _doc_facts(hits)
         emit(
@@ -159,12 +233,10 @@ async def teach(
             }
         )
         first = hits[0]
-        text = (
-            f'From your document "{first.title}", page {first.page}: '
-            f"{_excerpt(first.text, 300)} [F1]"
-        )
+        excerpt = _excerpt(first.text, 300)
+        text = _say("doc_from", title=first.title, page=first.page, excerpt=excerpt)
         if len(hits) > 1:
-            text += f" Page {hits[1].page} says more [F2]."
+            text += _say("doc_more", page=hits[1].page)
         instruction = (
             f'The user asked: "{args.question}". Answer in at most 5 sentences using only these '
             "passages from their own document, citing each one you use. If the passages don't "
@@ -271,23 +343,21 @@ async def teach(
         }
     )
     if hits:
-        text = (
-            f'Your document "{hits[0].title}" covers it on page {hits[0].page}: '
-            f"{_excerpt(hits[0].text, 260)} [F1]"
-        )
+        first = hits[0]
+        excerpt = _excerpt(first.text, 260)
+        text = _say("doc_covers", title=first.title, page=first.page, excerpt=excerpt)
     else:
-        text = f"From your notes ({section.id}, {section.title}): {passage} [{notes_ref}]"
+        text = _say(
+            "notes_from", sid=section.id, stitle=section.title, passage=passage, ref=notes_ref
+        )
     if mistake is not None:
         ref = next(f.id for f in facts if f.text.startswith("Usual mix-up"))
-        text += f" The mix-up I see most in your answers: {_first_lower(mistake.text)} [{ref}]. "
+        text += _say("mixup", text=_first_lower(mistake.text), ref=ref)
         text += mistake.fix
     if gap is not None:
         ref = facts[-1].id
-        text += (
-            f" It builds on {course.concept(gap.prereq).name.lower()}, which is still shaky "
-            f"[{ref}], so that's worth a look first."
-        )
-    text += " Want five questions on it?"
+        text += _say("builds", name=course.concept(gap.prereq).name.lower(), ref=ref)
+    text += _say("offer")
     instruction = (
         f'The user asked: "{args.question}". Explain {concept.name.lower()} in plain words using '
         "only the passages from their own documents, the course notes and the key ideas in the "
@@ -319,7 +389,7 @@ async def mistakes(
                 k = merged[m.id]
                 merged[m.id] = replace(
                     k,
-                    concept_name=f"{k.concept_name} and {m.concept_name.lower()}",
+                    concept_name=_say("and", a=k.concept_name, b=m.concept_name.lower()),
                     count=k.count + m.count,
                     confident=k.confident + m.confident,
                 )
@@ -327,11 +397,7 @@ async def mistakes(
                 merged[m.id] = m
         found = sorted(merged.values(), key=lambda m: -m.count)
     if not found:
-        reply = (
-            "I haven't seen a pattern in your wrong answers yet. A few quizzes and I'll be able "
-            "to tell a slip from a real mix-up."
-        )
-        return ToolOutcome(name="mistakes", reply=reply), {}
+        return ToolOutcome(name="mistakes", reply=_say("no_pattern")), {}
     top = found[:3]
     facts = [
         Fact(
@@ -360,13 +426,16 @@ async def mistakes(
         }
     )
     first = top[0]
-    text = (
-        f"The mix-up I see most: {_first_lower(first.text)}, {first.count} times on "
-        f"{first.concept_name.lower()}, {first.confident} of them when you were sure [F1]. "
-        f"{first.fix}"
+    text = _say(
+        "most",
+        text=_first_lower(first.text),
+        count=first.count,
+        concept=first.concept_name.lower(),
+        confident=first.confident,
     )
+    text += first.fix
     if len(top) > 1:
-        text += f" Next: {_first_lower(top[1].text)} [F2]."
+        text += _say("next", text=_first_lower(top[1].text))
     instruction = (
         f'The user asked: "{args.question}". Name their most frequent mix-up and its fix from the '
         "facts, then the next one, in at most 4 sentences. Say that being sure and wrong is "

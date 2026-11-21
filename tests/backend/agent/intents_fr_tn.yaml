@@ -1,0 +1,62 @@
+# Labelled utterances in French and Tunisian Arabic (Derja), routed by the same keyword rules as
+# intents.yaml (backend/agent/intents.py, _FR_TN_*). Derja is written the way students type it:
+# in Arabic script, in Latin letters with digits ("ma fhemtech", "3awedli"), and mixed with the
+# French course terms. `lang` is for reading only; the router doesn't need to be told.
+
+# French: understanding ------------------------------------------------------------------------
+- {lang: fr, text: "Je ne comprends pas le théorème de Bayes", kind: chat, tool: teach, dim: bayes}
+- {lang: fr, text: "je n'ai pas compris la probabilité conditionnelle", kind: chat, tool: teach, dim: conditional}
+- {lang: fr, text: "c'est quoi une variable aléatoire ?", kind: chat, tool: teach, dim: random_variables}
+- {lang: fr, text: "Explique-moi l'espérance", kind: chat, tool: teach, dim: expectation}
+- {lang: fr, text: "comment on calcule la variance ?", kind: chat, tool: teach, dim: variance}
+- {lang: fr, text: "je bloque sur la loi binomiale", kind: chat, tool: teach, dim: binomial}
+- {lang: fr, text: "Qu’est-ce que veut dire indépendants ?", kind: chat, tool: teach, dim: independence}
+
+# French: mistakes, why, forecasts, pushback ----------------------------------------------------
+- {lang: fr, text: "Qu'est-ce que je rate tout le temps ?", kind: chat, tool: mistakes}
+- {lang: fr, text: "quelles erreurs je fais en dénombrement ?", kind: chat, tool: mistakes, dim: counting}
+- {lang: fr, text: "Pourquoi tu as choisi mon dernier exercice ?", kind: chat, tool: explain}
+- {lang: fr, text: "Quel sera exactement mon score en Bayes le mois prochain ?", kind: chat, tool: forecast_range, dim: bayes}
+- {lang: fr, text: "C'est pas juste, il y avait du bruit", kind: chat, tool: contest}
+- {lang: fr, text: "je ne suis pas d'accord avec ce résultat", kind: chat, tool: contest}
+- {lang: fr, text: "comment je m'en sors ?", kind: chat, tool: read_profile}
+- {lang: fr, text: "tu te souviens de ce que je t'ai dit ?", kind: chat, tool: search_memory}
+
+# French: practice ------------------------------------------------------------------------------
+- {lang: fr, text: "Interroge-moi sur mes notes", kind: play, game: quiz_notes}
+- {lang: fr, text: "Interroge-moi sur la probabilité conditionnelle", kind: play, dim: conditional}
+- {lang: fr, text: "Quelque chose de rapide", kind: play, quick: true}
+- {lang: fr, text: "pas de dénombrement aujourd'hui", kind: play, avoid: [counting]}
+- {lang: fr, text: "play Quiz : Théorème de Bayes", kind: play, game: quiz_bayes}
+- {lang: fr, text: "on y va", kind: play}
+
+# French: the rest ------------------------------------------------------------------------------
+- {lang: fr, text: "Quand est-ce que je suis le plus efficace ?", kind: twin_chat}
+- {lang: fr, text: "j'ai mal dormi cette nuit", kind: life_context}
+- {lang: fr, text: "mon objectif c'est d'être solide en Bayes", kind: goal, dim: bayes}
+- {lang: fr, text: "change de coach", kind: settings}
+- {lang: fr, text: "merci", kind: chat}
+
+# Derja, Arabic script --------------------------------------------------------------------------
+- {lang: tn, text: "ما فهمتش théorème de Bayes", kind: chat, tool: teach, dim: bayes}
+- {lang: tn, text: "فهّمني الاحتمال الشرطي", kind: chat, tool: teach, dim: conditional}
+- {lang: tn, text: "شنوّة هي الvariance ؟", kind: chat, tool: teach, dim: variance}
+- {lang: tn, text: "شنوّة الحاجات اللي نغلط فيهم ديما ؟", kind: chat, tool: mistakes}
+- {lang: tn, text: "علاش اخترت التمرين اللي فات ؟", kind: chat, tool: explain}
+- {lang: tn, text: "موش عادل، كان فما حس برشا", kind: chat, tool: contest}
+- {lang: tn, text: "اختبرني على الnotes متاعي", kind: play, game: quiz_notes}
+- {lang: tn, text: "عطيني أسئلة على الprobabilité conditionnelle", kind: play, dim: conditional}
+- {lang: tn, text: "حاجة صغيرة بالزربة", kind: play, quick: true}
+- {lang: tn, text: "يلّا نبداو", kind: play}
+- {lang: tn, text: "وقتاش نكون خير ؟", kind: twin_chat}
+- {lang: tn, text: "ما رقدتش البارح", kind: life_context}
+- {lang: tn, text: "كيفاش ماشي هالجمعة ؟", kind: chat, tool: read_profile}
+- {lang: tn, text: "عسلامة", kind: chat}
+
+# Derja, Latin letters (Arabizi) ----------------------------------------------------------------
+- {lang: tn, text: "ma fhemtech el probabilité conditionnelle", kind: chat, tool: teach, dim: conditional}
+- {lang: tn, text: "3awedli el bayes", kind: chat, tool: teach, dim: bayes}
+- {lang: tn, text: "chnowa el espérance ?", kind: chat, tool: teach, dim: expectation}
+- {lang: tn, text: "chnowa nghlot dima ?", kind: chat, tool: mistakes}
+- {lang: tn, text: "yalla nabdew", kind: play}
+- {lang: tn, text: "3aslema", kind: chat}

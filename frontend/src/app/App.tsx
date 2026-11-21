@@ -27,10 +27,12 @@ import { PlateauToast, RushedScreen, SplitPlan } from './StressCases'
 import { Conversation, Star, type Panel } from './Conversation'
 import { DecisionCard } from './DecisionCard'
 import { Heading } from './icons'
+import { LanguagePicker } from './LanguagePicker'
 import { Onboarding } from './Onboarding'
 import { SubjectSetup } from './SubjectSetup'
 import { Settings } from './Settings'
 import { useSession } from './useSession'
+import { t, useLocale } from '../i18n'
 
 type NavItem = { id: Panel; label: string; icon: ReactNode }
 
@@ -146,6 +148,7 @@ function Icon({ children }: { children: ReactNode }) {
 }
 
 export function App() {
+  useLocale()
   const session = useSession()
   const [registered, setRegistered] = useState(() => {
     adoptSignIn()
@@ -238,12 +241,13 @@ export function App() {
           <span className="brand__mark" aria-hidden="true" />
           Lodestar
         </p>
+        <LanguagePicker />
         {receipt ? (
           <section className="card" data-testid="receipt">
-            <h2>Everything is deleted</h2>
+            <h2>{t('Everything is deleted')}</h2>
             <p>{receipt.message}</p>
             <p className="muted">
-              Lodestar keeps only a receipt with these counts, not who you were.
+              {t('Lodestar keeps only a receipt with these counts, not who you were.')}
             </p>
             <button
               type="button"
@@ -252,7 +256,7 @@ export function App() {
                 window.location.assign('/')
               }}
             >
-              Start again
+              {t('Start again')}
             </button>
           </section>
         ) : (
@@ -279,7 +283,7 @@ export function App() {
 
   const measured = twin?.dims.filter((d) => d.n > 0) ?? []
   const current = ALL.find((n) => n.id === panel)
-  const title = current?.label ?? ''
+  const title = current ? t(current.label) : ''
 
   let body: ReactNode = null
   if (panel === 'twin' && registry && twin && progress) {
@@ -305,15 +309,15 @@ export function App() {
       />
     ) : (
       <>
-        <section aria-label="Concept map">
+        <section aria-label={t('Concept map')}>
           {course ? (
             <ConceptMap course={course} onSelect={setSkill} />
           ) : (
-            <p className="muted">Loading the course…</p>
+            <p className="muted">{t('Loading the course…')}</p>
           )}
         </section>
-        <section className="panel-block" aria-label="Ask about the course">
-          <Heading icon="chat">Ask about the course</Heading>
+        <section className="panel-block" aria-label={t('Ask about the course')}>
+          <Heading icon="chat">{t('Ask about the course')}</Heading>
           {twinFrom !== null && (
             <ul className="twin-chat" data-testid="twin-chat" aria-live="polite">
               {session.state.feed.slice(twinFrom).map((item, i) =>
@@ -342,7 +346,7 @@ export function App() {
                       <i />
                       <i />
                     </span>
-                    Thinking
+                    {t('Thinking')}
                   </p>
                 </li>
               )}
@@ -363,19 +367,19 @@ export function App() {
             <input
               value={twinAsk}
               maxLength={2000}
-              placeholder="e.g. what is a random variable? or: what do I keep getting wrong?"
-              aria-label="Your question about the course"
+              placeholder={t('e.g. what is a random variable? or: what do I keep getting wrong?')}
+              aria-label={t('Your question about the course')}
               onChange={(e) => {
                 setTwinAsk(e.target.value)
               }}
             />
             <button type="submit" disabled={!twinAsk.trim()}>
-              Ask
+              {t('Ask')}
             </button>
           </form>
         </section>
         <section className="panel-block">
-          <Heading icon="radar">All concepts at a glance</Heading>
+          <Heading icon="radar">{t('All concepts at a glance')}</Heading>
           <Radar twin={twin} registry={registry} split={patterns?.split} />
           {patterns?.split && (
             <SplitPlan
@@ -393,14 +397,15 @@ export function App() {
     body = (
       <>
         <section className="panel-block">
-          <Heading icon="target">Goals</Heading>
+          <Heading icon="target">{t('Goals')}</Heading>
           <Goals goals={goals} />
         </section>
         <section className="panel-block">
-          <Heading icon="trend">Each skill over time</Heading>
+          <Heading icon="trend">{t('Each concept over time')}</Heading>
           <p className="muted small">
-            Line: estimate. Shaded: the 80% range. Dashed: the forecast for the next sessions.
-            Orange strips: what you told Lodestar about your days.
+            {t(
+              'Line: estimate. Shaded: the 80% range. Dashed: the forecast for the next sessions. Orange strips: what you told Lodestar about your days.',
+            )}
           </p>
           <div className="curves">
             {measured.map((d) => (
@@ -419,11 +424,11 @@ export function App() {
           </div>
         </section>
         <section className="panel-block">
-          <Heading icon="calendar">Change by week</Heading>
+          <Heading icon="calendar">{t('Change by week')}</Heading>
           <WeekHeatmap progress={progress} name={dimName} />
         </section>
         <section className="panel-block">
-          <Heading icon="clock">When you do best</Heading>
+          <Heading icon="clock">{t('When you do best')}</Heading>
           <HourHeatmap progress={progress} />
         </section>
       </>
@@ -508,14 +513,14 @@ export function App() {
       type="button"
       className="rail__item"
       aria-current={panel === item.id ? 'page' : undefined}
-      aria-label={item.label}
-      title={item.label}
+      aria-label={t(item.label)}
+      title={t(item.label)}
       onClick={() => {
         open(item.id)
       }}
     >
       <Icon>{item.icon}</Icon>
-      <span className="rail__label">{item.label}</span>
+      <span className="rail__label">{t(item.label)}</span>
     </button>
   )
   const home =
@@ -534,8 +539,8 @@ export function App() {
             type="button"
             className="rail__item"
             aria-current={panel === null ? 'page' : undefined}
-            aria-label="Conversation"
-            title="Conversation"
+            aria-label={t('Conversation')}
+            title={t('Conversation')}
             onClick={() => {
               setPanel(null)
             }}
@@ -543,23 +548,24 @@ export function App() {
             <Icon>
               <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z" />
             </Icon>
-            <span className="rail__label">Conversation</span>
+            <span className="rail__label">{t('Conversation')}</span>
           </button>
-          <p className="rail__group">Study</p>
+          <p className="rail__group">{t('Study')}</p>
           {PLAY.map(navButton)}
-          <p className="rail__group">Your course</p>
+          <p className="rail__group">{t('Your course')}</p>
           {NAV.slice(0, 4).map(navButton)}
-          <p className="rail__group">For teachers</p>
+          <p className="rail__group">{t('For teachers')}</p>
           {navButton(TEACHER)}
-          <p className="rail__group">Behind the scenes</p>
+          <p className="rail__group">{t('Behind the scenes')}</p>
           {NAV.slice(4).map(navButton)}
           <span className="rail__spacer" />
           {localMode && (
-            <p className="rail__note" title="Lodestar uses the model on this server">
+            <p className="rail__note" title={t('Lodestar uses the model on this server')}>
               <span className="rail__dot" aria-hidden="true" />
-              <span className="rail__label">Local mode</span>
+              <span className="rail__label">{t('Local mode')}</span>
             </p>
           )}
+          <LanguagePicker variant="rail" />
           <DemoToggle variant="rail" />
           {navButton(SETTINGS)}
         </nav>
@@ -570,7 +576,7 @@ export function App() {
         <main className={`stage${home ? ' stage--home' : ''}`} hidden={panel !== null}>
           {dash.error && (
             <p role="alert" className="notice">
-              Couldn&apos;t load your Twin: {dash.error}
+              {t("Couldn't load your data:")} {dash.error}
             </p>
           )}
           <Conversation
@@ -605,9 +611,9 @@ export function App() {
                 )}
                 <h1>{title}</h1>
               </div>
-              <p className="muted">{SUBTITLE[panel]}</p>
+              <p className="muted">{t(SUBTITLE[panel])}</p>
             </header>
-            <div className="page__body">{body ?? <p className="muted">Loading…</p>}</div>
+            <div className="page__body">{body ?? <p className="muted">{t('Loading…')}</p>}</div>
           </section>
         )}
       </div>

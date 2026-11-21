@@ -28,8 +28,14 @@ import type {
   TwinView,
 } from './types'
 
+import { getLocale } from '../i18n'
+
 const TOKEN_KEY = 'lodestar.token'
 export const API_BASE = '/api'
+/** The language the backend answers in (backend/i18n.py). WebSockets pass it as `?lang=`. */
+export const LOCALE_HEADER = 'X-Lodestar-Locale'
+export const withLang = (url: string): string =>
+  `${url}${url.includes('?') ? '&' : '?'}lang=${getLocale()}`
 
 export class ApiError extends Error {
   constructor(
@@ -68,6 +74,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers)
   if (!(init.body instanceof FormData)) headers.set('Content-Type', 'application/json')
   if (token) headers.set('Authorization', `Bearer ${token}`)
+  headers.set(LOCALE_HEADER, getLocale())
   const response = await fetch(`${API_BASE}${path}`, { ...init, headers })
   if (!response.ok) {
     let detail = response.statusText

@@ -10,6 +10,7 @@ from uuid import UUID
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncConnection
 
+from backend import i18n
 from backend.contracts.views import (
     DimensionView,
     PatternsView,
@@ -44,6 +45,39 @@ STRATEGY = {
 DEFAULT_STRATEGY = (
     "Explain the idea out loud in your own words before answering, then check it on one example."
 )
+STRATEGY_FR = {
+    "chapter_1": "Écris l'univers ou une petite liste de résultats avant de compter ; la plupart "
+    "des erreurs de dénombrement se voient dès que la liste est sur papier.",
+    "chapter_2": "Transforme chaque probabilité en effectifs : imagine 1,000 personnes, remplis un "
+    "tableau à double entrée ou un arbre, et lis la réponse sur les effectifs. Dis par quel "
+    "groupe tu divises.",
+    "chapter_3": "Écris d'abord la loi comme un petit tableau de valeurs et de probabilités, puis "
+    "calcule à partir du tableau, une colonne à la fois.",
+}
+DEFAULT_STRATEGY_FR = (
+    "Explique l'idée à voix haute avec tes mots avant de répondre, puis vérifie-la sur un exemple."
+)
+STRATEGY_TN = {
+    "chapter_1": "اكتب الunivers ولا ليستة صغيرة متاع النتائج قبل ما تحسب؛ أغلب غلطات "
+    "الdénombrement يبانو أول ما الليستة تولّي على الورقة.",
+    "chapter_2": "بدّل كل probabilité لأعداد : تخيّل 1,000 عبد، عمّر tableau à double entrée ولا "
+    "arbre، واقرا الجواب من الأعداد. قول على أما groupe قاعد تقسم.",
+    "chapter_3": "اكتب الloi في الأول كيف tableau صغير فيه القيم والprobabilités، ومن بعد احسب من "
+    "الtableau، colonne بcolonne.",
+}
+DEFAULT_STRATEGY_TN = "فسّر الفكرة بصوت عالي بكلامك قبل ما تجاوب، ومن بعد ثبّتها على مثال واحد."
+
+
+def strategy(group: str) -> str:
+    """The change of approach for a stuck concept, in the request's language."""
+    loc = i18n.current()
+    table, default = {
+        "fr": (STRATEGY_FR, DEFAULT_STRATEGY_FR),
+        "tn": (STRATEGY_TN, DEFAULT_STRATEGY_TN),
+    }.get(loc, (STRATEGY, DEFAULT_STRATEGY))
+    return table.get(group, default)
+
+
 ADVANCED_TARGET = TARGET_P["push"]
 FOUNDATION_TARGET = TARGET_P["chill"]
 MAX_PLATEAUS = 3
@@ -126,9 +160,9 @@ async def read_patterns(
                 low=v.percent_low,
                 high=v.percent_high,
                 game_id=game.id if game else None,
-                game_name=game.name if game else None,
+                game_name=registry.game(game.id).name if game else None,
                 same_skill=same,
-                strategy=STRATEGY.get(definition.group, DEFAULT_STRATEGY),
+                strategy=strategy(definition.group),
             )
         )
 
@@ -150,7 +184,7 @@ async def read_patterns(
                 level=next_level(Belief(v.mu, v.sigma), target),
                 target_p=target,
                 game_id=game.id if game else None,
-                game_name=game.name if game else None,
+                game_name=registry.game(game.id).name if game else None,
             )
 
         split = SplitView(

@@ -14,7 +14,7 @@ from backend.contracts.common import (
     PlayMode,
     ProviderId,
 )
-from backend.registry.course import Course, concept_of
+from backend.registry.course import EXPLAIN_PREFIX, QUIZ_PREFIX, Concept, Course, concept_of
 
 Badge = Literal["established", "moderate", "experimental"]
 Phase = Literal["P1", "P2", "L"]
@@ -254,6 +254,8 @@ class Registry(Contract):
     dimensions: list[Dimension]
     games: list[Game]
     courses: list[Course] = Field(default_factory=list)
+    # The same courses in other languages (registry/courses/i18n/), by locale (backend/i18n.py).
+    translations: dict[str, list[Course]] = Field(default_factory=dict)
     providers: list[LlmProvider]
     batteries: dict[str, Battery]
     consent: ConsentNotice
@@ -288,22 +290,88 @@ class Registry(Contract):
         return self
 
     def dimension(self, dim_id: str) -> Dimension:
-        return next(d for d in self.dimensions if d.id == dim_id)
+        """A dimension, named in the request's language when it is a course concept, so every
+        sentence the server writes ("Bayes' theorem has stayed near 45%") names it the way the
+        student reads it."""
+        d = next(d for d in self.dimensions if d.id == dim_id)
+        concept = self._concept_here(dim_id)
+        if concept is None or concept.name == d.name:
+            return d
+        return d.model_copy(update={"name": concept.name, "plain": concept.plain})
+
+    def _concept_here(self, concept_id: str) -> Concept | None:
+        """The concept with this id in the request's language, or None outside a course."""
+        for course in self.courses_in():
+            for concept in course.concepts:
+                if concept.id == concept_id:
+                    return concept
+        return None
+
+    def courses_in(self, locale: str | None = None) -> list[Course]:
+        """The courses in the language of the request (backend/i18n.py); English when there is
+        no translation. Ids, answers and tags are the same in every language."""
+        from backend import i18n
+
+        loc = locale or i18n.course_locale()
+        translated = self.translations.get(loc)
+        if not translated:
+            return self.courses
+        by_id = {c.id: c for c in translated}
+        return [by_id.get(c.id, c) for c in self.courses]
 
     @property
     def course(self) -> Course:
-        """The course being studied. One course per deployment for now (docs/plan/19)."""
-        return self.courses[0]
+        """The course being studied, in the request's language. One course per deployment for
+        now (docs/plan/19)."""
+        return self.courses_in()[0]
 
     def course_of(self, dim_id: str) -> Course | None:
-        return next((c for c in self.courses if any(k.id == dim_id for k in c.concepts)), None)
+        return next((c for c in self.courses_in() if any(k.id == dim_id for k in c.concepts)), None)
+
+    def every_language(self) -> list[Course]:
+        """Every course in every language, for matching what a student types."""
+        return [*self.courses, *(c for cs in self.translations.values() for c in cs)]
+
+    def localized(self, locale: str | None = None) -> Registry:
+        """Concept and exercise names in a language (the request's by default), for GET
+        /registry and for matching an exercise a student names."""
+        from backend import i18n
+
+        loc = i18n.parse(locale) if locale else i18n.current()
+        names = {k.id: k for c in self.courses_in(i18n.course_locale(loc)) for k in c.concepts}
+        if loc == "en" or not names:
+            return self
+
+        dims = [
+            d.model_copy(update={"name": names[d.id].name, "plain": names[d.id].plain})
+            if d.id in names
+            else d
+            for d in self.dimensions
+        ]
+        games = []
+        for g in self.games:
+            for prefix, key in ((QUIZ_PREFIX, "quiz_name"), (EXPLAIN_PREFIX, "explain_name")):
+                concept = names.get(g.id[len(prefix) :]) if g.id.startswith(prefix) else None
+                if concept is not None:
+                    g = g.model_copy(update={"name": i18n.text(key, loc, name=concept.name)})
+            games.append(g)
+        return self.model_copy(update={"dimensions": dims, "games": games})
 
     def concept_for_game(self, game_id: str) -> str | None:
         concept = concept_of(game_id)
         return concept if concept and self.course_of(concept) else None
 
     def game(self, game_id: str) -> Game:
-        return next(g for g in self.games if g.id == game_id)
+        """An exercise, named in the request's language ("Quiz : Théorème de Bayes")."""
+        from backend import i18n
+
+        g = next(g for g in self.games if g.id == game_id)
+        for prefix, key in ((QUIZ_PREFIX, "quiz_name"), (EXPLAIN_PREFIX, "explain_name")):
+            if game_id.startswith(prefix) and i18n.current() != "en":
+                concept = self._concept_here(game_id[len(prefix) :])
+                if concept is not None:
+                    return g.model_copy(update={"name": i18n.text(key, name=concept.name)})
+        return g
 
     def provider(self, provider_id: str) -> LlmProvider:
         return next(p for p in self.providers if p.id == provider_id)

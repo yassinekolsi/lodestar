@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { API_BASE, api, getToken } from '../api/client'
+import { API_BASE, api, getToken, withLang } from '../api/client'
 import type {
   AcsView,
   CourseMapView,
@@ -87,7 +87,7 @@ export function useDashboard(enabled: boolean): DashboardData & { refresh: () =>
     const token = getToken()
     if (!token) return
     const scheme = window.location.protocol === 'https:' ? 'wss' : 'ws'
-    const ws = new WebSocket(`${scheme}://${window.location.host}${API_BASE}/twin/stream`)
+    const ws = new WebSocket(withLang(`${scheme}://${window.location.host}${API_BASE}/twin/stream`))
     socket.current = ws
     ws.addEventListener('open', () => {
       ws.send(JSON.stringify({ type: 'auth', token }))

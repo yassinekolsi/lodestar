@@ -5723,6 +5723,16 @@
             },
             "title": "Providers",
             "type": "array"
+          },
+          "translations": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/Course"
+              },
+              "type": "array"
+            },
+            "title": "Translations",
+            "type": "object"
           }
         },
         "required": [

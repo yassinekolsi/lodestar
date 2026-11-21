@@ -1,0 +1,639 @@
+# Probability 1 in French (backend/registry/course.py, Course.localized). Text only, keyed by id:
+# answers, levels, misconception tags and prerequisites come from ../probability.yaml, so a
+# student's profile is the same in every language.
+#
+# Tunisian university courses are taught in French, so this is also the course a Derja speaker
+# studies from (backend/i18n.py, course_locale). Aliases therefore include what students type in
+# Derja, in Arabic script and in Latin letters ("bayes", "el conditionnelle", "الاحتمال الشرطي").
+# Numbers keep their decimal point (0.75), the same as the original, so the coach's citations
+# check against the same facts.
+
+name: Probabilités 1
+audience: Première année universitaire
+
+sections:
+  "1.1":
+    title: Univers et événements
+    text: |
+      Une expérience aléatoire est tout ce dont le résultat est incertain : lancer une pièce, lancer un dé, tirer une carte.
+      L'univers S (l'espace des résultats) est l'ensemble de tous les résultats possibles. Pour un dé, S = {1, 2, 3, 4, 5, 6}.
+      Pour deux lancers de pièce, S = {PP, PF, FP, FF} : PF et FP sont deux résultats différents, car le premier et le deuxième lancer sont deux lancers différents.
+      Un événement est un sous-ensemble de S : il peut contenir un résultat, plusieurs, tous, ou aucun.
+      « A ou B » (la réunion, A ∪ B) contient tous les résultats de A, de B, ou des deux. En probabilités, « ou » inclut toujours « les deux ».
+      « A et B » (l'intersection, A ∩ B) ne contient que les résultats communs aux deux.
+      « Non A » (le complémentaire) contient tous les résultats de S qui ne sont pas dans A.
+      « Au moins un » veut dire un ou plus ; ce n'est pas la même chose que « exactement un ».
+  "1.2":
+    title: Dénombrement
+    text: |
+      Principe multiplicatif : si un premier choix se fait de m façons et un second de n façons, le couple se fait de m × n façons. On multiplie des choix faits l'un après l'autre ; on n'additionne que quand on choisit une option ou une autre.
+      Ranger n objets différents en ligne : n! = n × (n − 1) × … × 1 façons.
+      Choisir k objets parmi n quand l'ordre compte (un président, puis un trésorier) : n × (n − 1) × … × (n − k + 1) = n! / (n − k)! (arrangements).
+      Choisir k objets parmi n quand l'ordre ne compte pas (un comité) : C(n, k) = n! / (k! (n − k)!) (combinaisons). Chaque comité a été compté k! fois dans le décompte ordonné, donc on divise par k!.
+      Avec remise (les chiffres d'un code PIN peuvent se répéter), chaque choix a de nouveau les n options : n^k.
+      Pose-toi toujours deux questions : l'ordre compte-t-il, et peut-on répéter ?
+  "1.3":
+    title: Résultats équiprobables
+    text: |
+      Quand tous les résultats de S sont équiprobables, P(A) = (nombre de résultats dans A) / (nombre de résultats dans S).
+      Cela ne marche que si les résultats sont vraiment équiprobables. « Rouge ou bleu » fait deux possibilités, mais avec 3 billes rouges et 7 bleues, rouge a une probabilité de 3/10, pas 1/2.
+      Compte des résultats, pas des catégories. Avec deux dés, il y a 36 résultats ordonnés équiprobables. Une somme de 7 vient de 6 d'entre eux (1-6, 2-5, 3-4, 4-3, 5-2, 6-1) ; une somme de 2 ne vient que d'un seul (1-1). Les 11 sommes possibles ne sont pas équiprobables.
+      Toute probabilité est entre 0 et 1. Une cote (3 contre 7) n'est pas une probabilité (3/10).
+  "1.4":
+    title: Complémentaire et règle d'addition
+    text: |
+      Règle du complémentaire : P(non A) = 1 − P(A).
+      Règle d'addition : P(A ou B) = P(A) + P(B) − P(A et B). Les résultats communs à A et B sont comptés une fois dans P(A) et une fois dans P(B), donc on les soustrait une fois.
+      Si A et B sont incompatibles (ils ne peuvent pas arriver ensemble), P(A et B) = 0 et P(A ou B) = P(A) + P(B).
+      « Au moins un » se calcule le plus souvent par le complémentaire : P(au moins un six en 3 lancers) = 1 − P(aucun six en 3 lancers) = 1 − (5/6)³ ≈ 0.42. Additionner 1/6 + 1/6 + 1/6 compte plusieurs fois les lancers avec deux ou trois six, et avec assez de lancers on dépasserait 1.
+  "2.1":
+    title: Probabilité conditionnelle
+    text: |
+      P(A | B) est la probabilité de A sachant que B s'est produit. Savoir B réduit l'univers à B.
+      P(A | B) = P(A et B) / P(B), pour P(B) > 0. Le dénominateur est P(B), pas l'univers entier.
+      Avec un tableau à double entrée : P(physique | maths) = (étudiants qui font les deux) / (étudiants qui font des maths).
+      P(A | B) et P(B | A) sont deux nombres différents. La plupart des gens enrhumés éternuent ; la plupart des gens qui éternuent ne sont pas enrhumés. Les inverser est l'erreur la plus fréquente en probabilités.
+      La formule des probabilités composées vient de la même formule : P(A et B) = P(B) × P(A | B).
+      Un tirage sans remise change la probabilité conditionnelle : après un as, il reste 3 as parmi 51 cartes, donc P(deuxième as | premier as) = 3/51.
+  "2.2":
+    title: Indépendance
+    text: |
+      A et B sont indépendants quand savoir l'un ne change pas la probabilité de l'autre : P(A | B) = P(A). De façon équivalente, P(A et B) = P(A) × P(B).
+      L'indépendance se vérifie avec des nombres, jamais avec l'intuition que les événements « sont liés ».
+      Indépendants ne veut pas dire incompatibles. Si A et B sont incompatibles et tous deux possibles, savoir que A s'est produit te dit que B ne s'est pas produit, donc ils sont dépendants.
+      Une pièce équilibrée n'a pas de mémoire. Après cinq piles de suite, le lancer suivant donne encore pile avec une probabilité de 1/2 ; face n'est pas « dû ».
+      Pour des événements dépendants, on multiplie par la probabilité conditionnelle, pas par la probabilité simple : deux boules rouges de suite parmi 3 rouges et 2 bleues, sans remise, c'est 3/5 × 2/4.
+  "2.3":
+    title: Formule des probabilités totales
+    text: |
+      Découpe l'univers en cas qui ne se recouvrent pas et qui couvrent tout (jour de pluie / jour sec, machine A / machine B) : un système complet d'événements.
+      Alors P(A) = P(A | cas 1) P(cas 1) + P(A | cas 2) P(cas 2) + …
+      Sur un arbre de probabilités : multiplie le long de chaque chemin qui finit en A, puis additionne ces chemins.
+      C'est une moyenne pondérée des probabilités conditionnelles, pondérée par la fréquence de chaque cas. Une moyenne simple n'est juste que si les cas sont aussi fréquents les uns que les autres.
+  "2.4":
+    title: Théorème de Bayes
+    text: |
+      Le théorème de Bayes inverse une probabilité conditionnelle : P(A | B) = P(B | A) P(A) / P(B), où P(B) vient en général de la formule des probabilités totales.
+      La probabilité de départ P(A) compte (le taux de base). Si les incendies arrivent 0.1% des jours, une alarme qui sonne pour 99% des incendies et 2% des jours sans incendie n'a raison qu'environ 5% des fois où elle sonne : les fausses alarmes des nombreux jours sans incendie sont plus nombreuses que les rares vrais incendies.
+      Pour vérifier ta réponse, imagine 10,000 jours ou 1,000 mails et compte chaque groupe.
+  "3.1":
+    title: Variables aléatoires discrètes
+    text: |
+      Une variable aléatoire X associe un nombre à chaque résultat, par exemple le nombre de piles en deux lancers.
+      Sa loi donne chaque valeur x avec sa probabilité P(X = x). Les valeurs sont des nombres ; les résultats (PP, PF, …) ne sont pas des valeurs.
+      Chaque P(X = x) est entre 0 et 1, et leur somme vaut exactement 1.
+      P(X ≤ x) additionne les probabilités de toutes les valeurs jusqu'à x inclus (fonction de répartition).
+      Pour deux lancers équilibrés, P(X = 0) = 1/4, P(X = 1) = 2/4, P(X = 2) = 1/4 : un seul pile peut arriver de deux façons (PF et FP).
+  "3.2":
+    title: Espérance
+    text: |
+      L'espérance est la moyenne sur le long terme : E[X] = Σ x · P(X = x), chaque valeur pondérée par sa probabilité.
+      Ce n'est pas la valeur la plus probable, et ce n'est pas forcément une valeur que X peut prendre : un dé équilibré a E[X] = 3.5.
+      Une moyenne simple des valeurs n'est juste que si elles sont équiprobables.
+      Pour un jeu, compte ce que tu paies : gain espéré = gains espérés − mise.
+      Linéarité : E[aX + b] = a E[X] + b, et E[X + Y] = E[X] + E[Y] toujours.
+  "3.3":
+    title: Variance et écart-type
+    text: |
+      La variance mesure la dispersion de X autour de sa moyenne μ = E[X] : Var(X) = E[(X − μ)²] = E[X²] − (E[X])².
+      E[X²] est la moyenne des carrés ; (E[X])² est le carré de la moyenne. Ce n'est pas la même chose.
+      L'écart-type est √Var(X), dans la même unité que X.
+      Var(aX + b) = a² Var(X) : ajouter une constante décale X sans changer sa dispersion, et multiplier par a multiplie la dispersion par a, donc la variance par a².
+      Une constante a une variance nulle. Pour X et Y indépendants, Var(X + Y) = Var(X) + Var(Y) et aussi Var(X − Y) = Var(X) + Var(Y) : les variances ne se soustraient jamais.
+  "3.4":
+    title: La loi binomiale
+    text: |
+      X ~ B(n, p) compte les succès en n épreuves indépendantes, chacune avec la même probabilité de succès p.
+      P(X = k) = C(n, k) p^k (1 − p)^(n − k). Le terme p^k (1 − p)^(n − k) est la probabilité d'un ordre précis ; C(n, k) compte combien d'ordres il y a.
+      E[X] = np et Var(X) = np(1 − p).
+      Des tirages sans remise ne sont pas indépendants, donc ils ne suivent pas une loi binomiale.
+      Exemple : 3 lancers équilibrés, P(exactement 2 piles) = C(3, 2) (1/2)² (1/2) = 3/8 (PPF, PFP, FPP).
+
+concepts:
+  sample_space:
+    name: Univers et événements
+    plain: Lister tous les résultats, et combiner des événements avec ou, et, non
+    aliases: ["univers", "espace des résultats", "événement", "événements", "evenement", "réunion", "intersection", "el univers", "الevents"]
+    key_ideas:
+      - l'univers est l'ensemble de tous les résultats possibles
+      - un événement est un sous-ensemble de l'univers
+      - "ou (réunion) inclut les résultats communs aux deux événements"
+      - et (intersection) ne garde que les résultats communs aux deux
+      - le complémentaire est tout ce qui n'est pas dans l'événement
+    misconceptions:
+      union_intersection_swap:
+        text: Confondre « ou » (réunion) et « et » (intersection)
+        fix: « Et » ne garde que ce qui est dans les deux événements ; « ou » garde tout ce qui est dans l'un ou l'autre.
+      or_exclusive:
+        text: Lire « A ou B » comme « A ou B mais pas les deux »
+        fix: En probabilités, « ou » inclut toujours les résultats communs aux deux événements.
+      merged_outcomes:
+        text: Fusionner des résultats différents, comme compter PF et FP comme un seul
+        fix: Garde l'ordre quand l'expérience a un ordre ; PF et FP sont deux résultats.
+      at_least_exactly:
+        text: Lire « au moins un » comme « exactement un »
+        fix: « Au moins un » veut dire un ou plus, donc ça inclut le cas où tout arrive.
+    questions:
+      ss1:
+        stem: Tu lances un dé à six faces. Quel est l'univers ?
+      ss2:
+        stem: "Sur un dé, A = « le résultat est pair » = {2, 4, 6} et B = « le résultat est supérieur à 3 » = {4, 5, 6}. Que vaut A et B (A ∩ B) ?"
+        explain: "« Et » garde les résultats présents dans les deux listes : 4 et 6 sont pairs et supérieurs à 3."
+      ss3:
+        stem: "Mêmes événements : A = {2, 4, 6} et B = {4, 5, 6}. Que vaut A ou B (A ∪ B) ?"
+        explain: "« Ou » garde tout ce qui est dans A, dans B, ou dans les deux : 2, 4, 5 et 6."
+      ss4:
+        stem: Sur un dé, A = « le résultat est pair ». Quel est le complémentaire de A ?
+        options: ["{1, 3, 5}", "{2, 4, 6}", "{ } (l'ensemble vide)", "{1, 2, 3}"]
+        explain: Le complémentaire contient tous les résultats qui ne sont pas dans A, donc les résultats impairs.
+      ss5:
+        stem: Tu lances une pièce deux fois. Combien de résultats y a-t-il dans l'univers ?
+        explain: PP, PF, FP et FF. PF et FP sont différents car le premier et le deuxième lancer sont deux lancers différents.
+      ss6:
+        stem: Tu lances une pièce deux fois (P = pile, F = face). Quel ensemble est l'événement « au moins un pile » ?
+        options: ["{PP, PF, FP}", "{PF, FP}", "{PP}", "{PP, PF, FP, FF}"]
+        explain: Au moins un pile veut dire un ou deux piles, donc PP en fait partie aussi. Seul FF est exclu.
+
+  counting:
+    name: Dénombrement
+    plain: Multiplier les choix, et savoir quand l'ordre compte ou quand on peut répéter
+    aliases: ["dénombrement", "denombrement", "combinaisons", "combinaison", "arrangements", "arrangement", "permutations", "permutation", "factorielle", "principe multiplicatif", "el dénombrement", "الدنومبرمون"]
+    key_ideas:
+      - multiplier le nombre de façons pour des choix faits l'un après l'autre
+      - utiliser les arrangements quand l'ordre compte
+      - utiliser les combinaisons quand l'ordre ne compte pas
+      - avec remise chaque choix a de nouveau toutes les options
+    misconceptions:
+      add_instead_multiply:
+        text: Additionner le nombre d'options alors que les choix se font l'un après l'autre
+        fix: Des choix faits à la suite se multiplient. On n'additionne que quand on choisit une option ou une autre.
+      order_confusion:
+        text: Compter des arrangements ordonnés alors que l'ordre ne compte pas, ou l'inverse
+        fix: "Demande-toi si échanger deux choix donne un résultat différent. Un président et un trésorier : oui. Un comité : non, donc divise par k!."
+      replacement_confusion:
+        text: Autoriser les répétitions quand elles sont interdites, ou les interdire quand elles sont permises
+        fix: "Demande-toi si le même élément peut être choisi deux fois. Les chiffres d'un code PIN peuvent se répéter (n^k) ; les membres d'un comité, non."
+    questions:
+      co1:
+        stem: Un menu propose 3 entrées et 4 plats. Combien de repas différents composés d'une entrée et d'un plat y a-t-il ?
+        explain: Chacune des 3 entrées va avec chacun des 4 plats, donc 3 × 4 = 12.
+      co2:
+        stem: De combien de façons peut-on ranger les lettres A, B et C en ligne ?
+        explain: 3 choix pour la première place, 2 pour la deuxième, 1 pour la dernière, donc 3! = 6. Les lettres ne se répètent pas, donc ce n'est pas 3³ = 27.
+      co3:
+        stem: Un club de 10 personnes choisit un président et un trésorier, qui doivent être deux personnes différentes. Combien de façons y a-t-il ?
+        explain: Les rôles sont différents, donc l'ordre compte. 10 choix pour le président, puis 9 pour le trésorier, donc 10 × 9 = 90.
+      co4:
+        stem: Le même club de 10 personnes choisit un comité de 2. Combien de comités différents y a-t-il ?
+        explain: Un comité Amira et Sami est le même que Sami et Amira, donc l'ordre ne compte pas. C(10, 2) = 90 / 2 = 45.
+      co5:
+        stem: Un code PIN de 4 chiffres utilise les chiffres de 0 à 9, et les chiffres peuvent se répéter. Combien de codes sont possibles ?
+        explain: Chacune des 4 positions a les 10 chiffres disponibles, donc 10⁴ = 10,000. 5,040 = 10 × 9 × 8 × 7 interdirait les répétitions.
+      co6:
+        stem: On choisit une équipe de 2 hommes et 2 femmes parmi 6 hommes et 5 femmes. Combien d'équipes sont possibles ?
+        explain: C(6, 2) = 15 façons de choisir les hommes et C(5, 2) = 10 façons de choisir les femmes. Les deux arrivent, donc 15 × 10 = 150.
+
+  equally_likely:
+    name: Résultats équiprobables
+    plain: La probabilité comme cas favorables sur cas possibles, quand c'est permis
+    aliases: ["équiprobable", "équiprobables", "equiprobable", "cas favorables", "cas possibles", "probabilité classique", "dés", "billes", "الequiprobable"]
+    key_ideas:
+      - la probabilité est le nombre de cas favorables divisé par le nombre de cas possibles
+      - seulement quand tous les résultats sont équiprobables
+      - compter des résultats et pas des catégories
+      - une probabilité est entre 0 et 1
+    misconceptions:
+      equiprobability_bias:
+        text: Traiter des possibilités comme équiprobables alors qu'elles ne le sont pas, comme les sommes de deux dés
+        fix: Reviens à des résultats vraiment équiprobables (36 pour deux dés), puis compte.
+      merged_outcomes:
+        text: Fusionner des résultats différents, comme compter PF et FP comme un seul
+        fix: Garde l'ordre quand l'expérience a un ordre ; PF et FP sont deux résultats.
+      odds_confusion:
+        text: Donner une cote (favorables contre défavorables) au lieu d'une probabilité
+        fix: Une probabilité divise par tous les résultats. 3 rouges et 7 bleues, c'est 3/10, pas 3/7.
+    questions:
+      el1:
+        stem: Tu lances un dé équilibré. Quelle est la probabilité d'obtenir un 5 ?
+        explain: Un résultat favorable sur 6 résultats équiprobables.
+      el2:
+        stem: Un sac contient 3 billes rouges et 7 bleues. Tu en tires une au hasard. Que vaut P(rouge) ?
+        explain: 3 billes rouges sur 10 billes au total. Deux couleurs ne veut pas dire que chacune a une probabilité de 1/2.
+      el3:
+        stem: Tu lances un dé équilibré. Quelle est la probabilité que le résultat soit supérieur à 4 ?
+        explain: 5 et 6 sont supérieurs à 4, donc 2 résultats sur 6, soit 1/3.
+      el4:
+        stem: Tu lances deux pièces équilibrées. Quelle est la probabilité d'obtenir exactement un pile ?
+        explain: PF et FP parmi PP, PF, FP, FF, donc 2/4 = 1/2. « Un de chaque » fait deux résultats, pas un.
+      el5:
+        stem: Tu lances deux dés équilibrés. Qu'est-ce qui est le plus probable, une somme de 7 ou une somme de 2 ?
+        options:
+          - 7 est six fois plus probable que 2
+          - Elles sont équiprobables, chaque somme est un seul résultat
+          - 2 est plus probable
+          - 7 est deux fois plus probable que 2
+        explain: Sur les 36 résultats équiprobables, 6 donnent une somme de 7 et un seul (1-1) donne 2.
+      el6:
+        stem: Tu lances deux dés équilibrés. Quelle est la probabilité que la somme soit 8 ?
+        explain: 2-6, 3-5, 4-4, 5-3 et 6-2 sont 5 des 36 résultats ordonnés équiprobables.
+
+  addition_rule:
+    name: Complémentaire et règle d'addition
+    plain: P(non A), P(A ou B), et « au moins un »
+    aliases: ["règle d'addition", "regle d'addition", "complémentaire", "complementaire", "au moins un", "incompatibles", "événements incompatibles", "el complémentaire", "الcomplémentaire"]
+    key_ideas:
+      - la règle du complémentaire P(non A) = 1 − P(A)
+      - additionner les probabilités puis soustraire la partie commune P(A et B)
+      - des événements incompatibles n'ont pas de partie commune
+      - au moins un se calcule le plus facilement par le complémentaire
+    misconceptions:
+      double_count_union:
+        text: Additionner P(A) et P(B) sans soustraire la partie commune
+        fix: Les résultats communs aux deux événements sont comptés deux fois par P(A) + P(B), donc soustrais P(A et B) une fois.
+      at_least_one_sum:
+        text: Additionner les chances de chaque essai pour obtenir « au moins un »
+        fix: Utilise 1 − P(aucun). Additionner compte plusieurs fois les cas avec deux succès ou plus.
+      assumes_independence:
+        text: Multiplier les probabilités d'événements qui ne sont pas indépendants
+        fix: P(A et B) = P(A) × P(B) seulement pour des événements indépendants. En général, utilise P(B) × P(A | B), ou la règle d'addition.
+    questions:
+      ad1:
+        stem: La probabilité qu'il pleuve demain est 0.3. Quelle est la probabilité qu'il ne pleuve pas ?
+        explain: Pluie et pas de pluie couvrent tout sans se recouvrir, donc P(pas de pluie) = 1 − 0.3 = 0.7.
+      ad2:
+        stem: Dans une classe, P(joue au foot) = 0.4, P(joue au basket) = 0.3 et P(joue aux deux) = 0.1. Que vaut P(joue au foot ou au basket) ?
+        explain: 0.4 + 0.3 − 0.1 = 0.6. Les étudiants qui jouent aux deux ont été comptés dans 0.4 et dans 0.3.
+      ad3:
+        stem: Tu tires une carte d'un jeu standard de 52 cartes. Que vaut P(cœur ou roi) ?
+        explain: 13 cœurs + 4 rois − 1 roi de cœur (compté deux fois) = 16 cartes.
+      ad4:
+        stem: A et B sont incompatibles, avec P(A) = 0.2 et P(B) = 0.5. Que vaut P(A ou B) ?
+        explain: Des événements incompatibles n'ont pas de partie commune, donc P(A et B) = 0 et P(A ou B) = 0.2 + 0.5.
+      ad5:
+        stem: Tu lances un dé équilibré 3 fois. Quelle est la probabilité d'obtenir au moins un six ?
+        options: ["Environ 0.42", "0.5", "Environ 0.005", "Environ 0.17"]
+        explain: 1 − P(aucun six) = 1 − (5/6)³ ≈ 1 − 0.58 = 0.42. Additionner 1/6 trois fois compte deux fois les doubles six.
+      ad6:
+        stem: P(A) = 0.6, P(B) = 0.4 et P(A ou B) = 0.7. Que vaut P(A et B) ?
+        explain: D'après la règle d'addition, P(A et B) = P(A) + P(B) − P(A ou B) = 0.6 + 0.4 − 0.7 = 0.3. Multiplier 0.6 × 0.4 suppose l'indépendance, ce que rien ne dit.
+
+  conditional:
+    name: Probabilité conditionnelle
+    plain: P(A | B), la probabilité de A sachant que B s'est produit
+    aliases: ["probabilité conditionnelle", "probabilite conditionnelle", "conditionnelle", "proba conditionnelle", "sachant que", "tableau à double entrée", "el conditionnelle", "el proba conditionnelle", "الاحتمال الشرطي", "الconditionnelle", "الconditionnel"]
+    key_ideas:
+      - savoir B réduit l'univers à B
+      - "la probabilité conditionnelle est la probabilité des deux divisée par la probabilité de B : P(A | B) = P(A et B) / P(B)"
+      - le dénominateur est P(B) et pas tout l'univers
+      - P(A | B) n'est pas la même chose que P(B | A)
+    misconceptions:
+      inverse_conditional:
+        text: Inverser P(A | B) et P(B | A)
+        fix: "Dis-le avec des mots : « parmi les gens qui éternuent, combien sont enrhumés » n'est pas la même question que « parmi les gens enrhumés, combien éternuent ». Le dénominateur, c'est le groupe dont on te parle."
+      conditional_as_joint:
+        text: Utiliser P(A et B) comme si c'était P(A | B)
+        fix: P(A | B) divise P(A et B) par P(B). Sans diviser, tu obtiens la part de tout le monde, pas la part de B.
+      ignores_condition:
+        text: Ignorer la condition et donner la probabilité simple
+        fix: La condition change ce qui est possible. Réduis l'univers à ce qu'on te dit qui s'est produit, puis compte.
+    questions:
+      cd1:
+        stem: Tu lances un dé équilibré et on te dit que le résultat est pair. Quelle est la probabilité que ce soit un 6 ?
+        explain: Savoir que le résultat est pair laisse {2, 4, 6}, et 6 est l'un de ces 3.
+      cd2:
+        stem: "Sur 100 étudiants, 40 font des maths, 50 font de la physique et 30 font les deux. Un étudiant fait des maths. Que vaut P(physique | maths) ?"
+        explain: Seuls les 40 étudiants en maths comptent maintenant, et 30 d'entre eux font de la physique, donc 30/40 = 0.75.
+      cd3:
+        stem: P(A et B) = 0.12 et P(B) = 0.4. Que vaut P(A | B) ?
+        explain: P(A | B) = P(A et B) / P(B) = 0.12 / 0.4 = 0.3.
+      cd4:
+        stem: "Mêmes 100 étudiants : 40 font des maths, 50 de la physique, 30 les deux. Un étudiant fait de la physique. Que vaut P(maths | physique) ?"
+        explain: Cette fois le groupe, ce sont les 50 étudiants en physique, et 30 d'entre eux font des maths, donc 30/50 = 0.6. Ce n'est pas la même chose que P(physique | maths) = 0.75.
+      cd5:
+        stem: La plupart des gens enrhumés éternuent. Est-ce que ça veut dire que la plupart des gens qui éternuent sont enrhumés ?
+        options:
+          - Non. P(éternue | enrhumé) et P(enrhumé | éternue) sont deux nombres différents
+          - Oui, les deux disent la même chose
+          - Oui, tant que les rhumes sont fréquents
+          - Non, parce que les deux font toujours 1 au total
+        explain: Beaucoup de gens éternuent pour d'autres raisons (poussière, pollen), donc les gens qui éternuent forment un groupe bien plus grand que les gens enrhumés.
+      cd6:
+        stem: Tu tires deux cartes d'un jeu de 52 cartes sans remettre la première. Que vaut P(la deuxième carte est un as | la première carte est un as) ?
+        explain: Une fois un as parti, il reste 3 as parmi 51 cartes.
+
+  independence:
+    name: Indépendance
+    plain: Quand savoir un événement ne change rien à l'autre
+    aliases: ["indépendance", "independance", "indépendants", "indépendant", "independant", "erreur du joueur", "sophisme du joueur", "el indépendance", "الاستقلالية", "الindépendance"]
+    key_ideas:
+      - indépendants veut dire P(A | B) = P(A)
+      - pour des événements indépendants P(A et B) = P(A) fois P(B)
+      - indépendants n'est pas la même chose qu'incompatibles
+      - une pièce équilibrée n'a pas de mémoire
+    misconceptions:
+      gamblers_fallacy:
+        text: Penser qu'après une série, l'autre résultat est « dû »
+        fix: Des épreuves indépendantes n'ont pas de mémoire. Le prochain lancer d'une pièce équilibrée vaut 1/2, quoi qu'il soit arrivé avant.
+      exclusive_independent:
+        text: Penser que des événements incompatibles sont indépendants
+        fix: Si A et B ne peuvent pas arriver ensemble, savoir A te dit que B ne s'est pas produit, donc ils dépendent l'un de l'autre.
+      assumes_independence:
+        text: Multiplier les probabilités d'événements qui ne sont pas indépendants
+        fix: P(A et B) = P(A) × P(B) seulement pour des événements indépendants. En général, utilise P(B) × P(A | B), ou la règle d'addition.
+      and_or_swap:
+        text: Additionner les probabilités pour « et », ou les multiplier pour « ou »
+        fix: « Et » pour des événements indépendants multiplie. « Ou » utilise la règle d'addition.
+    questions:
+      in1:
+        stem: Une pièce équilibrée tombe sur pile 5 fois de suite. Quelle est la probabilité de pile au lancer suivant ?
+        options: ["1/2", "Moins de 1/2, face est dû", "Plus de 1/2, la pièce est en série", "1/32"]
+        explain: La pièce n'a pas de mémoire. Chaque lancer est indépendant, donc pile vaut toujours 1/2.
+      in2:
+        stem: A et B sont indépendants, avec P(A) = 0.5 et P(B) = 0.4. Que vaut P(A et B) ?
+        explain: Pour des événements indépendants, P(A et B) = 0.5 × 0.4 = 0.2.
+      in3:
+        stem: A et B sont incompatibles et ont tous les deux une probabilité supérieure à 0. Sont-ils indépendants ?
+        options:
+          - Non. Si A arrive, B ne peut pas arriver, donc savoir A change P(B)
+          - Oui, ils n'ont rien à voir l'un avec l'autre
+          - Oui, toujours
+          - Seulement si P(A) = P(B)
+        explain: P(B | A) = 0 mais P(B) > 0, donc P(B | A) ≠ P(B).
+      in4:
+        stem: P(A) = 0.3, P(B) = 0.5 et P(A et B) = 0.15. A et B sont-ils indépendants ?
+        options:
+          - Oui, car 0.3 × 0.5 = 0.15
+          - Non, car ils se recouvrent
+          - Non, car 0.3 + 0.5 ne fait pas 0.15
+          - On ne peut pas savoir sans P(A ou B)
+        explain: L'indépendance se vérifie avec des nombres. P(A) × P(B) = 0.15 = P(A et B), donc oui.
+      in5:
+        stem: Un sac contient 3 boules rouges et 2 bleues. Tu en tires deux sans remettre la première. Que vaut P(les deux sont rouges) ?
+        explain: 3/5 pour la première rouge, puis 2/4 car une rouge est partie, donc 3/5 × 2/4 = 0.3. Utiliser 3/5 deux fois traite les tirages comme indépendants.
+      in6:
+        stem: Dans une classe, 60% des étudiants révisent et 50% réussissent. P(réussit | a révisé) = 0.7. Réviser et réussir sont-ils indépendants ?
+        options:
+          - Non, P(réussit | a révisé) = 0.7 n'est pas P(réussit) = 0.5
+          - Oui, car 0.6 × 0.5 = 0.3
+          - Oui, rien ne les relie
+          - On ne peut pas savoir
+        explain: Savoir qu'un étudiant a révisé fait passer sa chance de réussir de 0.5 à 0.7, donc les événements sont dépendants.
+
+  total_probability:
+    name: Formule des probabilités totales
+    plain: Obtenir P(A) en découpant en cas et en pondérant chacun
+    aliases: ["probabilités totales", "probabilites totales", "formule des probabilités totales", "loi des probabilités totales", "arbre", "arbre de probabilités", "arbre pondéré", "système complet", "el arbre", "الarbre", "الprobabilités totales"]
+    key_ideas:
+      - découper en cas qui ne se recouvrent pas et couvrent tout
+      - multiplier chaque probabilité conditionnelle par la probabilité de son cas
+      - additionner les cas
+      - c'est une moyenne pondérée et pas une moyenne simple
+    misconceptions:
+      average_unweighted:
+        text: Prendre une moyenne simple des probabilités conditionnelles
+        fix: Pondère chaque cas par sa fréquence. Une moyenne simple n'est juste que si les cas sont équiprobables.
+      forgets_branch:
+        text: Oublier un des cas
+        fix: Liste d'abord tous les cas et vérifie que leurs probabilités font 1 au total.
+      tree_swap:
+        text: Additionner le long d'un chemin et multiplier entre les chemins
+        fix: Sur un arbre, multiplie le long de chaque chemin, puis additionne les chemins qui finissent là où tu veux.
+    questions:
+      tp1:
+        stem: 30% des jours sont pluvieux. P(en retard | pluie) = 0.5 et P(en retard | sec) = 0.1. Que vaut P(en retard) ?
+        explain: 0.3 × 0.5 + 0.7 × 0.1 = 0.15 + 0.07 = 0.22. Les jours secs sont plus fréquents, donc ils pèsent plus.
+      tp2:
+        stem: La machine A fabrique 60% des pièces et la machine B 40%. 2% des pièces de A et 5% des pièces de B sont défectueuses. Quelle part de toutes les pièces est défectueuse ?
+        explain: 0.6 × 0.02 + 0.4 × 0.05 = 0.012 + 0.020 = 0.032.
+      tp3:
+        stem: Sur un arbre de probabilités, comment obtient-on P(A) ?
+        options:
+          - On multiplie le long de chaque chemin qui finit en A, puis on additionne ces chemins
+          - On additionne le long de chaque chemin, puis on multiplie les chemins
+          - On fait la moyenne des probabilités au bout des branches
+          - On prend le chemin le plus probable
+        explain: Chaque chemin, c'est « ce cas puis A », ce qui se multiplie. Les chemins ne se recouvrent pas, donc ils s'additionnent.
+      tp4:
+        stem: Trois fournisseurs livrent 50%, 30% et 20% du stock. Leurs livraisons sont en retard avec une probabilité de 0.1, 0.2 et 0.5. Quelle est la probabilité qu'une livraison soit en retard ?
+        options: ["0.21", "Environ 0.27", "0.10", "0.8"]
+        explain: 0.5 × 0.1 + 0.3 × 0.2 + 0.2 × 0.5 = 0.05 + 0.06 + 0.10 = 0.21.
+      tp5:
+        stem: 70% des étudiants d'un examen viennent du groupe 1, où 80% réussissent. Les autres viennent du groupe 2, où 50% réussissent. Quelle est la probabilité qu'un étudiant pris au hasard réussisse ?
+        explain: 0.7 × 0.8 + 0.3 × 0.5 = 0.56 + 0.15 = 0.71.
+
+  bayes:
+    name: Théorème de Bayes
+    plain: Inverser une probabilité conditionnelle, sans oublier la fréquence de départ
+    aliases: ["théorème de bayes", "theoreme de bayes", "formule de bayes", "taux de base", "probabilité a priori", "el bayes", "باياس", "بايز", "الbayes"]
+    key_ideas:
+      - P(A | B) = P(B | A) fois P(A) divisé par P(B)
+      - P(B) vient de la formule des probabilités totales
+      - le taux de base P(A) compte
+      - vérifier en imaginant un nombre concret de cas
+    misconceptions:
+      inverse_conditional:
+        text: Inverser P(A | B) et P(B | A)
+        fix: "Dis-le avec des mots : « parmi les mails signalés, combien sont des spams » n'est pas la même question que « parmi les spams, combien sont signalés »."
+      base_rate_neglect:
+        text: Ignorer la fréquence de A au départ
+        fix: Imagine 10,000 cas. Quand A est rare, même un petit taux d'erreur sur les nombreux cas sans A peut dépasser les vrais cas de A.
+      ignores_evidence:
+        text: Donner la probabilité de départ P(A) en ignorant ce qu'on a observé
+        fix: L'observation B change la probabilité. Utilise P(B | A) et P(B) pour mettre à jour P(A).
+      forgets_denominator:
+        text: S'arrêter à P(A et B) sans diviser par P(B)
+        fix: P(A | B) = P(A et B) / P(B). Trouve P(B) avec la formule des probabilités totales.
+      assumes_independence:
+        text: Multiplier les probabilités d'événements qui ne sont pas indépendants
+        fix: P(A et B) = P(A) × P(B) seulement pour des événements indépendants. En général, utilise P(B) × P(A | B).
+    questions:
+      by1:
+        stem: Un filtre anti-spam signale 90% des spams. Est-ce que ça veut dire que 90% des mails signalés sont des spams ?
+        options:
+          - Pas forcément. Ça dépend de la part de spams et de la fréquence à laquelle les mails normaux sont signalés
+          - Oui, c'est la même chose
+          - Oui, si le filtre est bon
+          - Non, c'est toujours 10%
+        explain: P(signalé | spam) n'est pas P(spam | signalé). Pour l'inverser, il faut le taux de base et les faux signalements.
+      by2:
+        stem: 10% des mails sont des spams. Le filtre signale 90% des spams et 10% des mails normaux. Un mail est signalé. Que vaut P(spam | signalé) ?
+        explain: Sur 1,000 mails, 100 sont des spams et 90 d'entre eux sont signalés ; 900 sont normaux et 90 d'entre eux sont signalés aussi. 90 des 180 mails signalés sont des spams.
+      by3:
+        stem: Une alarme incendie sonne pour 99% des vrais incendies, et 2% des jours sans incendie. Les incendies arrivent 0.1% des jours. L'alarme sonne. Quelle est la probabilité d'un incendie ?
+        options: ["Environ 5%", "Environ 99%", "Environ 98%", "Environ 0.1%"]
+        explain: Sur 100,000 jours, il y a environ 100 incendies (99 alarmes) et 99,900 jours calmes (environ 1,998 fausses alarmes). 99 alarmes sur environ 2,097 sont vraies, soit à peu près 5%.
+      by4:
+        stem: La machine A fabrique 60% des pièces avec 2% de défauts ; la machine B en fabrique 40% avec 5% de défauts. Une pièce est défectueuse. Quelle est la probabilité qu'elle vienne de B ?
+        explain: P(défectueuse) = 0.012 + 0.020 = 0.032, et P(B et défectueuse) = 0.020, donc P(B | défectueuse) = 0.020 / 0.032 = 0.625.
+      by5:
+        stem: Quelle formule est le théorème de Bayes ?
+        explain: On multiplie la probabilité conditionnelle inversée par le taux de base de A, et on divise par la probabilité de ce qu'on a observé.
+
+  random_variables:
+    name: Variables aléatoires discrètes
+    plain: Un nombre pour chaque résultat, et la probabilité de chaque nombre
+    aliases: ["variable aléatoire", "variables aléatoires", "variable aleatoire", "loi de probabilité", "el variable aléatoire", "الvariable aléatoire"]
+    key_ideas:
+      - une variable aléatoire associe un nombre à chaque résultat
+      - la loi donne chaque valeur avec sa probabilité
+      - la somme des probabilités vaut 1
+      - P(X ≤ x) additionne les probabilités jusqu'à x
+    misconceptions:
+      probs_not_sum_one:
+        text: Oublier que les probabilités d'une loi font 1 au total et ne peuvent pas être négatives
+        fix: Vérifie chaque loi. Chaque probabilité est entre 0 et 1 et ensemble elles font exactement 1.
+      outcome_vs_value:
+        text: Lister des résultats (PP, PF…) au lieu des valeurs de X
+        fix: X est un nombre. Liste les nombres que X peut prendre, puis les résultats qui donnent chacun.
+      equiprobability_bias:
+        text: Traiter les valeurs de X comme équiprobables alors qu'elles ne le sont pas
+        fix: Reviens à des résultats vraiment équiprobables et compte combien donnent chaque valeur.
+      cumulative_confusion:
+        text: Donner P(X = x) quand la question demande P(X ≤ x)
+        fix: « Au plus x » additionne toutes les valeurs jusqu'à x, pas seulement x.
+    questions:
+      rv1:
+        stem: X est le nombre de piles en 2 lancers d'une pièce équilibrée. Quelles valeurs X peut-il prendre ?
+        options: ["0, 1 et 2", "PP, PF, FP et FF", "1 et 2", "0 et 1"]
+        explain: Deux lancers peuvent donner aucun pile, un pile ou deux piles.
+      rv2:
+        stem: X est le nombre de piles en 2 lancers d'une pièce équilibrée. Que vaut P(X = 1) ?
+        explain: PF et FP donnent tous les deux un pile, donc 2 des 4 résultats.
+      rv3:
+        stem: P(X = 0) = 0.2, P(X = 1) = 0.5 et P(X = 2) = k, et X ne prend pas d'autres valeurs. Que vaut k ?
+        explain: La somme des probabilités vaut 1, donc k = 1 − 0.2 − 0.5 = 0.3.
+      rv4:
+        stem: P(X = 0) = 0.2, P(X = 1) = 0.5 et P(X = 2) = 0.3. Que vaut P(X ≤ 1) ?
+        explain: X ≤ 1 veut dire X = 0 ou X = 1, donc 0.2 + 0.5 = 0.7.
+      rv5:
+        stem: Laquelle de ces lois est une loi de probabilité valide pour X ?
+        explain: Seule la première a toutes ses probabilités entre 0 et 1 et un total d'exactement 1.
+
+  expectation:
+    name: Espérance
+    plain: La moyenne sur le long terme d'une variable aléatoire
+    aliases: ["espérance", "esperance", "espérance mathématique", "gain espéré", "gain moyen", "moyenne de x", "el espérance", "الesperance", "الespérance"]
+    key_ideas:
+      - E[X] est la somme de chaque valeur fois sa probabilité
+      - c'est une moyenne pondérée
+      - ce n'est pas la valeur la plus probable
+      - "l'espérance est linéaire : multiplier la moyenne par a et ajouter b, E[aX + b] = a E[X] + b"
+    misconceptions:
+      expectation_most_likely:
+        text: Prendre la valeur la plus probable pour l'espérance
+        fix: E[X] pondère chaque valeur par sa probabilité. La valeur la plus probable est autre chose (le mode).
+      expectation_must_occur:
+        text: Penser que l'espérance doit être une valeur que X peut prendre
+        fix: E[X] est une moyenne. Un dé équilibré fait en moyenne 3.5 sur beaucoup de lancers, même si aucun lancer ne donne 3.5.
+      average_unweighted:
+        text: Faire la moyenne des valeurs sans les pondérer par leurs probabilités
+        fix: Une moyenne simple n'est juste que si toutes les valeurs sont équiprobables.
+      linearity_error:
+        text: Se tromper sur E[aX + b], souvent en oubliant le + b
+        fix: E[aX + b] = a E[X] + b. Multiplie la moyenne, puis ajoute la constante.
+    questions:
+      ex1:
+        stem: Quelle est l'espérance d'un lancer de dé équilibré ?
+        options: ["3.5", "Il n'y en a pas, car on ne peut pas obtenir 3.5", "3", "6"]
+        explain: (1 + 2 + 3 + 4 + 5 + 6) / 6 = 3.5. C'est une moyenne sur le long terme, pas un lancer.
+      ex2:
+        stem: P(X = 0) = 0.7 et P(X = 10) = 0.3. Que vaut E[X] ?
+        explain: 0 × 0.7 + 10 × 0.3 = 3.
+      ex3:
+        stem: Un jeu coûte 2 dinars. Tu gagnes 10 dinars avec une probabilité de 0.1 et rien sinon. Quel est ton gain espéré par partie ?
+        options: ["−1 dinar", "−2 dinars", "+1 dinar", "+8 dinars"]
+        explain: Les gains espérés font 0.1 × 10 = 1 dinar, moins les 2 dinars de mise, donc −1 dinar par partie en moyenne.
+      ex4:
+        stem: E[X] = 4. Que vaut E[3X + 2] ?
+        explain: E[3X + 2] = 3 × 4 + 2 = 14.
+      ex5:
+        stem: P(X = 1) = 0.2, P(X = 2) = 0.5 et P(X = 9) = 0.3. Que vaut E[X] ?
+        explain: 1 × 0.2 + 2 × 0.5 + 9 × 0.3 = 0.2 + 1.0 + 2.7 = 3.9.
+
+  variance:
+    name: Variance et écart-type
+    plain: La dispersion d'une variable aléatoire autour de sa moyenne
+    aliases: ["variance", "écart-type", "ecart-type", "écart type", "ecart type", "dispersion", "el variance", "الvariance", "الécart-type"]
+    key_ideas:
+      - la variance mesure la dispersion autour de la moyenne
+      - "la variance est la moyenne des carrés moins le carré de la moyenne : Var(X) = E[X²] − (E[X])²"
+      - l'écart-type est la racine carrée de la variance
+      - ajouter une constante ne change pas la variance
+      - multiplier par a multiplie la variance par a au carré
+    misconceptions:
+      variance_linear:
+        text: Traiter la variance comme la moyenne, par exemple Var(3X) = 3 Var(X) ou Var(X − Y) = Var(X) − Var(Y)
+        fix: Var(aX) = a² Var(X), et pour X et Y indépendants les variances s'additionnent toujours.
+      shift_changes_spread:
+        text: Penser qu'ajouter une constante change la variance
+        fix: Ajouter une constante déplace toutes les valeurs de la même quantité, donc la dispersion ne change pas.
+      variance_sd_confusion:
+        text: Confondre la variance et l'écart-type
+        fix: L'écart-type est la racine carrée de la variance.
+      ex2_vs_ex_squared:
+        text: Confondre E[X²] et (E[X])²
+        fix: E[X²] fait la moyenne des carrés ; (E[X])² met la moyenne au carré. Var(X) est le premier moins le second.
+    questions:
+      va1:
+        stem: X vaut toujours 5. Que vaut Var(X) ?
+        explain: X ne s'éloigne jamais de sa moyenne, donc il n'y a aucune dispersion.
+      va2:
+        stem: Var(X) = 4. Que vaut Var(X + 10) ?
+        explain: Ajouter 10 décale toutes les valeurs de la même quantité, donc la dispersion ne change pas.
+      va3:
+        stem: Var(X) = 4. Que vaut Var(3X) ?
+        explain: Var(3X) = 3² × 4 = 36.
+      va4:
+        stem: Var(X) = 9. Quel est l'écart-type de X ?
+        explain: L'écart-type est √9 = 3.
+      va5:
+        stem: E[X] = 2 et E[X²] = 7. Que vaut Var(X) ?
+        explain: Var(X) = E[X²] − (E[X])² = 7 − 4 = 3.
+      va6:
+        stem: X et Y sont indépendants, avec Var(X) = 2 et Var(Y) = 3. Que vaut Var(X − Y) ?
+        explain: Var(X − Y) = Var(X) + (−1)² Var(Y) = 2 + 3 = 5. Les variances ne se soustraient jamais.
+
+  binomial:
+    name: La loi binomiale
+    plain: Compter les succès dans des épreuves indépendantes avec la même chance
+    aliases: ["binomiale", "loi binomiale", "b(n, p)", "schéma de bernoulli", "bernoulli", "épreuve de bernoulli", "el binomiale", "الbinomiale", "الloi binomiale"]
+    key_ideas:
+      - n épreuves indépendantes avec la même probabilité de succès p
+      - "la probabilité de k succès multiplie le nombre d'ordres par la chance d'un ordre : P(X = k) = C(n, k) p^k (1 − p)^(n − k)"
+      - C(n, k) compte les ordres dans lesquels les succès peuvent arriver
+      - la moyenne est np et la variance est np(1 − p)
+    misconceptions:
+      binomial_no_choose:
+        text: Oublier le facteur C(n, k)
+        fix: p^k (1 − p)^(n − k) est la chance d'un ordre précis. Multiplie par C(n, k), le nombre d'ordres.
+      binomial_not_independent:
+        text: Utiliser la loi binomiale pour des épreuves qui ne sont pas indépendantes, comme des tirages sans remise
+        fix: La loi binomiale demande le même p à chaque épreuve. Sans remise, p change après chaque tirage.
+      expectation_most_likely:
+        text: Penser que la moyenne np arrive forcément, ou qu'elle est la seule valeur probable
+        fix: np est la moyenne sur le long terme. Les autres valeurs ont aussi une vraie probabilité.
+      variance_sd_confusion:
+        text: Confondre la variance np(1 − p), l'écart-type et la moyenne
+        fix: Moyenne np, variance np(1 − p), écart-type √(np(1 − p)).
+    questions:
+      bi1:
+        stem: Laquelle de ces variables aléatoires suit une loi binomiale ?
+        options:
+          - Le nombre de piles en 10 lancers d'une pièce équilibrée
+          - Le nombre d'as parmi 5 cartes tirées sans remise
+          - Le nombre de lancers jusqu'au premier pile
+          - La somme de deux dés
+        explain: Les lancers de pièce sont indépendants et ont tous le même p = 1/2. Des tirages de cartes sans remise changent p à chaque fois.
+      bi2:
+        stem: X ~ B(10, 0.3). Que vaut E[X] ?
+        explain: E[X] = np = 10 × 0.3 = 3. 2.1 est la variance, np(1 − p).
+      bi3:
+        stem: Tu lances une pièce équilibrée 3 fois. Quelle est la probabilité d'obtenir exactement 2 piles ?
+        explain: PPF, PFP et FPP ont chacun une probabilité de 1/8, donc C(3, 2) × 1/8 = 3/8.
+      bi4:
+        stem: X ~ B(5, 0.2). Que vaut P(X = 1) ?
+        options: ["Environ 0.41", "Environ 0.08", "1, car E[X] = 1", "0.2"]
+        explain: C(5, 1) × 0.2 × 0.8⁴ = 5 × 0.2 × 0.4096 ≈ 0.41.
+      bi5:
+        stem: X ~ B(100, 0.5). Que vaut Var(X) ?
+        explain: Var(X) = np(1 − p) = 100 × 0.5 × 0.5 = 25. La moyenne est 50 et l'écart-type est 5.

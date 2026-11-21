@@ -74,6 +74,9 @@ extend-exclude = ["frontend", "docs", "backend/db/migrations/versions"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "ASYNC"]
+# Derja is written in Arabic script and French uses typographic apostrophes (backend/i18n.py):
+# these letters are meant, not look-alikes of Latin ones.
+allowed-confusables = ["ا", "’", "ـ"]
 
 [tool.mypy]
 python_version = "3.14"

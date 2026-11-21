@@ -5,6 +5,7 @@ import type { Persona, Registry } from '../api/types'
 import { DemoToggle } from './DemoToggle'
 import { Glyph } from './icons'
 import { PERSONAS } from './personas'
+import { t } from '../i18n'
 
 type Notice = Registry['consent']
 
@@ -27,7 +28,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
         setConsent(Object.fromEntries(registry.consent.switches.map((s) => [s.id, s.default])))
       },
       () => {
-        setError("Couldn't reach Lodestar. Try again in a moment.")
+        setError(t("Couldn't reach Lodestar. Try again in a moment."))
       },
     )
   }, [])
@@ -51,15 +52,16 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
           <span className="step-icon">
             <Glyph name="star" />
           </span>
-          <h2>Welcome to Lodestar</h2>
+          <h2>{t('Welcome to Lodestar')}</h2>
           <p>
-            Lodestar is a study coach for your course. It finds which concepts aren&apos;t sticking
-            and why, explains them from your notes, quizzes you at the right level, and explains
-            every choice it makes.
+            {t(
+              "Lodestar is a study coach for your course. It finds which concepts aren't sticking and why, explains them from your notes, quizzes you at the right level, and explains every choice it makes.",
+            )}
           </p>
           <p className="muted">
-            Lodestar measures what you know about the course, nothing else. It never labels you, and
-            every number comes with how sure it is.
+            {t(
+              'Lodestar measures what you know about the course, nothing else. It never labels you, and every number comes with how sure it is.',
+            )}
           </p>
           <button
             type="button"
@@ -68,7 +70,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
               setStep('age')
             }}
           >
-            Get started
+            {t('Get started')}
           </button>
           <DemoToggle variant="welcome" />
         </>
@@ -79,8 +81,12 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
           <span className="step-icon">
             <Glyph name="user" />
           </span>
-          <h2>How old are you?</h2>
-          <p>This prototype is for people aged {notice?.age_minimum ?? 18} and over.</p>
+          <h2>{t('How old are you?')}</h2>
+          <p>
+            {t('This prototype is for people aged {n} and over.', {
+              n: notice?.age_minimum ?? 18,
+            })}
+          </p>
           <div className="choice">
             <button
               type="button"
@@ -89,7 +95,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
                 setStep('consent')
               }}
             >
-              I&apos;m {notice?.age_minimum ?? 18} or older
+              {t("I'm {n} or older", { n: notice?.age_minimum ?? 18 })}
             </button>
             <button
               type="button"
@@ -97,7 +103,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
                 setStep('under')
               }}
             >
-              I&apos;m younger
+              {t("I'm younger")}
             </button>
           </div>
         </>
@@ -105,10 +111,11 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
 
       {step === 'under' && (
         <>
-          <h2>Not yet, sorry</h2>
+          <h2>{t('Not yet, sorry')}</h2>
           <p>
-            Lodestar needs a parent or guardian&apos;s consent for younger people, and this
-            prototype can&apos;t ask for it yet. Nothing about you has been stored.
+            {t(
+              "Lodestar needs a parent or guardian's consent for younger people, and this prototype can't ask for it yet. Nothing about you has been stored.",
+            )}
           </p>
         </>
       )}
@@ -118,8 +125,8 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
           <span className="step-icon">
             <Glyph name="shield" />
           </span>
-          <h2>What Lodestar may do</h2>
-          <p className="muted">You can change these later in Settings.</p>
+          <h2>{t('What Lodestar may do')}</h2>
+          <p className="muted">{t('You can change these later in Settings.')}</p>
           <ul className="switches">
             {notice.switches.map((s) => (
               <li key={s.id}>
@@ -133,15 +140,15 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
                     }}
                   />
                   <span>
-                    <strong>{s.title}</strong>
-                    {s.required && <span className="muted"> (needed)</span>}
+                    <strong>{t(s.title)}</strong>
+                    {s.required && <span className="muted"> {t('(needed)')}</span>}
                     <br />
-                    <span className="muted">{s.short}</span>
+                    <span className="muted">{t(s.short)}</span>
                   </span>
                 </label>
                 <details className="switch__more">
-                  <summary>Details</summary>
-                  <p>{s.plain}</p>
+                  <summary>{t('Details')}</summary>
+                  <p>{t(s.plain)}</p>
                 </details>
               </li>
             ))}
@@ -153,7 +160,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
               setStep('coach')
             }}
           >
-            Continue
+            {t('Continue')}
           </button>
         </>
       )}
@@ -163,9 +170,9 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
           <span className="step-icon">
             <Glyph name="smile" />
           </span>
-          <h2>Pick a coach</h2>
-          <p className="muted">They all say the same facts, in their own way.</p>
-          <div className="coaches" role="radiogroup" aria-label="Coach">
+          <h2>{t('Pick a coach')}</h2>
+          <p className="muted">{t('They all say the same facts, in their own way.')}</p>
+          <div className="coaches" role="radiogroup" aria-label={t('Coach')}>
             {PERSONAS.map((p) => (
               <label key={p.id} className="coach-option">
                 <input
@@ -178,15 +185,15 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
                   }}
                 />
                 <span>
-                  <strong>{p.name}</strong> · {p.style}
+                  <strong>{p.name}</strong> · {t(p.style)}
                   <br />
-                  <span className="muted">&ldquo;{p.sample}&rdquo;</span>
+                  <span className="muted">&ldquo;{t(p.sample)}&rdquo;</span>
                 </span>
               </label>
             ))}
           </div>
           <button type="button" className="primary" disabled={saving} onClick={() => void finish()}>
-            Let&apos;s start
+            {t("Let's start")}
           </button>
         </>
       )}

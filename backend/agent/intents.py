@@ -28,10 +28,11 @@ SKILL_WORDS: list[tuple[re.Pattern[str], str]] = []
 def _concept_words(registry: Registry) -> list[tuple[re.Pattern[str], str]]:
     phrases = [
         (phrase.lower(), concept.id)
-        for course in registry.courses
+        for course in registry.every_language()  # "Bayes", "théorème de Bayes", "بايز"
         for concept in course.concepts
         for phrase in [concept.name, *concept.aliases]
     ]
+    phrases = list(dict.fromkeys(phrases))
     phrases.sort(key=lambda p: -len(p[0]))
     return [(re.compile(rf"(?<![\w]){re.escape(p)}(?![\w])", re.I), c) for p, c in phrases]
 
@@ -225,6 +226,142 @@ _SMALL_TALK = re.compile(
 )
 
 
+# French and Tunisian Arabic (Derja) ------------------------------------------------------------
+# The same rules in the two other languages a student may type (backend/i18n.py). Derja comes in
+# Arabic script and in Latin letters with digits for some sounds ("ma fhemtech", "3awedli"), and is
+# mixed with French course terms. Each rule keeps its English pattern and gains these as
+# alternatives, so routing English is unchanged.
+
+_FR_TN_KINDS: dict[str, str] = {
+    "settings": (
+        r"\b(paramètres|réglages|change[rz]? (de |le |mon )?coach|"
+        r"coach (plus )?(calme|sympa|strict)|"
+        r"mode (push|chill|équilibré)|caméra|micro(phone)?|(active|désactive|coupe) (la |le )?\w+|"
+        r"arrête de (me )?proposer)\b|بدّل الcoach|بدل الcoach|الإعدادات|الparamètres"
+    ),
+    "experiment": (
+        r"\b(une expérience|faire une expérience|tester si|teste si|vraie expérience|"
+        r"comparer (le )?(matin|soir))\b|نجرّب|نجرب كان|تجربة"
+    ),
+    "twin_chat": (
+        r"\b(quand (est-ce que )?je suis (le plus |plus )?(efficace|concentré|concentrée)|"
+        r"meilleur moment|moment de la journée|matin ou (le )?soir)\b|"
+        r"وقتاش نكون|الصباح ولا العشية|الصباح ولا الليل"
+    ),
+    "goal": (
+        r"\b(objectif|mon but|je veux (être|devenir) .{0,40}(meilleur|solide|fort|forte)|"
+        r"améliorer (mon|ma|mes)|progresser en|devenir solide en)\b|نحب نتحسن|هدف|نحب نولّي|نحب نولي"
+    ),
+    "life_context": (
+        r"\b(dormi|mal dormi|pas dormi|fatigué|fatiguée|épuisé|épuisée|malade|mal à la tête|"
+        r"grippe|examens?|semaine d'examens|stressé|stressée|stress|journée chargée)\b|"
+        r"ما رقدتش|مارقدتش|تعبان|تعبانة|مريض|مريضة|مقلّق|مقلق|عندي examen|الexamens?|"
+        r"\b(ma r9adtech|ta3ban|mridh)\b"
+    ),
+}
+_FR_TN_TOOLS: dict[str, str] = {
+    "mistakes": (
+        r"\b(mes erreurs|mes fautes|quelles erreurs|qu'?est-ce que je rate|je rate (souvent|tout)|"
+        r"je me trompe|où je me trompe|confusions?|je confonds)\b|"
+        r"غلطاتي|الغلطات متاعي|شنوّة نغلط|شنوة نغلط|وين نغلط|علاش نغلط|نغلط ديما|نخلط|"
+        r"اللي نغلط فيهم|\b(chnowa nghlot|win nghlot|nghlot dima)\b"
+    ),
+    "teach": (
+        r"\b(je (ne )?(comprends|comprend|pige|capte) pas|j'?(ai|arrive) pas (à )?comprendre|"
+        r"(je n'?ai|j'?ai) pas compris|"
+        r"c'?est quoi|qu'?est-ce que (c'?est|signifie|veut dire)|"
+        r"explique[sz]?(-moi| moi)?(?! (ton|ce|cette|la) (choix|décision))|"
+        r"aide-moi (à comprendre|avec)|je bloque sur|je suis perdu|"
+        r"comment (on )?(calcule|trouve|utilise|applique|résout))\b|"
+        r"ما فهمتش|مافهمتش|موش فاهم|فهّمني|فهمني|اشرحلي|إشرحلي|شنوّة (هو|هي|معناها)|"
+        r"شنوة (هو|هي|معناها)|شنيّة|كيفاش نحسب|كيفاش نعمل|عاودلي|"
+        r"\b(ma fhemtech|ma fhemtch|mafhemtech|ma fhmtch|fahhemni|fhemni|chnowa|chneya|"
+        r"kifech|3awedli|achra7li)\b"
+    ),
+    "explain": (
+        r"\b(pourquoi (tu as|as-tu|t'as) (choisi|pris)|pourquoi (cet|ce) (exercice|quiz)|"
+        r"comment (tu as|as-tu) choisi)\b|علاش اخترت|علاش هذا|\b3lech (ikhtart|hedha)\b"
+    ),
+    "forecast_range": (
+        r"\b(prédi\w*|prévoi\w*|prévision|(quel|combien) sera\b.{0,30}\bmon|"
+        r"je vais avoir combien|(exactement|précisément)\b.{0,30}\b(sera|score))\b|"
+        r"باش نجيب قدّاش|باش نجيب قداش|شنوّة باش يكون|شنوة باش يكون"
+    ),
+    "session_history": (
+        r"\b(qu'?est-ce que j'?ai (fait|joué)|ma dernière (séance|session)|dernière séance|"
+        r"historique des séances)\b|شنوة عملت|شنوّة عملت|آخر séance"
+    ),
+    "search_memory": (
+        r"\b(tu te souviens|qu'?est-ce que tu sais sur moi|tu te rappelles)\b|تتفكّر|تتفكر|"
+        r"شنوة تعرف عليّا|شنوة تعرف عليا"
+    ),
+    "get_history": (
+        r"\b(historique|progrès|progression|depuis le début|cette semaine|ce mois|tendance)\b|"
+        r"تطوّرت|تطورت|تحسّنت|تحسنت"
+    ),
+    "read_profile": (
+        r"\b(comment je m'?en sors|mon (profil|niveau|score)|mes (résultats|scores|points forts)|"
+        r"où j'?en suis)\b|وين وصلت|المستوى متاعي|كيفاش ماشي"
+    ),
+}
+_FR_TN_CONTEST = (
+    r"\b(c'?est pas juste|ce n'?est pas juste|c'?est faux|injuste|je ne suis pas d'accord|"
+    r"pas d'accord|j'?étais distrait|j'?étais distraite|(il y avait|y avait) du bruit|"
+    r"trop de bruit|on m'?a interrompu)\b|موش عادل|موش صحيح|ماهوش صحيح|كان فما حس|"
+    r"فما برشا حس|تلهّيت|تلهيت"
+)
+_FR_TN_NOTES = (
+    r"\b(mes|les|nos|de mes|sur mes) (propres )?(notes|slides?|pdfs?|documents?|cours|"
+    r"polycopiés?|chapitres?|fichiers?)\b|الnotes متاعي|الcours متاعي|الslides متاعي|"
+    r"الdocument متاعي|\b(les notes mte3i|el cours mte3i)\b"
+)
+_FR_TN_QUIZ = (
+    r"\b(quiz|interroge-moi|teste-moi|questions?|exercices?|réviser|entraîne-moi)\b|"
+    r"أسئلة|سؤال|تمارين|اختبرني|إختبرني"
+)
+_FR_TN_QUESTION = (
+    r"؟\s*$|^\s*(comment|pourquoi|qu'?est|quel|quelle|quand|est-ce|c'?est quoi|explique|"
+    r"علاش|كيفاش|شنوّة|شنوة|شنيّة|وقتاش|قدّاش|قداش|chnowa|kifech|3lech)\b"
+)
+_FR_TN_PLAY = (
+    r"\b(interroge-moi|teste-moi|des questions sur|exercices?|réviser|révision|étudier|"
+    r"on commence|commencer|c'?est parti|allons-y|encore un|un autre|vas-y|donne-moi|"
+    r"entraîne-moi|on y va)\b|يلّا|يلا|نبداو|نقراو|عطيني|زيد واحد|نحب نقرا|نتمرّن|نتمرن|ابدا|"
+    r"\b(yalla|nabdew|a3tini)\b"
+)
+_FR_TN_SMALL_TALK = (
+    r"^\s*(salut|bonjour|bonsoir|merci|d'?accord|ok|cool|super|au revoir|bonne nuit|"
+    r"qui es-tu|tu fais quoi)\b|^\s*(عسلامة|السلام|أهلا|اهلا|مرسي|يعيشك|باهي|بالسلامة|"
+    r"شكون انت|ahla|3aslema|aslema|yaatik saha|mersi|behi)\b"
+)
+_FR_TN_DECLINE = (
+    r"\b(pas (de |le |la |les |d')?|sans|autre chose que|plutôt pas|j'?en ai marre (de |du |des )?)"
+    r"(?P<rest_fr>.{0,40})|(موش|ما نحبش|بلاش|ماعادش)(?P<rest_tn>.{0,40})"
+)
+_FR_TN_QUICK = (
+    r"\b(rapide|court|vite|(j'?ai|seulement) \d+ min\w*|pas le temps)\b|حاجة صغيرة|بالزربة|"
+    r"ما عنديش وقت|مزروب"
+)
+_FR_TN_ELSE = r"\b(autre chose|un autre (exercice|quiz)|pas celui-là)\b|حاجة أخرى|واحد آخر|واحد اخر"
+
+
+def _also(pattern: re.Pattern[str], extra: str | None) -> re.Pattern[str]:
+    return re.compile(f"(?:{pattern.pattern})|(?:{extra})", re.I) if extra else pattern
+
+
+_KINDS = [(kind, _also(p, _FR_TN_KINDS.get(kind))) for kind, p in _KINDS]
+_CHAT_TOOLS = [(tool, _also(p, _FR_TN_TOOLS.get(tool))) for tool, p in _CHAT_TOOLS]
+_CONTEST = _also(_CONTEST, _FR_TN_CONTEST)
+_NOTES = _also(_NOTES, _FR_TN_NOTES)
+_QUIZ_WORDS = _also(_QUIZ_WORDS, _FR_TN_QUIZ)
+_QUESTION = _also(_QUESTION, _FR_TN_QUESTION)
+_PLAY = _also(_PLAY, _FR_TN_PLAY)
+_SMALL_TALK = _also(_SMALL_TALK, _FR_TN_SMALL_TALK)
+_QUICK = _also(_QUICK, _FR_TN_QUICK)
+_ELSE = _also(_ELSE, _FR_TN_ELSE)
+_DECLINE_FR_TN = re.compile(_FR_TN_DECLINE, re.I)
+
+
 @dataclass(frozen=True)
 class Routed:
     intent: Intent
@@ -248,8 +385,12 @@ def skills_in(text: str, registry: Registry | None = None) -> list[str]:
 
 def game_in(text: str, registry: Registry) -> str | None:
     lowered = text.lower().replace("\u2019", "'")
-    for game in registry.games:  # a story ("the Detective story") is played chapter by chapter
-        if (game.available or game.kind == "story") and game.name.lower() in lowered:
+    # Exercise names in every language ("Quiz : Théorème de Bayes"): students switch.
+    names = [(g, g.name) for g in registry.games]
+    for locale in ("fr", "tn"):
+        names += [(g, g.name) for g in registry.localized(locale).games]
+    for game, name in names:  # a story ("the Detective story") is played chapter by chapter
+        if (game.available or game.kind == "story") and name.lower() in lowered:
             return game.id
     return None
 
@@ -257,8 +398,10 @@ def game_in(text: str, registry: Registry) -> str | None:
 def declined(text: str, registry: Registry | None = None) -> list[str]:
     """Skills the user turned down: 'not memory today', 'skip the maths'."""
     out: list[str] = []
-    for match in _DECLINE.finditer(text):
-        for dim in skills_in(match.group("rest"), registry):
+    rests = [m.group("rest") for m in _DECLINE.finditer(text)]
+    rests += [m.group("rest_fr") or m.group("rest_tn") or "" for m in _DECLINE_FR_TN.finditer(text)]
+    for rest in rests:
+        for dim in skills_in(rest, registry):
             if dim not in out:
                 out.append(dim)
     return out
@@ -279,7 +422,7 @@ def chat_tool(text: str) -> ToolChoice | None:
 
 def classify(text: str, trigger: str, registry: Registry | None = None) -> Routed:
     """Keyword rules. `sure` is False when nothing matched or two kinds compete."""
-    stripped = text.strip()
+    stripped = text.strip().replace("\u2019", "'")  # phones type a curly apostrophe
     if not stripped:
         kind: IntentKind = "proactive" if trigger in ("schedule", "proactive") else "play"
         return Routed(Intent(kind=kind), sure=True)
@@ -402,6 +545,8 @@ Pick the kind:
 - goal: wants to reach a level in a concept by a date (an exam)
 - life_context: tells how their life is going (sleep, exams, stress, feeling unwell)
 - settings: wants to change the coach, difficulty mode, camera or microphone
+Messages may be in English, French or Tunisian Arabic (Derja, in Arabic script or in Latin
+letters such as "ma fhemtech"), often mixed with French course terms. Route them the same way.
 Reply with one JSON object and nothing else, shaped like:
 {"kind": "play", "tool": null, "game": null, "skill": null, "avoid_skill": null, "quick": false}
 (tool: one of the tools above or null; game, skill and

@@ -10,7 +10,7 @@ router = APIRouter(tags=["registry"])
 
 @router.get("/registry", response_model=Registry)
 def get_registry() -> Registry:
-    registry = load_registry()
+    registry = load_registry().localized()  # concept names in the request's language
     visible = [p for p in registry.providers if not p.hidden]
     # Courses carry the question bank and its answers: the UI reads GET /course instead.
-    return registry.model_copy(update={"providers": visible, "courses": []})
+    return registry.model_copy(update={"providers": visible, "courses": [], "translations": {}})

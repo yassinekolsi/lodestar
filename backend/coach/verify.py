@@ -10,32 +10,46 @@
 import re
 from dataclasses import dataclass, field
 
+from backend import i18n
 from backend.coach.language import find_banned
 from backend.contracts.common import Persona
 from backend.contracts.facts import FactsPacket
 
+# The same rules hold in English, French and Derja (backend/i18n.py); \u061f is the Arabic "?".
 _CITE = re.compile(r"\[([FDKM]\d+)\]")
 _NUMBER = re.compile(r"\d+(?:\.\d+)?")
-_SENTENCE = re.compile(r"(?<=[.!?])\s+")
+_SENTENCE = re.compile(r"(?<=[.!?\u061f])\s+")
 # "Nice work! [F1]" cites the sentence before it: move trailing citations inside the punctuation.
-_TRAILING_CITES = re.compile(r"([.!?]+)\s*((?:\[[FDKM]\d+\]\s*)+)")
+_TRAILING_CITES = re.compile(r"([.!?\u061f]+)\s*((?:\[[FDKM]\d+\]\s*)+)")
 _FORECAST = re.compile(
     r"\b(will (reach|be|get|hit|improve|rise|go)|you'll (reach|be|get)|expect(ed)?(?!\s+value)|"
-    r"forecast|predict(ed)?|on track to)\b",
+    r"forecast|predict(ed)?|on track to|atteindr\w*|tu seras|prévi\w*|prédi\w*)\b|"
+    r"توقع|توقّع|باش توصل",
     re.IGNORECASE,
 )
-_RANGE = re.compile(r"\d+\s*%?\s*(?:-|\u2013|to)\s*\d+|\bbetween\s+\d+|\blikely\b", re.IGNORECASE)
+_RANGE = re.compile(
+    r"\d+\s*%?\s*(?:-|\u2013|to|à|et|و|إلى|ل)\s*\d+|\b(between|entre)\s+\d+|"
+    r"\blikely\b|"
+    r"\bprobablement\b|محتمل|بين\s*\d+",
+    re.IGNORECASE,
+)
 
 # Promises about the future or a person (the "fortune teller" guardrail): fine only when denied.
 _ABSOLUTE = re.compile(
     r"\b(definitely|guarantee\w*|for sure|for certain|certainly|without (a )?doubt|exactly|"
-    r"promise\w*|100%)",
+    r"promise\w*|100%|certainement|sans (aucun )?doute|garanti\w*|exactement|promis)|"
+    r"أكيد|مضمون|بالضبط",
     re.IGNORECASE,
 )
-_DENIED = re.compile(r"\b(can'?t|cannot|won'?t|not|no one|nobody|never)\b", re.IGNORECASE)
+_DENIED = re.compile(
+    r"\b(can'?t|cannot|won'?t|not|no one|nobody|never|pas|jamais|personne|aucun)\b|"
+    r"(^|\s)(ما|موش|مش|مانيش)\s",
+    re.IGNORECASE,
+)
 
 MAX_SENTENCES = 6
 MAX_CHARS = 700
+MAX_CHARS_TRANSLATED = 900  # French and Derja run about a quarter longer than English
 # Persona style rules (docs/plan/09, "Personas"). They change how Lodestar talks, not what it says.
 STYLE_RULES: dict[str, dict[str, float]] = {
     "willow": {"max_sentences": 4},
@@ -60,7 +74,8 @@ class Verdict:
 def style_violations(text: str, persona: Persona | None) -> list[str]:
     parts = sentences(text)
     out = []
-    if len(parts) > MAX_SENTENCES or len(text) > MAX_CHARS:
+    limit = MAX_CHARS if i18n.current() == "en" else MAX_CHARS_TRANSLATED
+    if len(parts) > MAX_SENTENCES or len(text) > limit:
         out.append(f"too long: {len(parts)} sentences, {len(text)} characters")
     rules = STYLE_RULES.get(persona or "", {})
     if "max_sentences" in rules and len(parts) > rules["max_sentences"]:

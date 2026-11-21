@@ -12,10 +12,11 @@ from typing import Any
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langgraph.runtime import Runtime
 
+from backend import i18n
 from backend.agent.context import LodestarContext
 from backend.agent.state import LodestarState
 from backend.agent.telemetry import emit, traced
-from backend.coach.personas import CLOSING, RULES, STYLE
+from backend.coach.personas import RULES, STYLE, closing
 from backend.coach.verify import verify
 from backend.contracts.common import Persona
 from backend.contracts.events import SessionEnded, SessionEndedPayload
@@ -34,6 +35,26 @@ from backend.scoring.kalman_elo import Belief
 from backend.scoring.quality import FLAGGED
 
 _SENTENCE = re.compile(r"(?<=[.!?])\s+")
+
+# Fixed sentences no model writes, in each language (backend/i18n.py).
+_SAID: dict[str, dict[i18n.Locale, str]] = {
+    "saved": {"en": "Round saved.", "fr": "Exercice enregistré.", "tn": "سجّلنا التمرين."},
+    "not_counted": {
+        "en": "That round didn't count toward your profile.",
+        "fr": "Cet exercice ne compte pas dans ton profil.",
+        "tn": "التمرين هذا ما تحسبش في الprofil متاعك.",
+    },
+    "kept": {
+        "en": "I kept your estimate and I'm less sure of it now:",
+        "fr": "J'ai gardé ton estimation, mais j'en suis moins sûr maintenant :",
+        "tn": "خلّيت التقدير متاعك أما توّا موش متأكد منو برشا :",
+    },
+    "rushing": {
+        "en": "Were you distracted, or rushing?",
+        "fr": "Tu étais distrait, ou pressé ?",
+        "tn": "كنت مشغول بحاجة أخرى، ولا مزروب ؟",
+    },
+}
 
 
 def _pct(ctx: LodestarContext, dim: str, mu: float, sigma: float) -> tuple[int, int, int]:
@@ -122,8 +143,8 @@ async def reflect(state: LodestarState, runtime: Runtime[LodestarContext]) -> di
 def template_reply(packet: FactsPacket, persona: str) -> str:
     """Fallback built only from facts: always passes the verifier."""
     picks = [f for f in packet.facts if not f.decision][:3]
-    sentences = [f"{f.text} [{f.id}]." for f in picks] or ["Round saved."]
-    sentences.append(CLOSING.get(persona, ""))  # type: ignore[call-overload]
+    sentences = [f"{f.text} [{f.id}]." for f in picks] or [_SAID["saved"][i18n.current()]]
+    sentences.append(closing(persona))
     return " ".join(s for s in sentences if s)
 
 
@@ -141,15 +162,19 @@ async def draft_verified(
     """Draft with the LLM, verify, repair up to twice, else a template built only from facts (or
     `fallback`, fixed text with no numbers). Nothing reaches the user before it passes
     (docs/plan/09)."""
-    names = [d.name for d in ctx.services.registry.dimensions]
+    registry = ctx.services.registry
+    names = [d.name for d in registry.dimensions]
+    if registry.courses:  # a French or Derja reply names concepts in French
+        names += [c.name for c in registry.course.concepts if c.name not in names]
     items: list[Fact | KnowledgeItem | MemoryItem] = [
         *packet.facts,
         *packet.knowledge,
         *packet.memories,
     ]
     listing = "\n".join(f"{i.id}: {i.text}" for i in items)
+    system = i18n.with_language(f"{style or STYLE[persona]}\n{RULES}\n\nFacts:\n{listing}")
     messages: list[Any] = [
-        SystemMessage(f"{style or STYLE[persona]}\n{RULES}\n\nFacts:\n{listing}"),
+        SystemMessage(system),
         HumanMessage(instruction),
     ]
     degraded: list[str] = []
@@ -195,15 +220,14 @@ async def draft_verified(
 
 def rushed_reply(packet: FactsPacket) -> str:
     """Asks what happened; a rushed round is not a drop in skill, and no model writes this."""
+    loc = i18n.current()
     speed, right, *ranges = [*packet.facts, None, None]
-    said = ["That round didn't count toward your profile."]
+    said = [_SAID["not_counted"][loc]]
     if speed is not None and right is not None and "ms" in speed.text:
         said.append(f"{speed.text} [{speed.id}]. {right.text} [{right.id}].")
     if ranges and ranges[0] is not None:
-        said.append(
-            f"I kept your estimate and I'm less sure of it now: {ranges[0].text} [{ranges[0].id}]."
-        )
-    said.append("Were you distracted, or rushing?")
+        said.append(f"{_SAID['kept'][loc]} {ranges[0].text} [{ranges[0].id}].")
+    said.append(_SAID["rushing"][loc])
     return " ".join(said)
 
 
