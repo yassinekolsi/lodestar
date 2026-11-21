@@ -12,4 +12,5 @@ router = APIRouter(tags=["registry"])
 def get_registry() -> Registry:
     registry = load_registry()
     visible = [p for p in registry.providers if not p.hidden]
-    return registry.model_copy(update={"providers": visible})
+    # Courses carry the question bank and its answers: the UI reads GET /course instead.
+    return registry.model_copy(update={"providers": visible, "courses": []})

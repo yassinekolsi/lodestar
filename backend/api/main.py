@@ -14,6 +14,7 @@ from backend.agent.graph import checkpoint_pool, checkpointer, compile_graph
 from backend.agent.runner import SessionRunner
 from backend.api import (
     affect,
+    course,
     demo,
     experiments,
     goals,
@@ -102,6 +103,7 @@ def create_app(*, with_lifespan: bool = True) -> FastAPI:
         title="Lodestar API", version="0.1.0", lifespan=lifespan if with_lifespan else None
     )
     app.include_router(registry.router)
+    app.include_router(course.router)
     app.include_router(twin.router)
     app.include_router(demo.router)
     app.include_router(llm.router)

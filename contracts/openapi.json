@@ -859,6 +859,172 @@
         "title": "Choice",
         "type": "object"
       },
+      "ClassConcept": {
+        "additionalProperties": false,
+        "properties": {
+          "chapter": {
+            "title": "Chapter",
+            "type": "string"
+          },
+          "id": {
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "title": "Id",
+            "type": "string"
+          },
+          "median_percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Percent"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "section": {
+            "title": "Section",
+            "type": "string"
+          },
+          "solid": {
+            "description": "Students at 70% or more",
+            "title": "Solid",
+            "type": "integer"
+          },
+          "struggling": {
+            "description": "Students below the struggling line (45%)",
+            "title": "Struggling",
+            "type": "integer"
+          },
+          "students": {
+            "description": "Students with at least one counted answer on it",
+            "title": "Students",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "chapter",
+          "section",
+          "students",
+          "median_percent",
+          "struggling",
+          "solid"
+        ],
+        "title": "ClassConcept",
+        "type": "object"
+      },
+      "ClassMistake": {
+        "additionalProperties": false,
+        "properties": {
+          "concept": {
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "title": "Concept",
+            "type": "string"
+          },
+          "concept_name": {
+            "title": "Concept Name",
+            "type": "string"
+          },
+          "confident": {
+            "title": "Confident",
+            "type": "integer"
+          },
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "fix": {
+            "title": "Fix",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "students": {
+            "title": "Students",
+            "type": "integer"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "concept",
+          "concept_name",
+          "id",
+          "text",
+          "fix",
+          "students",
+          "count",
+          "confident"
+        ],
+        "title": "ClassMistake",
+        "type": "object"
+      },
+      "ClassView": {
+        "additionalProperties": false,
+        "properties": {
+          "active_week": {
+            "description": "Studied in the last 7 days",
+            "title": "Active Week",
+            "type": "integer"
+          },
+          "concepts": {
+            "items": {
+              "$ref": "#/components/schemas/ClassConcept"
+            },
+            "title": "Concepts",
+            "type": "array"
+          },
+          "course": {
+            "title": "Course",
+            "type": "string"
+          },
+          "drifting": {
+            "description": "Studied before, nothing in the last 7 days",
+            "title": "Drifting",
+            "type": "integer"
+          },
+          "mistakes": {
+            "items": {
+              "$ref": "#/components/schemas/ClassMistake"
+            },
+            "title": "Mistakes",
+            "type": "array"
+          },
+          "students": {
+            "title": "Students",
+            "type": "integer"
+          },
+          "suggestions": {
+            "description": "What to revisit in class, in plain words",
+            "items": {
+              "type": "string"
+            },
+            "title": "Suggestions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "course",
+          "students",
+          "active_week",
+          "drifting",
+          "concepts",
+          "mistakes",
+          "suggestions"
+        ],
+        "title": "ClassView",
+        "type": "object"
+      },
       "CoachReply": {
         "additionalProperties": false,
         "properties": {
@@ -907,6 +1073,219 @@
           "used_template"
         ],
         "title": "CoachReply",
+        "type": "object"
+      },
+      "Concept": {
+        "additionalProperties": false,
+        "properties": {
+          "aliases": {
+            "description": "Words students use for it",
+            "items": {
+              "type": "string"
+            },
+            "title": "Aliases",
+            "type": "array"
+          },
+          "id": {
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "title": "Id",
+            "type": "string"
+          },
+          "key_ideas": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 2,
+            "title": "Key Ideas",
+            "type": "array"
+          },
+          "misconceptions": {
+            "items": {
+              "$ref": "#/components/schemas/Misconception"
+            },
+            "title": "Misconceptions",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "plain": {
+            "title": "Plain",
+            "type": "string"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/Question"
+            },
+            "minItems": 3,
+            "title": "Questions",
+            "type": "array"
+          },
+          "requires": {
+            "items": {
+              "pattern": "^[a-z][a-z0-9_]*$",
+              "type": "string"
+            },
+            "title": "Requires",
+            "type": "array"
+          },
+          "section": {
+            "title": "Section",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "plain",
+          "section",
+          "key_ideas",
+          "questions"
+        ],
+        "title": "Concept",
+        "type": "object"
+      },
+      "ConceptStatus": {
+        "additionalProperties": false,
+        "properties": {
+          "blocking": {
+            "description": "Struggling concepts this one is the gap under",
+            "items": {
+              "pattern": "^[a-z][a-z0-9_]*$",
+              "type": "string"
+            },
+            "title": "Blocking",
+            "type": "array"
+          },
+          "chapter": {
+            "title": "Chapter",
+            "type": "string"
+          },
+          "high": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "High"
+          },
+          "id": {
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "title": "Id",
+            "type": "string"
+          },
+          "key_ideas": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Key Ideas",
+            "type": "array"
+          },
+          "low": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Low"
+          },
+          "mistake": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Most frequent mix-up on it",
+            "title": "Mistake"
+          },
+          "mistakes": {
+            "default": 0,
+            "title": "Mistakes",
+            "type": "integer"
+          },
+          "n": {
+            "description": "Answers that counted",
+            "title": "N",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Mastery: chance of a typical question right",
+            "title": "Percent"
+          },
+          "plain": {
+            "title": "Plain",
+            "type": "string"
+          },
+          "plateau": {
+            "default": false,
+            "title": "Plateau",
+            "type": "boolean"
+          },
+          "requires": {
+            "items": {
+              "pattern": "^[a-z][a-z0-9_]*$",
+              "type": "string"
+            },
+            "title": "Requires",
+            "type": "array"
+          },
+          "review_due": {
+            "default": false,
+            "title": "Review Due",
+            "type": "boolean"
+          },
+          "section": {
+            "title": "Section",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "not_checked",
+              "solid",
+              "shaky",
+              "struggling"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "plain",
+          "section",
+          "chapter",
+          "requires",
+          "key_ideas",
+          "n",
+          "percent",
+          "low",
+          "high",
+          "state"
+        ],
+        "title": "ConceptStatus",
         "type": "object"
       },
       "ConsentChanged": {
@@ -1250,6 +1629,153 @@
           "line"
         ],
         "title": "CoreLine",
+        "type": "object"
+      },
+      "Course": {
+        "additionalProperties": false,
+        "properties": {
+          "audience": {
+            "title": "Audience",
+            "type": "string"
+          },
+          "concepts": {
+            "items": {
+              "$ref": "#/components/schemas/Concept"
+            },
+            "minItems": 1,
+            "title": "Concepts",
+            "type": "array"
+          },
+          "id": {
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "sections": {
+            "items": {
+              "$ref": "#/components/schemas/Section"
+            },
+            "minItems": 1,
+            "title": "Sections",
+            "type": "array"
+          },
+          "source": {
+            "$ref": "#/components/schemas/CourseSource"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "audience",
+          "source",
+          "sections",
+          "concepts"
+        ],
+        "title": "Course",
+        "type": "object"
+      },
+      "CourseMapView": {
+        "additionalProperties": false,
+        "properties": {
+          "audience": {
+            "title": "Audience",
+            "type": "string"
+          },
+          "concepts": {
+            "items": {
+              "$ref": "#/components/schemas/ConceptStatus"
+            },
+            "title": "Concepts",
+            "type": "array"
+          },
+          "course": {
+            "title": "Course",
+            "type": "string"
+          },
+          "exam": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The nearest exam goal's date",
+            "title": "Exam"
+          },
+          "gap": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GapView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "sections": {
+            "items": {
+              "$ref": "#/components/schemas/SectionView"
+            },
+            "title": "Sections",
+            "type": "array"
+          },
+          "source_title": {
+            "title": "Source Title",
+            "type": "string"
+          },
+          "source_url": {
+            "title": "Source Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "course",
+          "name",
+          "audience",
+          "source_title",
+          "source_url",
+          "concepts",
+          "sections"
+        ],
+        "title": "CourseMapView",
+        "type": "object"
+      },
+      "CourseSource": {
+        "additionalProperties": false,
+        "properties": {
+          "license": {
+            "title": "License",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "url": {
+            "format": "uri",
+            "maxLength": 2083,
+            "minLength": 1,
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "url",
+          "license"
+        ],
+        "title": "CourseSource",
         "type": "object"
       },
       "CreatedUser": {
@@ -1680,15 +2206,7 @@
             "type": "array"
           },
           "group": {
-            "enum": [
-              "attention",
-              "control",
-              "memory",
-              "speed",
-              "reasoning",
-              "language",
-              "style"
-            ],
+            "description": "The course chapter a concept belongs to; colours the map",
             "title": "Group",
             "type": "string"
           },
@@ -2127,6 +2645,19 @@
             ],
             "title": "Mode",
             "type": "string"
+          },
+          "plugin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Browser plugin to run, when it isn't the game's own id",
+            "title": "Plugin"
           },
           "practice_trials": {
             "minimum": 0,
@@ -2843,6 +3374,14 @@
             "title": "Available",
             "type": "boolean"
           },
+          "chance": {
+            "default": 0.5,
+            "description": "Success rate of pure guessing (4 options: 0.25)",
+            "exclusiveMaximum": 1.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Chance",
+            "type": "number"
+          },
           "code_source": {
             "title": "Code Source",
             "type": "string"
@@ -2980,6 +3519,18 @@
             "title": "Phase",
             "type": "string"
           },
+          "plugin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Browser plugin that plays it, when not the game's own id",
+            "title": "Plugin"
+          },
           "practice_trials": {
             "minimum": 0.0,
             "title": "Practice Trials",
@@ -2997,6 +3548,13 @@
               }
             ],
             "title": "Reliability"
+          },
+          "rushed_ms": {
+            "default": 200.0,
+            "description": "Median answer time below which answers are rushed",
+            "exclusiveMinimum": 0.0,
+            "title": "Rushed Ms",
+            "type": "number"
           },
           "scoring": {
             "enum": [
@@ -3069,6 +3627,36 @@
           "practice_trials"
         ],
         "title": "Game",
+        "type": "object"
+      },
+      "GapView": {
+        "additionalProperties": false,
+        "properties": {
+          "chain": {
+            "items": {
+              "pattern": "^[a-z][a-z0-9_]*$",
+              "type": "string"
+            },
+            "title": "Chain",
+            "type": "array"
+          },
+          "concept": {
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "title": "Concept",
+            "type": "string"
+          },
+          "prereq": {
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "title": "Prereq",
+            "type": "string"
+          }
+        },
+        "required": [
+          "concept",
+          "prereq",
+          "chain"
+        ],
+        "title": "GapView",
         "type": "object"
       },
       "GoalPayload": {
@@ -4363,6 +4951,33 @@
         "title": "MessageInput",
         "type": "object"
       },
+      "Misconception": {
+        "additionalProperties": false,
+        "properties": {
+          "fix": {
+            "description": "What to do instead, written by the team",
+            "title": "Fix",
+            "type": "string"
+          },
+          "id": {
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "title": "Id",
+            "type": "string"
+          },
+          "text": {
+            "description": "The mistake, in plain words",
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "fix"
+        ],
+        "title": "Misconception",
+        "type": "object"
+      },
       "ModelCard": {
         "additionalProperties": false,
         "properties": {
@@ -4856,6 +5471,77 @@
         "title": "ProviderView",
         "type": "object"
       },
+      "Question": {
+        "additionalProperties": false,
+        "properties": {
+          "explain": {
+            "title": "Explain",
+            "type": "string"
+          },
+          "id": {
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "title": "Id",
+            "type": "string"
+          },
+          "level": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Level",
+            "type": "number"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/QuizOption"
+            },
+            "minItems": 2,
+            "title": "Options",
+            "type": "array"
+          },
+          "stem": {
+            "title": "Stem",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "level",
+          "stem",
+          "options",
+          "explain"
+        ],
+        "title": "Question",
+        "type": "object"
+      },
+      "QuizOption": {
+        "additionalProperties": false,
+        "properties": {
+          "correct": {
+            "default": false,
+            "title": "Correct",
+            "type": "boolean"
+          },
+          "misconception": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Misconception"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "QuizOption",
+        "type": "object"
+      },
       "React": {
         "additionalProperties": false,
         "description": "Press as soon as the target shows, hold back for distractors.",
@@ -4963,6 +5649,13 @@
           },
           "consent": {
             "$ref": "#/components/schemas/ConsentNotice"
+          },
+          "courses": {
+            "items": {
+              "$ref": "#/components/schemas/Course"
+            },
+            "title": "Courses",
+            "type": "array"
           },
           "dimensions": {
             "items": {
@@ -5332,6 +6025,54 @@
           "quality_verdict"
         ],
         "title": "ScoringInputs",
+        "type": "object"
+      },
+      "Section": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "text"
+        ],
+        "title": "Section",
+        "type": "object"
+      },
+      "SectionView": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "text"
+        ],
+        "title": "SectionView",
         "type": "object"
       },
       "SelectionInput": {
@@ -7161,6 +7902,56 @@
         ]
       }
     },
+    "/class": {
+      "get": {
+        "description": "Everyone studying the course on this server, as counts and medians only. In a school\ndeployment this sits behind a teacher role; the demo lets any signed-in user open it.",
+        "operationId": "class_view_class_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Class View",
+        "tags": [
+          "course"
+        ]
+      }
+    },
     "/consent": {
       "get": {
         "operationId": "get_consent_consent_get",
@@ -7285,6 +8076,55 @@
         "summary": "Put Consent",
         "tags": [
           "data rights"
+        ]
+      }
+    },
+    "/course": {
+      "get": {
+        "operationId": "course_map_course_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseMapView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Course Map",
+        "tags": [
+          "course"
         ]
       }
     },
