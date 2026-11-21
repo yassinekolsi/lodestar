@@ -33,6 +33,8 @@ test('creates a subject, uploads a chapter and practises that exact document', a
     searchable: true,
     review_required: false,
     extraction_method: 'text',
+    status: 'ready',
+    progress: 0,
   }
   vi.mocked(api.uploadDocument).mockResolvedValue(doc)
   vi.mocked(api.searchDocuments).mockResolvedValue([

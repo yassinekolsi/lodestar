@@ -2372,6 +2372,17 @@
             "title": "Doc Id",
             "type": "string"
           },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
           "extraction_method": {
             "default": "text",
             "title": "Extraction Method",
@@ -2389,6 +2400,11 @@
             "title": "Passages",
             "type": "integer"
           },
+          "progress": {
+            "default": 0,
+            "title": "Progress",
+            "type": "integer"
+          },
           "review_required": {
             "default": false,
             "title": "Review Required",
@@ -2398,6 +2414,11 @@
             "default": true,
             "title": "Searchable",
             "type": "boolean"
+          },
+          "status": {
+            "default": "ready",
+            "title": "Status",
+            "type": "string"
           },
           "subject_id": {
             "anyOf": [
@@ -8241,6 +8262,7 @@
         ]
       },
       "post": {
+        "description": "Checks the file at once and returns a `processing` document; the pages are read in the\nbackground (OCR can take minutes), and GET /documents shows the progress.",
         "operationId": "upload_documents_post",
         "parameters": [
           {
@@ -8271,7 +8293,7 @@
           "required": true
         },
         "responses": {
-          "201": {
+          "202": {
             "content": {
               "application/json": {
                 "schema": {
@@ -8424,6 +8446,66 @@
           }
         },
         "summary": "Delete Document",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/documents/{doc_id}/approve": {
+      "post": {
+        "description": "The student looked at the document next to the original and validated it.",
+        "operationId": "approve_document_documents__doc_id__approve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "doc_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Doc Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Approve Document",
         "tags": [
           "documents"
         ]

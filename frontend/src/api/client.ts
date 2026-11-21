@@ -232,6 +232,8 @@ export const api = {
     body.append('gemini', String(gemini))
     return request<DocumentView>('/documents', { method: 'POST', body })
   },
+  approveDocument: (id: string) =>
+    request<DocumentView>(`/documents/${id}/approve`, { method: 'POST' }),
   deleteDocument: (id: string) => request<undefined>(`/documents/${id}`, { method: 'DELETE' }),
   searchDocuments: (query: string, docId = '') =>
     request<PassageView[]>(

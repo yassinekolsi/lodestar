@@ -201,7 +201,11 @@ export interface paths {
     /** List Documents */
     get: operations['list_documents_documents_get']
     put?: never
-    /** Upload */
+    /**
+     * Upload
+     * @description Checks the file at once and returns a `processing` document; the pages are read in the
+     *     background (OCR can take minutes), and GET /documents shows the progress.
+     */
     post: operations['upload_documents_post']
     delete?: never
     options?: never
@@ -238,6 +242,26 @@ export interface paths {
     post?: never
     /** Delete Document */
     delete: operations['delete_document_documents__doc_id__delete']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/documents/{doc_id}/approve': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Approve Document
+     * @description The student looked at the document next to the original and validated it.
+     */
+    post: operations['approve_document_documents__doc_id__approve_post']
+    delete?: never
     options?: never
     head?: never
     patch?: never
@@ -1963,6 +1987,8 @@ export interface components {
        * Format: uuid
        */
       doc_id: string
+      /** Error */
+      error?: string | null
       /**
        * Extraction Method
        * @default text
@@ -1975,6 +2001,11 @@ export interface components {
       /** Passages */
       passages: number
       /**
+       * Progress
+       * @default 0
+       */
+      progress: number
+      /**
        * Review Required
        * @default false
        */
@@ -1984,6 +2015,11 @@ export interface components {
        * @default true
        */
       searchable: boolean
+      /**
+       * Status
+       * @default ready
+       */
+      status: string
       /** Subject Id */
       subject_id?: string | null
       /** Title */
@@ -4741,7 +4777,7 @@ export interface operations {
     }
     responses: {
       /** @description Successful Response */
-      201: {
+      202: {
         headers: {
           [name: string]: unknown
         }
@@ -4813,6 +4849,39 @@ export interface operations {
           [name: string]: unknown
         }
         content?: never
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  approve_document_documents__doc_id__approve_post: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path: {
+        doc_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DocumentView']
+        }
       }
       /** @description Validation Error */
       422: {

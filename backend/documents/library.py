@@ -48,6 +48,9 @@ class DocumentView(Contract):
     searchable: bool = True
     extraction_method: str = "text"
     review_required: bool = False
+    status: str = "ready"
+    progress: int = 0
+    error: str | None = None
 
 
 def _view(r: Any, searchable: bool | None = None) -> DocumentView:
@@ -64,6 +67,9 @@ def _view(r: Any, searchable: bool | None = None) -> DocumentView:
         searchable=r.indexed if searchable is None else searchable,
         extraction_method=(r.extraction or {}).get("method", "text"),
         review_required=r.review_required,
+        status=r.status,
+        progress=r.progress,
+        error=r.error,
     )
 
 
@@ -288,3 +294,197 @@ async def quiz_content(
 
 def cite(hits: Sequence[Any]) -> list[dict[str, Any]]:
     return [{"title": h.title, "page": h.page, "text": h.text, "doc_id": h.doc_id} for h in hits]
+
+
+# Background reading (docs/plan/20) -----------------------------------------------------------
+
+
+async def start(
+    engine: AsyncEngine,
+    user_id: UUID,
+    filename: str,
+    pages: int,
+    subject_id: UUID | None,
+    chapter: str,
+    source_pdf: bytes | None,
+) -> DocumentView:
+    """A placeholder row the student sees at once, while the pages are read in the background."""
+    async with engine.begin() as conn:
+        await user_scope(conn, user_id)
+        if subject_id is not None and not await conn.scalar(
+            select(t.subjects.c.subject_id).where(
+                t.subjects.c.user_id == user_id, t.subjects.c.subject_id == subject_id
+            )
+        ):
+            raise ValueError("Choose one of your subjects first.")
+        title = filename.rsplit(".", 1)[0].replace("_", " ")[:120] or "Document"
+        row = (
+            await conn.execute(
+                insert(t.documents)
+                .values(
+                    user_id=user_id,
+                    title=title,
+                    filename=filename[:200],
+                    subject_id=subject_id,
+                    chapter=chapter,
+                    source_pdf=source_pdf,
+                    review_required=True,
+                    status="processing",
+                    pages=pages,
+                    passages=0,
+                )
+                .returning(t.documents)
+            )
+        ).one()
+    return _view(row)
+
+
+async def set_progress(engine: AsyncEngine, user_id: UUID, doc_id: UUID, pages_done: int) -> None:
+    async with engine.begin() as conn:
+        await user_scope(conn, user_id)
+        await conn.execute(
+            update(t.documents)
+            .where(t.documents.c.user_id == user_id, t.documents.c.doc_id == doc_id)
+            .values(progress=pages_done)
+        )
+
+
+async def finish(engine: AsyncEngine, user_id: UUID, doc_id: UUID, doc: Extracted) -> None:
+    """The pages are read: store them, waiting for the student to check and validate them."""
+    rows = [
+        {
+            "passage_id": uuid4(),
+            "doc_id": doc_id,
+            "user_id": user_id,
+            "page": p.page,
+            "position": p.position,
+            "text": p.text,
+            "concepts": p.concepts,
+        }
+        for p in doc.passages
+    ]
+    async with engine.begin() as conn:
+        await user_scope(conn, user_id)
+        await conn.execute(
+            delete(t.document_passages).where(
+                t.document_passages.c.doc_id == doc_id, t.document_passages.c.user_id == user_id
+            )
+        )
+        if rows:
+            await conn.execute(insert(t.document_passages), rows)
+        row = (
+            await conn.execute(
+                update(t.documents)
+                .where(t.documents.c.user_id == user_id, t.documents.c.doc_id == doc_id)
+                .values(
+                    title=doc.title,
+                    pages=doc.pages,
+                    progress=doc.pages,
+                    passages=len(rows),
+                    concepts=doc.concepts(),
+                    extraction={
+                        "method": doc.method,
+                        "pages": doc.page_texts,
+                        "warnings": doc.warnings,
+                    },
+                    review_required=True,
+                    status="review",
+                    error=None,
+                )
+                .returning(t.documents.c.subject_id)
+            )
+        ).one_or_none()
+        if row is not None:
+            await append_event(
+                conn,
+                LibraryChanged(
+                    user_id=user_id,
+                    ts=datetime.now(UTC),
+                    payload=LibraryPayload(
+                        action="document_uploaded", doc_id=doc_id, subject_id=row.subject_id
+                    ),
+                ),
+            )
+
+
+async def fail(engine: AsyncEngine, user_id: UUID, doc_id: UUID, reason: str) -> None:
+    async with engine.begin() as conn:
+        await user_scope(conn, user_id)
+        await conn.execute(
+            update(t.documents)
+            .where(t.documents.c.user_id == user_id, t.documents.c.doc_id == doc_id)
+            .values(status="failed", error=reason[:500])
+        )
+
+
+async def interrupted(engine: AsyncEngine) -> int:
+    """At start-up: reading cut off by a restart cannot resume, so it is marked failed."""
+    async with engine.begin() as conn:
+        done = await conn.execute(
+            update(t.documents)
+            .where(t.documents.c.status == "processing")
+            .values(status="failed", error="Reading was interrupted. Upload the file again.")
+        )
+    return int(done.rowcount or 0)
+
+
+async def approve(
+    engine: AsyncEngine, memory: MemoryStore | None, user_id: UUID, doc_id: UUID
+) -> DocumentView | None:
+    """The student checked the document against the original: it becomes searchable."""
+    async with engine.begin() as conn:
+        await user_scope(conn, user_id)
+        doc = (
+            await conn.execute(
+                select(t.documents)
+                .where(t.documents.c.user_id == user_id, t.documents.c.doc_id == doc_id)
+                .with_for_update()
+            )
+        ).one_or_none()
+        if doc is None:
+            return None
+        if doc.status not in ("review", "ready"):
+            raise ValueError("This document is not ready to validate yet.")
+        if any("[unclear]" in p for p in (doc.extraction or {}).get("pages", [])):
+            raise ValueError("Some pages have unclear symbols. Fix them in the review first.")
+        rows = [
+            dict(r._mapping)
+            for r in await conn.execute(
+                select(t.document_passages).where(
+                    t.document_passages.c.doc_id == doc_id,
+                    t.document_passages.c.user_id == user_id,
+                )
+            )
+        ]
+        await conn.execute(
+            update(t.documents)
+            .where(t.documents.c.doc_id == doc_id)
+            .values(review_required=False, status="ready")
+        )
+        await append_event(
+            conn,
+            LibraryChanged(
+                user_id=user_id,
+                ts=datetime.now(UTC),
+                payload=LibraryPayload(action="document_reviewed", doc_id=doc_id),
+            ),
+        )
+    indexed = False
+    if memory is not None:
+        try:
+            await memory.delete_document(user_id, doc_id)
+            await memory.write_passages(user_id, doc_id, doc.title, rows)
+            indexed = True
+        except Exception:
+            log.warning("Qdrant unavailable; document validated without its index", exc_info=True)
+    async with engine.begin() as conn:
+        await user_scope(conn, user_id)
+        row = (
+            await conn.execute(
+                update(t.documents)
+                .where(t.documents.c.user_id == user_id, t.documents.c.doc_id == doc_id)
+                .values(indexed=indexed)
+                .returning(t.documents)
+            )
+        ).one()
+    return _view(row)

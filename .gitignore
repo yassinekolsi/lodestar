@@ -37,3 +37,6 @@ test-results/
 
 # test and tool caches
 .hypothesis/
+
+# course files people drop in to try the app: never part of the repo
+/*.pdf

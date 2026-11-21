@@ -18,10 +18,16 @@ from backend.contracts.common import Contract
 from backend.contracts.events import LibraryChanged, LibraryPayload
 from backend.db import tables as t
 from backend.db.twin_store import append_event, user_scope
-from backend.documents import library
-from backend.documents.ingest import MAX_BYTES, UnreadableDocument, split_passages
+from backend.documents import jobs, library
+from backend.documents.ingest import (
+    MAX_BYTES,
+    UnreadableDocument,
+    pages_of,
+    scanned_pages,
+    split_passages,
+)
 from backend.documents.math_text import math_issues
-from backend.documents.ocr import extract_document
+from backend.documents.ocr import OCR_MAX_PAGES
 
 router = APIRouter(tags=["documents"])
 
@@ -78,7 +84,7 @@ class PassageView(Contract):
     score: float
 
 
-@router.post("/documents", response_model=library.DocumentView, status_code=201)
+@router.post("/documents", response_model=library.DocumentView, status_code=202)
 async def upload(
     file: UploadFile,
     request: Request,
@@ -88,32 +94,50 @@ async def upload(
     chapter: Annotated[str, Form(max_length=120)] = "",
     gemini: Annotated[bool, Form()] = False,
 ) -> library.DocumentView:
+    """Checks the file at once and returns a `processing` document; the pages are read in the
+    background (OCR can take minutes), and GET /documents shows the progress."""
     services: Services = request.app.state.services
+    filename = file.filename or "document.pdf"
     data = await file.read(MAX_BYTES + 1)
     try:
-        doc = await extract_document(
-            data,
-            file.filename or "document.pdf",
-            registry,
-            services.llm,
-            user_id,
-            force_gemini=gemini,
-        )
+        pages, _ = await run_in_threadpool(pages_of, data, filename, allow_scans=True)
     except UnreadableDocument as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
+    is_pdf = filename.lower().endswith(".pdf")
+    to_read = len(pages) if gemini else len(scanned_pages(pages)) if is_pdf else 0
+    if to_read > OCR_MAX_PAGES:
+        raise HTTPException(
+            422, f"Split scanned PDFs into files of at most {OCR_MAX_PAGES} pages for OCR."
+        )
     try:
-        return await library.save(
+        doc = await library.start(
             services.engine,
-            services.memory,
             user_id,
-            file.filename or "document.pdf",
-            doc,
-            subject_id=subject_id,
-            chapter=chapter.strip(),
-            source_pdf=data if (file.filename or "").lower().endswith(".pdf") else None,
+            filename,
+            len(pages),
+            subject_id,
+            chapter.strip(),
+            data if is_pdf else None,
         )
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
+    jobs.launch(services, registry, user_id, doc.doc_id, data, filename, gemini)
+    return doc
+
+
+@router.post("/documents/{doc_id}/approve", response_model=library.DocumentView)
+async def approve_document(
+    doc_id: UUID, request: Request, user_id: CurrentUser
+) -> library.DocumentView:
+    """The student looked at the document next to the original and validated it."""
+    services: Services = request.app.state.services
+    try:
+        doc = await library.approve(services.engine, services.memory, user_id, doc_id)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    if doc is None:
+        raise HTTPException(404, "No such document")
+    return doc
 
 
 @router.get("/documents", response_model=list[library.DocumentView])
@@ -273,6 +297,7 @@ async def review_document(
             .values(
                 extraction=extraction,
                 review_required=False,
+                status="ready",
                 indexed=False,
                 passages=len(rows),
                 concepts=concepts,

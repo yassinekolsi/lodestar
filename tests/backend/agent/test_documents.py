@@ -1,5 +1,6 @@
 """Page citations, source checks and ownership across the student library."""
 
+import asyncio
 from types import SimpleNamespace
 from uuid import UUID, uuid4
 
@@ -159,9 +160,18 @@ async def test_subject_upload_quiz_ownership_events_and_delete(aengine) -> None:
             files={"file": ("structures.txt", text)},
             data={"subject_id": subject_id, "chapter": "Chapter 2"},
         )
-        assert uploaded.status_code == 201, uploaded.text
+        # The upload returns at once; the pages are read in the background.
+        assert uploaded.status_code == 202, uploaded.text
         doc = uploaded.json()
+        assert doc["status"] == "processing"
         assert doc["chapter"] == "Chapter 2" and not doc["searchable"]
+        for _ in range(100):
+            listed = (await c.get("/documents", headers=headers)).json()[0]
+            if listed["status"] != "processing":
+                break
+            await asyncio.sleep(0.05)
+        assert listed["status"] == "review" and listed["passages"] > 0
+        assert listed["title"] and listed["review_required"]
         assert (await c.get("/documents", headers=other)).json() == []
         assert not (await c.get("/documents", headers=headers)).json()[0]["searchable"]
         stolen = await c.post(
@@ -197,9 +207,12 @@ async def test_subject_upload_quiz_ownership_events_and_delete(aengine) -> None:
                 conn, user, load_registry(), 42, doc_id=UUID(doc["doc_id"])
             )
             assert blocked is None
+        assert (await c.post(f"{url}/approve", headers=other)).status_code == 404
         reviewed = await c.put(f"{url}/review", json={"pages": [text]}, headers=headers)
         assert reviewed.status_code == 200, reviewed.text
-        assert not reviewed.json()["review_required"]
+        assert not reviewed.json()["review_required"] and reviewed.json()["status"] == "ready"
+        approved = await c.post(f"{url}/approve", headers=headers)
+        assert approved.status_code == 200 and approved.json()["status"] == "ready"
         async with aengine.connect() as conn:
             content, loadings = await library.quiz_content(
                 conn, user, load_registry(), 42, doc_id=UUID(doc["doc_id"])

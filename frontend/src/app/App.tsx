@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 
 import { SignalIndicator } from '../affect/SignalIndicator'
-import { adoptSignIn, api, forgetUser, hasUser } from '../api/client'
+import { adoptSignIn, api, forgetUser, hasUser, inDemo } from '../api/client'
 import type { Persona, Receipt } from '../api/types'
 import { About } from '../dashboard/About'
 import { AcsPanel } from '../dashboard/AcsPanel'
@@ -28,6 +28,7 @@ import { Conversation, Star, type Panel } from './Conversation'
 import { DecisionCard } from './DecisionCard'
 import { Heading } from './icons'
 import { Onboarding } from './Onboarding'
+import { SubjectSetup } from './SubjectSetup'
 import { Settings } from './Settings'
 import { useSession } from './useSession'
 
@@ -159,6 +160,17 @@ export function App() {
   /** Where the Twin page's own chat starts in the session feed. */
   const [twinFrom, setTwinFrom] = useState<number | null>(null)
   const dash = useDashboard(registered)
+  /** A new account starts by naming a subject and importing its course files (docs/plan/20). */
+  const [needsSubject, setNeedsSubject] = useState(false)
+  useEffect(() => {
+    if (!registered || inDemo()) return
+    api.subjects().then(
+      (s) => {
+        setNeedsSubject(s.length === 0)
+      },
+      () => undefined,
+    )
+  }, [registered])
   const [persona, setPersona] = useState<Persona>('willow')
   // Voice in, voice out: once someone talks to Lodestar, replies are spoken too (and always shown).
   const [voiceUsed, setVoiceUsed] = useState(false)
@@ -251,6 +263,17 @@ export function App() {
           />
         )}
       </main>
+    )
+  }
+
+  if (needsSubject) {
+    return (
+      <SubjectSetup
+        onDone={() => {
+          setNeedsSubject(false)
+          dash.refresh()
+        }}
+      />
     )
   }
 

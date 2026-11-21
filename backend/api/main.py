@@ -31,6 +31,7 @@ from backend.api import (
 from backend.api.llm import llm_factory_dep
 from backend.config import Settings, get_settings
 from backend.db.engine import get_async_engine, libpq_url
+from backend.documents import library
 from backend.generation.pipeline import ContentService
 from backend.llm import redaction
 from backend.llm.factory import LlmFactory
@@ -76,6 +77,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     await pool.open()
     memory, store = await _memory(settings)
     await _bundled_models(engine)
+    # Uploads still being read when the server stopped can't resume (docs/plan/20).
+    await library.interrupted(engine)
     llm = LlmFactory(reg, settings, engine)
     services = Services(
         engine=engine,

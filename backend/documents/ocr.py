@@ -36,6 +36,9 @@ describe each uncertainty in the uncertainties list in English. Never guess. Omi
 Return text and uncertainties only. An empty page returns empty text and no uncertainties."""
 
 
+OCR_MAX_PAGES = 80
+
+
 class Transcription(BaseModel):
     text: str = Field(max_length=50000)
     uncertainties: list[str] = Field(max_length=100)
@@ -66,8 +69,8 @@ async def extract_document(
     pages, stored = await run_in_threadpool(pages_of, data, filename, allow_scans=True)
     is_pdf = PurePath(filename).suffix.lower() == ".pdf"
     selected = (list(range(len(pages))) if force_gemini else scanned_pages(pages)) if is_pdf else []
-    if len(selected) > 80:
-        raise UnreadableDocument("Split PDFs for Gemini OCR into files of at most 80 pages.")
+    if len(selected) > OCR_MAX_PAGES:
+        raise UnreadableDocument(f"Split PDFs for OCR into files of at most {OCR_MAX_PAGES} pages.")
     warnings: dict[str, list[str]] = {}
     if selected:
         reader = PdfReader(io.BytesIO(data))
