@@ -1,118 +1,134 @@
-# Lodestar: a cognitive growth agent
+# Lodestar: a study coach that finds why a concept won't stick
 
-**AI4Brain · CISTAC 1.0 · team We are soo back.** Lodestar measures how you think with short games, keeps an honest, changing profile of you (the **Brain Twin**), explains every choice it makes, and coaches you at the right level. Every estimate comes with a range, and every number the coach says is cited.
+Lodestar is an AI study coach for a university course. It finds **which** concepts aren't sticking
+and **why**: often the gap is in a concept they build on. It explains them **from the student's own
+course notes**, quizzes at the right level, names the **misconception** behind a wrong answer, asks
+the student to explain the idea back, and brings concepts back **before they fade**. Teachers see
+where the whole class is, as counts.
 
-Lodestar is a practice coach. It doesn't assess medical or psychological conditions.
+Every estimate comes with a range, every number the coach says is cited, and every choice comes with
+its reason. Lodestar measures what a student knows about the course and nothing else: it never
+labels anyone.
 
-![Home: talk to Lodestar or start a session](docs/screens/home.png)
+![Concept map: what each concept builds on, mastery with its range, the gap under Bayes' theorem](docs/screens/concept-map.png)
 
-## For reviewers
+## The problem it answers
 
-Every claim here is backed by a number and a way to check it: **[docs/EVIDENCE.md](docs/EVIDENCE.md)** maps each CISTAC criterion to evidence, files, tests and commands. The short version:
+> How can an AI solution respond to students' difficulties in understanding their courses, enrich
+> how they learn, and lastingly improve their educational experience?
 
-- **Generalisation:** the models were trained and tested on different real people (36,297 Lumosity players: forecast ranges held 79.7%; 25,273 OULAD students: AUC 0.857). When simulated people break the scoring model on purpose (guessing, mixed discrimination, heavy-tailed noise), the profile still recovers true skill with r = 0.77 after 3 sessions and 0.86 after 10.
-- **Profile quality:** r = 0.82 after 3 sessions and 0.91 after 10; 80% ranges contain the truth 79.9% of the time.
-- **Robustness:** every session completes with every model down, the memory store down, or both; a crash mid-game resumes on the same trial.
-- **Runs out of the box:** the trained models ship in `models/`; no AI key is needed (local model, then templates).
-- **Not done yet:** a pilot with real Lodestar users.
-
-| | |
+| What gets in the way | What Lodestar does |
 |---|---|
-| ![Brain Twin: skill cards with ranges, wired by family and correlation](docs/screens/twin.png) | ![After a game: score, skill with its range, and the coach](docs/screens/result.png) |
-| ![Insights: forecast, best time, fatigue point, calibration](docs/screens/insights.png) | ![Agent: five stages and every decision with the options it weighed](docs/screens/agent.png) |
-
-## What it does
-
-| The brief asks | Lodestar |
-|---|---|
-| **Assess** across cognitive dimensions, non-clinically | 43 games (classic paradigms rebuilt, plus originals) over **16 skills**, each documented with definition, tasks, scoring, uncertainty and biases ([docs/generated/dimensions](docs/generated/dimensions)). Every answer records score, response time, errors, hints and confidence. |
-| **Understand**: an uncertainty-aware percentage profile | A Kalman-Elo estimate per skill: a percentage **and an 80% range** that narrows with play and widens with time away. Shown as the Brain Twin map, a radar chart, curves and per-skill pages. |
-| **Coach**: explainable, personalised feedback | A LangGraph agent with four coach voices (Willow, Spark, Sage, Buddy). Every sentence with a number cites a fact (`[F1]`), a verifier rejects uncited numbers and clinical words, and "Why?" opens the options the agent weighed. |
-| **Improve**: adaptive exercises and learning paths | Difficulty targets your chosen success rate, a bandit learns which game moves each skill for you, goals ("pin working memory down to ±15") and personal experiments ("am I sharper in the evening?"). |
-| **Brain Twin** with history and projections | Full history in Postgres (append-only events), growth forecasts as 80% ranges from a model trained on 36,297 real players. |
-| **Dashboard**: radar, progress curves, heatmaps, goals | All four, every estimate with its range. |
-| **AI Collaboration Score** (0–100, documented formula) | Five parts measured inside games (verification via planted mistakes, autonomy, iteration, clarification, responsible use), formula and weights in [docs/generated/acs.md](docs/generated/acs.md). |
-| **Ethics & data** | Seven consent switches, export, delete with a receipt, a retention job; camera and voice never change the profile ([docs/generated/data-policy.md](docs/generated/data-policy.md)). |
-| **Bonus**: voice, emotion-aware, predictive growth | Voice in and out with a wake word, optional on-device camera and voice-tone cues used only to suggest breaks, and the growth forecast. |
+| A student fails Bayes' theorem again and again, and more Bayes exercises don't help | The **gap rule** walks down the prerequisite map to the deepest shaky concept (here, conditional probability) and starts there, saying why |
+| Wrong answers only say "wrong" | Every wrong option is tagged with the **misconception** it shows (swapping P(A\|B) and P(B\|A), the gambler's fallacy…); the feedback names it and gives the fix |
+| Being sure and wrong goes unnoticed | **"How sure?"** on every answer: confident errors are flagged as mix-ups, and they're the easiest to fix once seen |
+| Re-reading feels like learning | **Explain it back** in your own words; Lodestar shows which key ideas you covered |
+| Chatbots make things up | Explanations come **from the course notes**, cited; a verifier rejects any number not in a fact |
+| Cramming the night before | **Spaced review**: concepts come back after 1 to 10 days depending on how well they're known |
+| Quitting quietly | An **engagement model** trained on 25,273 real students notices drift and offers short, easy sessions |
+| Teachers find out at the exam | A **class view**: which concepts the class finds hard and the mix-ups behind them, as counts, no names |
 
 ## Try it
 
-You need Docker (with Compose), `make`, and [uv](https://docs.astral.sh/uv/). Node 24 only for frontend development.
+You need Docker (with Compose), `make`, and [uv](https://docs.astral.sh/uv/). Node 24 only for
+frontend development.
 
 ```bash
 make up      # creates .env with a fresh encryption key, builds and starts everything
-make seed    # a demo user (Alex) with four months of practice; or press "Demo person" in the app
+make seed    # Alex, five weeks into Probability 1, and 24 classmates; or press "Demo person"
 ```
 
-Open the link (http://localhost:5173/?signin=…). To start fresh as a new user, open http://localhost:5173.
+Open the link it prints (http://localhost:5173/?signin=…). Then try:
 
-- **AI model.** Lodestar runs without any key, using a local [Ollama](https://ollama.com) model if one is running (`make up-ollama` starts one in Docker) and fixed templates otherwise. To use a hosted model, add your own key in **Settings → AI provider** (Anthropic, OpenAI, Gemini, DeepSeek, Grok, Mistral, Groq or OpenRouter). Keys are encrypted at rest and shown only as their last 4 characters.
-- **The trained models ship with the repo** (`models/`): the growth forecast and the engagement model load into a fresh database at start-up. To retrain from the public datasets: `make ml-data` (about 3.1 GB), `make ml-train ml-engagement`, then `make models-export` to ship the new versions.
-- **Terminal.** `bin/lodestar login --code <token>`, then `bin/lodestar chat` or `bin/lodestar play`.
+- **Start studying**: Lodestar goes to conditional probability first, because Bayes' theorem builds
+  on it, and switches to explain it back because quizzes alone haven't moved it in 11 days.
+- **"I don't get Bayes' theorem"**: the notes on it, where you stand, your usual mix-up, and what
+  it builds on.
+- **"What do I keep getting wrong?"**: the misconceptions behind your wrong answers, with fixes.
+- **Concept map** and **Class view** in the sidebar.
 
-## A tour
+No AI key is needed: Lodestar uses a local [Ollama](https://ollama.com) model if one is running
+(`make up-ollama`) and fixed templates otherwise. A hosted model can be added in **Settings → AI
+provider** with your own key (stored encrypted, shown as its last 4 characters). The terminal client
+works too: `bin/lodestar login --code <token>`, then `bin/lodestar chat`.
 
-| Page | What you see |
-|---|---|
-| **Conversation** | The app itself: talk to Lodestar, play the game it picks, see your score, the skill it moved (with its range) and the coach's comment. |
-| **Games** | The Detective story, "Make me a game", and every game by skill family. |
-| **Coach** | Pick the voice; the facts stay the same. |
-| **Brain Twin** | Skill cards on a map you can rearrange, the radar, and "Ask your Twin" answered on the page. |
-| **Progress** | Goals with rings and target ranges, curves with forecast bands, heatmaps by week and time of day. |
-| **Insights** | Where you're heading, your best time, when you tire, how well you judge yourself, your rhythm. |
-| **Experiments** | Morning vs evening tests with a plain verdict and how sure Lodestar is. |
-| **Agent** | The five stages lighting up live, and every decision with the options it weighed. |
-| **Memory** | What Lodestar remembers, with Forget on every line. |
-| **AI collaboration** | The score, its five parts and their ranges. |
-| **Under the hood** | Architecture, model evaluations, simulator results, the rules the code enforces. |
-
-## How it works
+## How it decides
 
 ```mermaid
 flowchart LR
-  U[Web app · voice · CLI] --> API[FastAPI]
-  API --> G[LangGraph agent<br/>perceive · decide · play · talk · remember]
-  G --> S[Scoring engine<br/>Kalman-Elo with ranges]
-  G --> M[Models<br/>forecast · engagement · fatigue · bandit]
-  G --> L[LLM factory<br/>your key or local model]
-  G --> C[Coach<br/>facts packet · verify · repair]
-  S --> PG[(Postgres<br/>append-only events, twin)]
-  G --> Q[(Qdrant<br/>memories, per user)]
-  G --> N[(Markdown<br/>notes you can read)]
+  C[Course YAML<br/>notes · concepts · prerequisites<br/>questions · misconceptions] --> R[Registry]
+  R --> S[Scoring<br/>Kalman-Elo per concept<br/>mastery with 80% range]
+  S --> P[Planner<br/>gap · plateau · consolidate<br/>review · uncertainty]
+  P --> Q[Quiz / Explain it back]
+  Q --> S
+  S --> T[Coach<br/>facts packet · verifier]
+  S --> V[Concept map · Class view]
 ```
 
-- **Agent**: 22 nodes in LangGraph with a Postgres checkpointer, so a crash mid-game resumes where it stopped. Every decision is stored with its candidates, score parts and reason.
-- **Scoring**: one transaction per round (events, trials, profile, history) under a per-user lock. The profile can be rebuilt from the event log at any time.
-- **Coach**: the agent builds a facts packet; the LLM drafts; a verifier checks every number against the facts and every word against the banned list; failures are repaired or replaced by a template.
-- **Memory**: Qdrant search is always filtered by user; Markdown notes are the only files Lodestar writes.
+1. **Mastery** per concept: the chance of getting a typical question right, with its 80% range
+   (Kalman-Elo; the range narrows with answers and widens with time away).
+2. **Gap**: a concept under 45% (and fairly surely so) sends Lodestar down its prerequisites to the
+   deepest shaky one.
+3. **Plateau**: no trend over 10 days and 40 answers changes the format to explain it back, with a
+   different way to study.
+4. **Consolidate** after a strong quiz; **review** when a concept is due.
+5. Otherwise the concept Lodestar knows least about, weighed with goals (exam dates), fatigue and
+   repetition. Every part is shown in "Why?".
 
-Design documents: [docs/plan](docs/plan/README.md). Technical report: [docs/report/report.pdf](docs/report/report.pdf). The full technical guide (architecture, assessment, how the Brain Twin is implemented, the agent and the coach, with every formula and constant): [docs/TECHNICAL.md](docs/TECHNICAL.md).
+Design: [docs/plan/19-study-coach.md](docs/plan/19-study-coach.md). Everything else (agent, memory,
+coach, ethics) is in [docs/plan](docs/plan/README.md) and [docs/TECHNICAL.md](docs/TECHNICAL.md).
+
+## The course
+
+The demo course is **Probability 1** ([registry/courses/probability.yaml](registry/courses/probability.yaml)):
+12 concepts in three chapters, 12 sections of notes, 67 questions, 104 wrong options tagged with 36
+misconceptions, each with a fix. A course is data, not code: the loader turns each concept into a
+tracked skill with a quiz and an explain-it-back, and validates that every question has exactly one
+right answer, every tag exists and the prerequisites have no cycles.
 
 ## Evaluation
 
-200 simulated people with known true skills, 10 sessions each (`make sim`, `make eval`; full table in [docs/figures/eval_summary.md](docs/figures/eval_summary.md)):
+**Simulated students** with known true levels per concept, playing 5-question quizzes, four a
+session, through the real scorer (`make sim N=200`):
 
 | Check | Result | Target |
 |---|---|---|
-| Recovers true skill after 3 sessions (correlation) | 0.82 (0.91 after 10) | > 0.80 |
-| 80% ranges containing the true skill | 79.9% | 75–85% |
-| Success rate in Balanced mode | 77.7% | 80 ± 5% |
-| Bad data caught (precision / recall) | 1.00 / 1.00 | > 0.9 / > 0.8 |
-| Answers that break the scoring model (guessing, mixed discrimination, heavy tails): recovery after 3 / 10 sessions | 0.77 / 0.86 | ≥ 0.75 after 3 |
-| Forecast ranges holding on held-out real players | 79.7% | 80% |
-| Engagement model AUC on held-out students | 0.857 (simple rule: 0.828) | report |
-| Sessions completed with every model down, Qdrant down, or both | 18/18 each | 100% |
+| Recovery of the true level after 10 sessions (correlation, mean over 12 concepts) | 0.84 (0.67 after 3) | > 0.80 |
+| 80% ranges containing the true level | 83.0% | 75–85% |
+| Success rate in Balanced mode | 80.0% | 80 ± 5% |
+| Uncertainty after placement, worst core concept | σ 0.86 | < 0.9 |
+| Clicking through quizzes and impossible answers caught (precision / recall) | 1.00 / 1.00 | > 0.9 / > 0.8 |
+
+**Does the gap rule find the gap?** (`python -m simulator.gap_eval --users 200`) Each simulated
+student gets one weak concept; everything built on it is held near it, and what it builds on is
+solid. After 10 sessions:
+
+| | Found the planted gap |
+|---|---|
+| Lodestar's gap rule | **72%** (145/200) |
+| "Practise your weakest concept" | 24% (48/200) |
+| Gap named for students with nothing planted | 5% (10/200) |
+
+**Real data:** the engagement model was trained on one set of real students and tested on others it
+never saw (OULAD, 25,273 students: AUC 0.857). The growth-forecast model was trained on 36,297
+real learners' practice curves (ranges held 79.7% on held-out players); on course mastery its
+coverage hasn't been measured yet.
+
+**Not done yet:** a pilot with a real class, courses drafted from uploaded PDFs, and interfaces in
+French and Arabic.
 
 ## Development
 
 ```bash
 make test        # backend (pytest) and frontend (vitest) unit tests
 make lint        # ruff, mypy --strict, eslint, prettier, banned-word check
+make sim N=200   # the simulated-student checks above
 cd frontend && npx playwright test   # end-to-end, against the running stack
-make docs        # regenerate skill pages, ACS, data policy and model cards
 ```
 
-Rules every contributor follows are in [AGENTS.md](AGENTS.md). Third-party code and licences: [THIRD_PARTY.md](THIRD_PARTY.md). Datasets: NCPT (CC BY 4.0), OULAD (CC BY 4.0), Steyvers & Schafer 2020 Lumosity data (OSF).
+Rules every contributor follows are in [AGENTS.md](AGENTS.md). Third-party code and licences:
+[THIRD_PARTY.md](THIRD_PARTY.md). Course notes follow the order of OpenStax Introductory Statistics
+2e (CC BY 4.0); notes and questions are the team's own.
 
 ## Licence
 
