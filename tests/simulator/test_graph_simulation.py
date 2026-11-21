@@ -16,7 +16,9 @@ async def test_graph_keeps_balanced_success_near_80(
     registry = load_registry()
     runner = await make_runner()
     rng = np.random.default_rng(7)
-    users = make_population(registry, 12, rng, kinds={"normal": 1.0})
+    # Course sessions also include placement and explanation rounds. Use enough students
+    # to retain at least 80 scored Balanced rounds without lowering the precision check.
+    users = make_population(registry, 24, rng, kinds={"normal": 1.0})
     runs = await simulate_through_graph(runner, aengine, registry, users, 5, rng)
     success, n = balanced_success(runs)
     assert n >= 80

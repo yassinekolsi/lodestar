@@ -17,7 +17,8 @@ def test_correlation_matrix_is_valid() -> None:
 def test_small_simulation_runs_end_to_end() -> None:
     registry = load_registry()
     rng = np.random.default_rng(0)
-    runs = [simulate_user(u, registry, 4, rng) for u in make_population(registry, 30, rng)]
+    # Five-question course rounds need more sessions before uncertainty permits Balanced mode.
+    runs = [simulate_user(u, registry, 10, rng) for u in make_population(registry, 30, rng)]
     dims = established_tracked(registry, runs)
     assert len(dims) >= 8  # a short run may not reach every skill
     assert recovery(runs, dims, 3).mean_r > 0.5
