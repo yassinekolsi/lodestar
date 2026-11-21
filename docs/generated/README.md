@@ -8,24 +8,19 @@ Written by `make docs` from the registry and the code; `tests/backend/test_docs_
 - [Data policy](data-policy.md)
 - [Model cards](model-cards.md)
 
-## The 17 skills
+## The 12 skills
 
 | Skill | Plain meaning | Evidence | In overall |
 |---|---|---|---|
-| [Selective attention](dimensions/selective_attention.md) | Focusing on what matters | established | yes |
-| [Sustained attention](dimensions/sustained_attention.md) | Staying alert over time | established | yes |
-| [Divided attention](dimensions/divided_attention.md) | Doing two things at once | moderate | yes |
-| [Inhibition](dimensions/inhibition.md) | Holding back an automatic response | established | yes |
-| [Working memory](dimensions/working_memory.md) | Holding information in mind and using it | established | yes |
-| [Short-term memory](dimensions/short_term_memory.md) | Remembering what you just saw | established | yes |
-| [Processing speed](dimensions/processing_speed.md) | Speed on simple tasks | established | yes |
-| [Cognitive flexibility](dimensions/cognitive_flexibility.md) | Switching between rules | established | yes |
-| [Planning](dimensions/planning.md) | Thinking ahead | moderate | yes |
-| [Reasoning](dimensions/reasoning.md) | Logic and patterns | established | yes |
-| [Spatial thinking](dimensions/spatial_thinking.md) | Imagining shapes and places | established | yes |
-| [Verbal skill](dimensions/verbal_skill.md) | Working with words | moderate | yes |
-| [Numerical thinking](dimensions/numerical_thinking.md) | Feel for numbers | established | yes |
-| [Decision style under risk](dimensions/decision_style.md) | Cautious or bold | moderate | no |
-| [Self-awareness of accuracy](dimensions/accuracy_awareness.md) | Knowing when you're right | experimental | no |
-| [Creativity](dimensions/creativity.md) | Coming up with ideas | experimental | no |
-| [Rhythm and timing](dimensions/timing.md) | Feeling a steady beat | experimental | no |
+| [Sample spaces and events](dimensions/sample_space.md) | Listing every outcome, and combining events with or, and, not | established | yes |
+| [Counting outcomes](dimensions/counting.md) | Multiplying choices, and knowing when order matters or things repeat | established | yes |
+| [Equally likely outcomes](dimensions/equally_likely.md) | Probability as favourable outcomes over all outcomes, when that is allowed | established | yes |
+| [Complement and addition rules](dimensions/addition_rule.md) | P(not A), P(A or B), and "at least one" | established | yes |
+| [Conditional probability](dimensions/conditional.md) | P(A | B), the probability of A once you know B happened | established | yes |
+| [Independence](dimensions/independence.md) | When knowing one event changes nothing about the other | established | yes |
+| [Law of total probability](dimensions/total_probability.md) | Getting P(A) by splitting into cases and weighting each one | established | yes |
+| [Bayes' theorem](dimensions/bayes.md) | Reversing a conditional, without forgetting how common things are | established | yes |
+| [Discrete random variables](dimensions/random_variables.md) | A number for each outcome, and the probability of each number | established | yes |
+| [Expected value](dimensions/expectation.md) | The long-run average of a random variable | established | yes |
+| [Variance and standard deviation](dimensions/variance.md) | How spread out a random variable is around its mean | established | yes |
+| [The binomial distribution](dimensions/binomial.md) | Counting successes in independent tries with the same chance | established | yes |
