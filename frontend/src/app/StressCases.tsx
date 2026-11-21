@@ -1,7 +1,15 @@
 import { useEffect, useState } from 'react'
 
 import { api } from '../api/client'
-import type { AgentCard, PlateauView, SplitView, WhyLine, WidenedRange } from '../api/types'
+import { CourseText } from '../lib/math'
+import type {
+  AgentCard,
+  DocumentSource,
+  PlateauView,
+  SplitView,
+  WhyLine,
+  WidenedRange,
+} from '../api/types'
 
 /** What each stress case looks like on screen. Each has its own colour, so it can't be mistaken
  * for another: red for a rushed round, amber for a plateau, blue for "why", violet for pushback,
@@ -323,6 +331,23 @@ export function SplitPlan({ split, onPlay }: { split: SplitView; onPlay: () => v
   )
 }
 
+function Sources({ sources }: { sources: DocumentSource[] }) {
+  return (
+    <div aria-label="Course sources">
+      {sources.map((source, i) => (
+      <details className="documents__passage" key={`${source.title}-${String(source.page)}-${String(i)}`}>
+          <summary>
+            {source.title} · page {source.page}
+          </summary>
+          <div>
+            <CourseText text={source.text} />
+          </div>
+        </details>
+      ))}
+    </div>
+  )
+}
+
 /** The cards the agent adds to the conversation. */
 export function AgentCardView({
   card,
@@ -332,6 +357,14 @@ export function AgentCardView({
   onWhy: (decisionId: string) => void
 }) {
   switch (card.card) {
+    case 'sources':
+      return (
+        <article className="turn-card stress" data-testid="sources-card">
+          <p className="eyebrow">From your course pages</p>
+          <p>{card.question.replace(/\s*\[document:[^\]]+\]/g, '')}</p>
+          <Sources sources={card.sources} />
+        </article>
+      )
     case 'lesson':
       return (
         <article className="turn-card stress stress--lesson" data-testid="lesson-card">
@@ -339,11 +372,10 @@ export function AgentCardView({
             From your notes · {card.section_id} {card.section_title}
           </p>
           <div className="lesson-passage">
-            {card.passage.split('\n').map((line, i) => (
-              <p key={i}>{line}</p>
-            ))}
+            <CourseText text={card.passage} />
           </div>
           <div className="lesson-facts">
+            {card.sources && <Sources sources={card.sources} />}
             {card.mastery && (
               <p>
                 <strong>Where you are:</strong> {card.mastery.now}% (likely {card.mastery.low}-

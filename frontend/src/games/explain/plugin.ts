@@ -2,6 +2,7 @@ import { button, el, makePlugin, markAnswer } from '../../taskhost/plugin'
 import type { GameModule, TrialRecord } from '../../taskhost/types'
 import { voiceAnswer } from '../../voice/answer'
 import { scored } from '../shared/ask'
+import { renderMath } from '../../lib/renderMath'
 
 /** Explain it back, as the backend serves it (backend/agent/learning.py, explain_content). */
 export interface ExplainContent {
@@ -39,6 +40,7 @@ const ExplainPlugin = makePlugin<ExplainContent>(
   async ({ stage, item, e2e }) => {
     stage.append(el('p', 'quiz-head', `Explain it back: ${item.concept_name}`))
     stage.append(el('p', 'quiz-stem', item.prompt))
+    renderMath(stage)
     const input = el('textarea', 'ml-input explain-input')
     input.dataset['testid'] = 'recall-input'
     input.setAttribute('aria-label', 'Your explanation')
@@ -94,6 +96,7 @@ const ExplainPlugin = makePlugin<ExplainContent>(
     const next = button('Finish', 'quiz-next', 'primary')
     box.append(next)
     stage.append(box)
+    renderMath(box)
     await new Promise<void>((resolve) => {
       next.addEventListener('click', () => {
         resolve()

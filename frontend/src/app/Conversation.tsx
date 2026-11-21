@@ -13,6 +13,7 @@ import { AgentCardView, WhyLines, TrackTag } from './StressCases'
 import type { FeedItem, Surface, useSession } from './useSession'
 
 export type Panel =
+  | 'documents'
   | 'games'
   | 'coach'
   | 'twin'
@@ -518,9 +519,9 @@ export function Conversation({
           <span className="hero__orb" aria-hidden="true" />
           <h1>{greeting(now)}</h1>
           <p className="hero__lede">
-            I&apos;m Lodestar, your study coach for Probability 1. I find which concepts aren&apos;t
-            sticking and why, explain them from your own notes, and quiz you where it helps most.
-            Ask me about any part of the course.
+            I&apos;m Lodestar, your study coach. Bring your C++, probability or other course notes.
+            I help you understand the ideas, check what sticks, and work through the mix-ups behind
+            your answers.
           </p>
           {progress && (
             <ul className="pills" aria-label="Your week">
@@ -540,6 +541,12 @@ export function Conversation({
           )}
           {state.phase === 'home' && (
             <div className="hero__actions" data-testid="start">
+              <button type="button" className="action" onClick={() => { onOpen('documents'); }}>
+                <span className="action__title">Upload your course</span>
+                <span className="action__text">
+                  Add subjects and chapters, then learn from your own pages
+                </span>
+              </button>
               <button
                 type="button"
                 className="action action--primary"
@@ -573,6 +580,7 @@ export function Conversation({
             <div className="ask-chips" aria-label="Try asking">
               <span className="muted small">Try asking</span>
               {[
+                'Quiz me on my notes',
                 "I don't get Bayes' theorem",
                 'Why did you pick my last exercise?',
                 'What exactly will my Bayes score be next month?',

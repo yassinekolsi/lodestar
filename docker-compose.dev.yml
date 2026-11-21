@@ -1,0 +1,24 @@
+# Run the mounted development app in the same project as its databases:
+# docker compose -p lodestar-upside -f docker-compose.yml -f docker-compose.dev.yml up -d --no-build
+services:
+  backend:
+    image: lodestar-dev:latest
+    working_dir: /src
+    command: sh -c "alembic upgrade head && uvicorn backend.api.main:app --host 0.0.0.0 --port 8000 --reload"
+    volumes:
+      - .:/src
+  frontend:
+    image: lodestar-frontend:latest
+    working_dir: /app
+    command: npx vite --host 0.0.0.0
+    environment:
+      LODESTAR_API_URL: http://backend:8000
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/e2e:/app/e2e
+      - ./frontend/package.json:/app/package.json
+      - ./frontend/package-lock.json:/app/package-lock.json
+      - ./frontend/vite.config.ts:/app/vite.config.ts
+      - ./frontend/playwright.config.ts:/app/playwright.config.ts
+      - ./contracts:/contracts

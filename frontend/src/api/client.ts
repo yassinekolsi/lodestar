@@ -5,6 +5,9 @@ import type {
   ConsentView,
   CourseMapView,
   Decision,
+  DocumentView,
+  SubjectView,
+  PassageView,
   ExperimentView,
   ForecastView,
   PatternsView,
@@ -63,7 +66,7 @@ export function signInCode(): string | null {
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const token = memoryToken ?? getToken()
   const headers = new Headers(init.headers)
-  headers.set('Content-Type', 'application/json')
+  if (!(init.body instanceof FormData)) headers.set('Content-Type', 'application/json')
   if (token) headers.set('Authorization', `Bearer ${token}`)
   const response = await fetch(`${API_BASE}${path}`, { ...init, headers })
   if (!response.ok) {
@@ -199,6 +202,41 @@ export interface SessionStart {
 }
 
 export const api = {
+  documentPages: (id: string) =>
+    request<{ page: number; text: string; warnings: string[] }[]>(`/documents/${id}/pages`),
+  reviewDocument: (id: string, pages: string[]) =>
+    request<DocumentView>(`/documents/${id}/review`, {
+      method: 'PUT',
+      body: JSON.stringify({ pages }),
+    }),
+  documentOriginal: async (id: string) => {
+    const token = memoryToken ?? getToken()
+    const response = await fetch(`${API_BASE}/documents/${id}/original`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+    if (!response.ok) throw new ApiError(response.status, 'Original PDF is unavailable.')
+    return response.blob()
+  },
+  subjects: () => request<SubjectView[]>('/subjects'),
+  createSubject: (name: string) =>
+    request<SubjectView>('/subjects', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    }),
+  documents: () => request<DocumentView[]>('/documents'),
+  uploadDocument: (file: File, subjectId: string, chapter: string, gemini = false) => {
+    const body = new FormData()
+    body.append('file', file)
+    if (subjectId) body.append('subject_id', subjectId)
+    body.append('chapter', chapter)
+    body.append('gemini', String(gemini))
+    return request<DocumentView>('/documents', { method: 'POST', body })
+  },
+  deleteDocument: (id: string) => request<undefined>(`/documents/${id}`, { method: 'DELETE' }),
+  searchDocuments: (query: string, docId = '') =>
+    request<PassageView[]>(
+      `/documents/search?q=${encodeURIComponent(query)}${docId ? `&doc_id=${encodeURIComponent(docId)}` : ''}`,
+    ),
   registry: () => request<Registry>('/registry'),
   course: () => request<CourseMapView>('/course'),
   classView: () => request<ClassView>('/class'),

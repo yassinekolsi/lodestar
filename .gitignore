@@ -9,6 +9,7 @@
 !/models/registry.yaml
 !/models/growth_forecast/
 /data/
+/.artifacts/
 
 # python
 __pycache__/

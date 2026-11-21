@@ -191,6 +191,109 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/documents': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List Documents */
+    get: operations['list_documents_documents_get']
+    put?: never
+    /** Upload */
+    post: operations['upload_documents_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/documents/search': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Search */
+    get: operations['search_documents_search_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/documents/{doc_id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /** Delete Document */
+    delete: operations['delete_document_documents__doc_id__delete']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/documents/{doc_id}/original': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Original */
+    get: operations['original_documents__doc_id__original_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/documents/{doc_id}/pages': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Document Pages */
+    get: operations['document_pages_documents__doc_id__pages_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/documents/{doc_id}/review': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /** Review Document */
+    put: operations['review_document_documents__doc_id__review_put']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/events': {
     parameters: {
       query?: never
@@ -664,6 +767,24 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/subjects': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Subjects */
+    get: operations['subjects_subjects_get']
+    put?: never
+    /** Create Subject */
+    post: operations['create_subject_subjects_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/twin': {
     parameters: {
       query?: never
@@ -1087,6 +1208,23 @@ export interface components {
        */
       voice_strain_cue: number | null
     }
+    /** Body_upload_documents_post */
+    Body_upload_documents_post: {
+      /**
+       * Chapter
+       * @default
+       */
+      chapter: string
+      /** File */
+      file: string
+      /**
+       * Gemini
+       * @default false
+       */
+      gemini: boolean
+      /** Subject Id */
+      subject_id?: string | null
+    }
     /** Calibration */
     Calibration: {
       /** Answers */
@@ -1131,20 +1269,6 @@ export interface components {
       text: string
       /** Title */
       title: string
-    }
-    /** Choice */
-    Choice: {
-      /** Answer */
-      answer: string
-      /**
-       * @description discriminator enum property added by openapi-typescript
-       * @enum {string}
-       */
-      block: 'choice'
-      /** Options */
-      options: string[]
-      /** Question */
-      question: string
     }
     /** ClassConcept */
     ClassConcept: {
@@ -1626,42 +1750,6 @@ export interface components {
       /** Percent */
       percent: number
     }
-    /**
-     * CustomGameContent
-     * @description The served content: the recipe plus the user's request it was written for.
-     */
-    CustomGameContent: {
-      /**
-       * Asked
-       * @default null
-       */
-      asked: string | null
-      /**
-       * Dims
-       * @description Skills it trains; the main one has loading 1.0
-       */
-      dims: {
-        [key: string]: number
-      }
-      /**
-       * Repeat
-       * @default 1
-       */
-      repeat: number
-      /** Steps */
-      steps: (
-        | components['schemas']['ShowItems']
-        | components['schemas']['Distractor']
-        | components['schemas']['Recall']
-        | components['schemas']['Choice']
-        | components['schemas']['Timer']
-        | components['schemas']['Rule']
-        | components['schemas']['React']
-        | components['schemas']['Feedback']
-      )[]
-      /** Title */
-      title: string
-    }
     /** DataExported */
     DataExported: {
       /**
@@ -1854,23 +1942,52 @@ export interface components {
        */
       still_learning: boolean
     }
-    /**
-     * Distractor
-     * @description A filler task between seeing and recalling (not scored).
-     */
-    Distractor: {
+    /** DocumentView */
+    DocumentView: {
       /**
-       * @description discriminator enum property added by openapi-typescript
-       * @enum {string}
+       * Chapter
+       * @default
        */
-      block: 'distractor'
-      /** Seconds */
-      seconds: number
+      chapter: string
+      /** Concepts */
+      concepts: {
+        [key: string]: number[]
+      }
       /**
-       * Task
-       * @enum {string}
+       * Created At
+       * Format: date-time
        */
-      task: 'arithmetic:easy' | 'arithmetic:hard' | 'tapping'
+      created_at: string
+      /**
+       * Doc Id
+       * Format: uuid
+       */
+      doc_id: string
+      /**
+       * Extraction Method
+       * @default text
+       */
+      extraction_method: string
+      /** Filename */
+      filename: string
+      /** Pages */
+      pages: number
+      /** Passages */
+      passages: number
+      /**
+       * Review Required
+       * @default false
+       */
+      review_required: boolean
+      /**
+       * Searchable
+       * @default true
+       */
+      searchable: boolean
+      /** Subject Id */
+      subject_id?: string | null
+      /** Title */
+      title: string
     }
     Event:
       | components['schemas']['SessionStarted']
@@ -1895,6 +2012,7 @@ export interface components {
       | components['schemas']['LlmSelectionChanged']
       | components['schemas']['StoryChapterCompleted']
       | components['schemas']['AssessmentContested']
+      | components['schemas']['LibraryChanged']
     /**
      * ExerciseSpec
      * @description Payload of the `play` interrupt.
@@ -2218,23 +2336,6 @@ export interface components {
        * @description Sessions it rests on
        */
       sessions: number
-    }
-    /**
-     * Feedback
-     * @description Show how the round is going so far (not scored).
-     */
-    Feedback: {
-      /**
-       * @description discriminator enum property added by openapi-typescript
-       * @enum {string}
-       */
-      block: 'feedback'
-      /**
-       * Level
-       * @default brief
-       * @enum {string}
-       */
-      level: 'brief' | 'full'
     }
     /**
      * ForecastBand
@@ -2697,6 +2798,59 @@ export interface components {
       /** Value */
       value: string
     }
+    /** LibraryChanged */
+    LibraryChanged: {
+      /**
+       * Event Id
+       * @description Assigned by Postgres (uuidv7)
+       * @default null
+       */
+      event_id: string | null
+      payload: components['schemas']['LibraryPayload']
+      /**
+       * Schema Version
+       * @default 1
+       */
+      schema_version: number
+      /**
+       * Session Id
+       * @default null
+       */
+      session_id: string | null
+      /**
+       * Ts
+       * Format: date-time
+       */
+      ts: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: 'library.changed'
+      /**
+       * User Id
+       * Format: uuid
+       */
+      user_id: string
+    }
+    /** LibraryPayload */
+    LibraryPayload: {
+      /**
+       * Action
+       * @enum {string}
+       */
+      action: 'subject_created' | 'document_uploaded' | 'document_deleted' | 'document_reviewed'
+      /**
+       * Doc Id
+       * @default null
+       */
+      doc_id: string | null
+      /**
+       * Subject Id
+       * @default null
+       */
+      subject_id: string | null
+    }
     /** LifeContextLine */
     LifeContextLine: {
       /**
@@ -3078,6 +3232,21 @@ export interface components {
        */
       timezone?: string | null
     }
+    /** PassageView */
+    PassageView: {
+      /** Concepts */
+      concepts?: string[]
+      /** Doc Id */
+      doc_id: string
+      /** Page */
+      page: number
+      /** Score */
+      score: number
+      /** Text */
+      text: string
+      /** Title */
+      title: string
+    }
     /** PatternsView */
     PatternsView: {
       /** Plateaus */
@@ -3251,42 +3420,6 @@ export interface components {
       /** Text */
       text: string
     }
-    /**
-     * React
-     * @description Press as soon as the target shows, hold back for distractors.
-     */
-    React: {
-      /**
-       * @description discriminator enum property added by openapi-typescript
-       * @enum {string}
-       */
-      block: 'react'
-      /** Deadline Ms */
-      deadline_ms: number
-      /** Distractors */
-      distractors?: string[]
-      /** Target */
-      target: string
-      /** Trials */
-      trials: number
-    }
-    /**
-     * Recall
-     * @description Recall the items of the last `show_items`: tap them in order, in any order, or say for
-     *     each probe whether it was shown.
-     */
-    Recall: {
-      /**
-       * @description discriminator enum property added by openapi-typescript
-       * @enum {string}
-       */
-      block: 'recall'
-      /**
-       * Kind
-       * @enum {string}
-       */
-      kind: 'free' | 'ordered' | 'recognition'
-    }
     /** Receipt */
     Receipt: {
       /** Counts */
@@ -3320,6 +3453,20 @@ export interface components {
       value: {
         [key: string]: unknown
       }
+    }
+    /** ReviewInput */
+    ReviewInput: {
+      /** Pages */
+      pages: string[]
+    }
+    /** ReviewPage */
+    ReviewPage: {
+      /** Page */
+      page: number
+      /** Text */
+      text: string
+      /** Warnings */
+      warnings: string[]
     }
     /** Rhythm */
     Rhythm: {
@@ -3427,29 +3574,6 @@ export interface components {
       stop_reason: ('user' | 'frustration' | 'error') | null
       /** Trial Count */
       trial_count: number
-    }
-    /**
-     * Rule
-     * @description Sort numbers 1-9 by a rule; with `switch_after`, the rule swaps every that many trials.
-     */
-    Rule: {
-      /**
-       * @description discriminator enum property added by openapi-typescript
-       * @enum {string}
-       */
-      block: 'rule'
-      /**
-       * Rule
-       * @enum {string}
-       */
-      rule: 'odd_even' | 'high_low'
-      /**
-       * Switch After
-       * @default null
-       */
-      switch_after: number | null
-      /** Trials */
-      trials: number
     }
     /**
      * ScoringInputs
@@ -3749,24 +3873,6 @@ export interface components {
       success_mode: ('chill' | 'balanced' | 'push') | null
     }
     /**
-     * ShowItems
-     * @description Flash items one at a time: `"digits:7"` (drawn in the browser) or an explicit list.
-     */
-    ShowItems: {
-      /**
-       * @description discriminator enum property added by openapi-typescript
-       * @enum {string}
-       */
-      block: 'show_items'
-      /**
-       * Items
-       * @description "<digits|letters|words|shapes>:<2-12>" or 2-12 short items
-       */
-      items: string | string[]
-      /** Ms Each */
-      ms_each: number
-    }
-    /**
      * SkillPriors
      * @description Observed-score correlations between skills from NCPT (registry/priors.yaml).
      */
@@ -3935,6 +4041,21 @@ export interface components {
       /** Story Id */
       story_id: string
     }
+    /** SubjectInput */
+    SubjectInput: {
+      /** Name */
+      name: string
+    }
+    /** SubjectView */
+    SubjectView: {
+      /** Name */
+      name: string
+      /**
+       * Subject Id
+       * Format: uuid
+       */
+      subject_id: string
+    }
     /** SwitchInput */
     SwitchInput: {
       /** Granted */
@@ -3962,19 +4083,6 @@ export interface components {
       required: boolean
       /** Title */
       title: string
-    }
-    /**
-     * Timer
-     * @description A countdown (not scored).
-     */
-    Timer: {
-      /**
-       * @description discriminator enum property added by openapi-typescript
-       * @enum {string}
-       */
-      block: 'timer'
-      /** Seconds */
-      seconds: number
     }
     /** TraceRow */
     TraceRow: {
@@ -4582,6 +4690,240 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CreatedUser']
+        }
+      }
+    }
+  }
+  list_documents_documents_get: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DocumentView'][]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  upload_documents_post: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'multipart/form-data': components['schemas']['Body_upload_documents_post']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DocumentView']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  search_documents_search_get: {
+    parameters: {
+      query: {
+        q: string
+        doc_id?: string | null
+      }
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['PassageView'][]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  delete_document_documents__doc_id__delete: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path: {
+        doc_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  original_documents__doc_id__original_get: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path: {
+        doc_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  document_pages_documents__doc_id__pages_get: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path: {
+        doc_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ReviewPage'][]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  review_document_documents__doc_id__review_put: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path: {
+        doc_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ReviewInput']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DocumentView']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
         }
       }
     }
@@ -5486,6 +5828,72 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['TraceRow'][]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  subjects_subjects_get: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SubjectView'][]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  create_subject_subjects_post: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SubjectInput']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SubjectView']
         }
       }
       /** @description Validation Error */

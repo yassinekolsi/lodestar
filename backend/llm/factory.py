@@ -6,12 +6,15 @@ in `degraded`. Keys are decrypted here, in memory, for one call; they never leav
 """
 
 import asyncio
+import base64
 import logging
+import os
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any, TypeVar
 from uuid import UUID
 
+import httpx
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import BaseMessage
 from pydantic import BaseModel
@@ -21,9 +24,15 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from backend.config import Settings
 from backend.contracts.llm import LlmSelection
 from backend.db import tables as t
-from backend.db.llm_store import get_credential, set_credential_status
+from backend.db.consent_store import granted_switches
+from backend.db.llm_store import (
+    get_credential,
+    save_credential,
+    set_credential_status,
+    set_selection,
+)
 from backend.llm.deidentify import scrub_messages
-from backend.llm.providers import build_chat_model
+from backend.llm.providers import build_chat_model, list_models
 from backend.llm.stub import Responder, StubChatModel
 from backend.llm.vault import Vault
 from backend.registry.models import Registry
@@ -191,6 +200,90 @@ class LlmFactory:
 
         text, rung, degraded = await self._walk(user_id, selection, call)
         return LlmReply(text, rung.provider, rung.model, degraded)
+
+    async def gemini_pdf_page(self, user_id: UUID, data: bytes, prompt: str, schema: type[M]) -> M:
+        """OCR has no text-only/local fallback. The key stays inside this factory.
+
+        Native PDF vision retains handwritten formulas and layout. Source pages are sent
+        only with Cloud AI enabled; provider errors never expose request headers or bodies.
+        """
+        async with self.engine.connect() as conn:
+            consent = await granted_switches(conn, user_id, self.registry.consent)
+            stored = await get_credential(conn, user_id, "gemini")
+        if "cloud_ai" not in consent:
+            raise ValueError("Enable Cloud AI in Settings to read scanned pages with Gemini.")
+        if not self.vault.available or stored is None or stored.status == "rejected":
+            raise ValueError("Add your Gemini key in Settings to read scanned pages.")
+        key = self.vault.open(user_id, "gemini", stored.ciphertext, stored.nonce)
+        model = "gemini-3.5-flash-lite"
+        body = {
+            "contents": [
+                {
+                    "role": "user",
+                    "parts": [
+                        {"text": prompt},
+                        {
+                            "inline_data": {
+                                "mime_type": "application/pdf",
+                                "data": base64.b64encode(data).decode("ascii"),
+                            }
+                        },
+                    ],
+                }
+            ],
+            "generationConfig": {
+                "temperature": 0,
+                "responseMimeType": "application/json",
+                "responseJsonSchema": schema.model_json_schema(),
+            },
+        }
+        try:
+            async with httpx.AsyncClient(timeout=120) as client:
+                for attempt in range(3):
+                    response = await client.post(
+                        f"{self.api_base('gemini')}/models/{model}:generateContent",
+                        headers={"x-goog-api-key": key},
+                        json=body,
+                    )
+                    if response.status_code not in (429, 500, 502, 503, 504) or attempt == 2:
+                        break
+                    await asyncio.sleep(2**attempt)
+            if response.status_code in (401, 403):
+                raise ValueError("Gemini could not authorise OCR. Check your key in Settings.")
+            if response.status_code == 404:
+                raise ValueError(
+                    "Gemini 3.5 Flash Lite is unavailable for this key. Check Settings."
+                )
+            if response.status_code == 429:
+                raise ValueError("Gemini's OCR limit was reached. Try again later.")
+            response.raise_for_status()
+            candidate = response.json()["candidates"][0]
+            if candidate.get("finishReason") != "STOP":
+                raise ValueError("Gemini did not finish reading this page. Try a smaller file.")
+            text = "".join(p.get("text", "") for p in candidate["content"]["parts"])
+            return schema.model_validate_json(text)
+        except httpx.HTTPError, KeyError, IndexError:
+            raise ValueError("Gemini could not read this page. Try again later.") from None
+
+    async def import_gemini_environment(self, user_id: UUID) -> list[str]:
+        """Explicit local setup command: seal the supplied environment key for one user."""
+        key = os.environ.get("GEMINI_API_KEY", "").strip()
+        if not key:
+            raise ValueError("GEMINI_API_KEY is not configured.")
+        async with httpx.AsyncClient(timeout=30) as client:
+            models = await list_models(
+                self.registry.provider("gemini"), key, self.api_base("gemini"), client
+            )
+        model = "gemini-3.5-flash-lite"
+        if model not in models:
+            return models
+        sealed = self.vault.seal(user_id, "gemini", key)
+        async with self.engine.begin() as conn:
+            await save_credential(conn, user_id, "gemini", sealed, "ok")
+            await set_selection(
+                conn, user_id, LlmSelection(mode="hosted", provider="gemini", model=model)
+            )
+        return models
 
     async def structured(
         self,

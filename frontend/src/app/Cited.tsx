@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { MathText } from '../lib/math'
 
 const CITE = /\[([FDKM]\d+(?:\s*,\s*[FDKM]\d+)*)\]/g
 
@@ -17,7 +18,7 @@ export function Cited({
   let last = 0
   for (const match of text.matchAll(CITE)) {
     const at = match.index
-    parts.push(text.slice(last, at))
+    parts.push(<MathText key={`text-${String(at)}`} text={text.slice(last, at)} />)
     for (const id of (match[1] ?? '').split(/\s*,\s*/)) {
       const ref = refs?.[id]
       parts.push(
@@ -42,6 +43,6 @@ export function Cited({
     }
     last = at + match[0].length
   }
-  parts.push(text.slice(last))
+  parts.push(<MathText key="tail" text={text.slice(last)} />)
   return <>{parts}</>
 }

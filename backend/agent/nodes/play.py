@@ -740,7 +740,18 @@ async def prepare_exercise(
                 seed,
                 concept=state.intent.dim if state.intent else None,
                 draft=_drafter(ctx),
+                doc_id=library.requested_document((state.intent.text or "") if state.intent else ""),
             )
+        if notes_content is None:
+            emit(
+                {
+                    "kind": "say",
+                    "text": "I couldn't make a reliable quiz from that chapter. "
+                    "Try searching its pages or choose another document. With an AI provider "
+                    "connected in Settings, I can also draft questions from your passages.",
+                }
+            )
+            return {"exercise": None}
     async with ctx.services.engine.begin() as conn:
         played_before = (
             await conn.execute(

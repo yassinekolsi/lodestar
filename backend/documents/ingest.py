@@ -20,9 +20,10 @@ from pathlib import PurePath
 from pypdf import PdfReader
 
 from backend.agent.intents import skills_in
+from backend.documents.math_text import BLOCK, safe_cut
 from backend.registry.models import Registry
 
-PASSAGE_CHARS = 900
+PASSAGE_CHARS = 650
 MIN_PASSAGE_CHARS = 120
 MAX_BYTES = 25 * 1024 * 1024
 MAX_PAGES = 400
@@ -46,6 +47,10 @@ class Extracted:
     title: str
     pages: int
     passages: list[Passage]
+    page_texts: list[str] = field(default_factory=list)
+    method: str = "text"
+    warnings: dict[str, list[str]] = field(default_factory=dict)
+    review_required: bool = False
 
     def concepts(self) -> dict[str, list[int]]:
         """Concept -> the pages that mention it, in order."""
@@ -58,24 +63,55 @@ class Extracted:
         return out
 
 
-def clean(text: str) -> str:
+def _clean_prose(text: str) -> str:
     text = text.replace("\r", "\n").replace("­", "")
     text = re.sub(r"(\w)-\n(\w)", r"\1\2", text)  # hyphenated across a line end
     lines = [ln.strip() for ln in text.split("\n")]
-    lines = [
-        ln for ln in lines if ln and not re.fullmatch(r"(page\s*)?\d{1,4}(\s*/\s*\d+)?", ln, re.I)
-    ]
     out: list[str] = []
     for ln in lines:
-        # A line ending without punctuation usually continues on the next one.
-        if out and not re.search(r"[.!?:;]$", out[-1]) and not re.match(r"^[-•*\d]", ln):
+        if re.fullmatch(r"(page\s*)?\d{1,4}(\s*/\s*\d+)?", ln, re.I):
+            continue
+        if not ln:
+            if out and out[-1]:
+                out.append("")
+            continue
+        # Keep short headings and code on their own lines. Blank lines delimit paragraphs.
+        if (
+            out
+            and len(out[-1]) > 85
+            and not re.search(r"[.!?:;{}]$", out[-1])
+            and not re.match(r"^[-•*\d#]|^(class|void|int|#include)\b", ln)
+        ):
             out[-1] = f"{out[-1]} {ln}"
         else:
             out.append(ln)
     return "\n".join(re.sub(r"[ \t]+", " ", ln) for ln in out)
 
 
-def pages_of(data: bytes, filename: str) -> tuple[list[str], str | None]:
+def clean(text: str) -> str:
+    def prose(value: str) -> str:
+        if not value.strip():
+            return value
+        before = re.match(r"\s*", value)
+        after = re.search(r"\s*$", value)
+        return (
+            (before.group() if before else "")
+            + _clean_prose(value).strip()
+            + (after.group() if after else "")
+        )
+
+    parts: list[str] = []
+    start = 0
+    for match in BLOCK.finditer(text):
+        parts.extend([prose(text[start : match.start()]), match.group()])
+        start = match.end()
+    parts.append(prose(text[start:]))
+    return "".join(parts)
+
+
+def pages_of(
+    data: bytes, filename: str, *, allow_scans: bool = False
+) -> tuple[list[str], str | None]:
     """The text of each page, and the title stored in the file if any."""
     if len(data) > MAX_BYTES:
         raise UnreadableDocument("That file is over 25 MB.")
@@ -85,53 +121,62 @@ def pages_of(data: bytes, filename: str) -> tuple[list[str], str | None]:
     if kind == ".pdf":
         try:
             reader = PdfReader(io.BytesIO(data))
-            pages = [(p.extract_text() or "") for p in reader.pages[:MAX_PAGES]]
+            if len(reader.pages) > MAX_PAGES:
+                raise UnreadableDocument("Split this PDF into files of at most 400 pages.")
+            pages = [(p.extract_text() or "") for p in reader.pages]
             meta = reader.metadata
             title = str(meta.title).strip() if meta and meta.title else None
+        except UnreadableDocument:
+            raise
         except Exception as exc:  # pypdf raises many kinds of errors on broken files
             raise UnreadableDocument("That PDF couldn't be read.") from exc
+        if not allow_scans and scanned_pages(pages):
+            raise UnreadableDocument("This PDF needs Gemini OCR. Upload it through Documents.")
     else:
         text = data.decode("utf-8", errors="replace")
         pages = text.split("\f") if "\f" in text else [text]
         title = None
-    if not any(p.strip() for p in pages):
+    if not allow_scans and not any(p.strip() for p in pages):
         raise UnreadableDocument(
             "No text found in that file. If it's a scan, export it with text (OCR) first."
         )
     return pages, title
 
 
+def scanned_pages(pages: list[str]) -> list[int]:
+    return [
+        i for i, p in enumerate(pages) if len(re.sub(r"CamScanner|\s|\d", "", p, flags=re.I)) < 25
+    ]
+
+
 def split_passages(pages: list[str]) -> list[Passage]:
     passages: list[Passage] = []
     for number, raw in enumerate(pages, start=1):
-        paragraphs = [p.strip() for p in clean(raw).split("\n") if p.strip()]
-        current = ""
-        for para in paragraphs:
-            if current and len(current) + len(para) + 1 > PASSAGE_CHARS:
-                passages.append(Passage(number, len(passages), current))
-                current = ""
-            if len(para) > PASSAGE_CHARS:  # a very long paragraph: cut at sentence ends
-                for sentence in re.split(r"(?<=[.!?])\s+", para):
-                    if current and len(current) + len(sentence) + 1 > PASSAGE_CHARS:
-                        passages.append(Passage(number, len(passages), current))
-                        current = ""
-                    current = f"{current} {sentence}".strip()
-            else:
-                current = f"{current}\n{para}".strip()
-        if current:
-            # A short tail joins the previous passage of the same page when there is one.
-            last = passages[-1] if passages else None
-            if len(current) < MIN_PASSAGE_CHARS and last is not None and last.page == number:
-                last.text = f"{last.text}\n{current}"
-            else:
-                passages.append(Passage(number, len(passages), current))
+        remaining = clean(raw).strip()
+        while len(remaining) > PASSAGE_CHARS:
+            window = remaining[:PASSAGE_CHARS]
+            # Prefer a section/paragraph boundary, then a sentence, then a word.
+            cut = window.rfind("\n", 400)
+            if cut < 0:
+                ends = list(re.finditer(r"[.!?]\s", window[400:]))
+                cut = 400 + ends[-1].end() if ends else window.rfind(" ", 400)
+            if cut < 0:
+                cut = PASSAGE_CHARS  # code or a long formula without whitespace
+            cut = safe_cut(remaining, cut)
+            passages.append(Passage(number, len(passages), remaining[:cut].strip()))
+            remaining = remaining[cut:].strip()
+        if remaining:
+            passages.append(Passage(number, len(passages), remaining))
     return passages
 
 
 def title_of(filename: str, stored: str | None, pages: list[str]) -> str:
     if stored and len(stored) > 3 and not stored.lower().startswith(("microsoft", "untitled")):
         return stored[:120]
-    for line in clean(pages[0]).split("\n"):
+    for line in pages[0].splitlines():
+        line = line.strip()
+        if re.search(r"@|author|enseignant|année|filière|^dr\.|^prof", line, re.I):
+            continue
         if 3 < len(line) <= 90:
             return line
     return PurePath(filename).stem.replace("_", " ").replace("-", " ")[:120]
@@ -142,4 +187,4 @@ def extract(data: bytes, filename: str, registry: Registry) -> Extracted:
     passages = split_passages(pages)
     for p in passages:
         p.concepts = skills_in(p.text, registry)
-    return Extracted(title_of(filename, stored, pages), len(pages), passages)
+    return Extracted(title_of(filename, stored, pages), len(pages), passages, page_texts=pages)

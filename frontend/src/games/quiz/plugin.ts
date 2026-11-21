@@ -1,6 +1,7 @@
 import { button, el, itemsToTimeline, makePlugin, markAnswer } from '../../taskhost/plugin'
 import type { GameModule, TrialRecord } from '../../taskhost/types'
 import { scored } from '../shared/ask'
+import { renderMath } from '../../lib/renderMath'
 
 /** One course question, as the backend serves it (backend/agent/learning.py, quiz_content). */
 export interface QuizQuestion {
@@ -77,10 +78,13 @@ const QuizPlugin = makePlugin<QuizItem>('lodestar-quiz', async ({ stage, item, e
   const tools = el('div', 'quiz-tools')
   tools.append(hint)
   stage.append(head, stem, list, hintBox, tools)
+  renderMath(stem)
+  options.forEach(renderMath)
   let hints = 0
   hint.addEventListener('click', () => {
     if (hints >= q.hints.length) return
     hintBox.textContent = q.hints[hints] ?? ''
+    renderMath(hintBox)
     if (hints === 1) {
       for (const i of q.remove) {
         const b = options[i]
@@ -135,6 +139,7 @@ const QuizPlugin = makePlugin<QuizItem>('lodestar-quiz', async ({ stage, item, e
   const next = button(item.number === item.of ? 'Finish' : 'Next', 'quiz-next', 'primary')
   box.append(next)
   stage.append(box)
+  renderMath(box)
   next.focus()
   await pick([next], false)
   return {

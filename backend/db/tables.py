@@ -251,6 +251,16 @@ life_context = Table(
     schema="twin",
 )
 
+subjects = Table(
+    "subjects",
+    metadata,
+    _uuid_pk("subject_id"),
+    _user_fk(),
+    Column("name", Text, nullable=False),
+    Column("created_at", TZ, nullable=False, server_default=NOW),
+    schema="app",
+)
+
 documents = Table(
     "documents",
     metadata,
@@ -258,6 +268,12 @@ documents = Table(
     _user_fk(),
     Column("title", Text, nullable=False),
     Column("filename", Text, nullable=False),
+    Column("subject_id", UUID(as_uuid=True)),
+    Column("chapter", Text, nullable=False, server_default=""),
+    Column("indexed", Boolean, nullable=False, server_default=text("false")),
+    Column("source_pdf", LargeBinary),
+    Column("extraction", JSONB, nullable=False, server_default=text("'{}'::jsonb")),
+    Column("review_required", Boolean, nullable=False, server_default=text("false")),
     Column("pages", Integer, nullable=False),
     Column("passages", Integer, nullable=False),
     Column("concepts", JSONB, nullable=False, server_default=text("'{}'::jsonb")),

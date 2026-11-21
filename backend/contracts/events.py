@@ -283,6 +283,17 @@ class AssessmentContested(_Envelope):
     payload: ContestPayload
 
 
+class LibraryPayload(Contract):
+    action: Literal["subject_created", "document_uploaded", "document_deleted", "document_reviewed"]
+    subject_id: UUID | None = None
+    doc_id: UUID | None = None
+
+
+class LibraryChanged(_Envelope):
+    type: Literal["library.changed"] = "library.changed"
+    payload: LibraryPayload
+
+
 Event = Annotated[
     SessionStarted
     | TrialRecorded
@@ -305,7 +316,8 @@ Event = Annotated[
     | TwinSnapshotTaken
     | LlmSelectionChanged
     | StoryChapterCompleted
-    | AssessmentContested,
+    | AssessmentContested
+    | LibraryChanged,
     Field(discriminator="type"),
 ]
 

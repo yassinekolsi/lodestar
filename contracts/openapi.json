@@ -729,6 +729,43 @@
         "title": "BiometricCues",
         "type": "object"
       },
+      "Body_upload_documents_post": {
+        "properties": {
+          "chapter": {
+            "default": "",
+            "maxLength": 120,
+            "title": "Chapter",
+            "type": "string"
+          },
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          },
+          "gemini": {
+            "default": false,
+            "title": "Gemini",
+            "type": "boolean"
+          },
+          "subject_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Id"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_documents_post",
+        "type": "object"
+      },
       "Calibration": {
         "additionalProperties": false,
         "properties": {
@@ -816,47 +853,6 @@
           "text"
         ],
         "title": "Chapter",
-        "type": "object"
-      },
-      "Choice": {
-        "additionalProperties": false,
-        "properties": {
-          "answer": {
-            "maxLength": 40,
-            "minLength": 1,
-            "title": "Answer",
-            "type": "string"
-          },
-          "block": {
-            "const": "choice",
-            "title": "Block",
-            "type": "string"
-          },
-          "options": {
-            "items": {
-              "maxLength": 40,
-              "minLength": 1,
-              "type": "string"
-            },
-            "maxItems": 6,
-            "minItems": 2,
-            "title": "Options",
-            "type": "array"
-          },
-          "question": {
-            "maxLength": 160,
-            "minLength": 3,
-            "title": "Question",
-            "type": "string"
-          }
-        },
-        "required": [
-          "block",
-          "question",
-          "options",
-          "answer"
-        ],
-        "title": "Choice",
         "type": "object"
       },
       "ClassConcept": {
@@ -1929,104 +1925,6 @@
         "title": "CurvePoint",
         "type": "object"
       },
-      "CustomGameContent": {
-        "additionalProperties": false,
-        "description": "The served content: the recipe plus the user's request it was written for.",
-        "properties": {
-          "asked": {
-            "anyOf": [
-              {
-                "maxLength": 300,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "title": "Asked"
-          },
-          "dims": {
-            "description": "Skills it trains; the main one has loading 1.0",
-            "maxProperties": 3,
-            "minProperties": 1,
-            "patternProperties": {
-              "^[a-z][a-z0-9_]*$": {
-                "type": "number"
-              }
-            },
-            "title": "Dims",
-            "type": "object"
-          },
-          "repeat": {
-            "default": 1,
-            "maximum": 5,
-            "minimum": 1,
-            "title": "Repeat",
-            "type": "integer"
-          },
-          "steps": {
-            "items": {
-              "discriminator": {
-                "mapping": {
-                  "choice": "#/components/schemas/Choice",
-                  "distractor": "#/components/schemas/Distractor",
-                  "feedback": "#/components/schemas/Feedback",
-                  "react": "#/components/schemas/React",
-                  "recall": "#/components/schemas/Recall",
-                  "rule": "#/components/schemas/Rule",
-                  "show_items": "#/components/schemas/ShowItems",
-                  "timer": "#/components/schemas/Timer"
-                },
-                "propertyName": "block"
-              },
-              "oneOf": [
-                {
-                  "$ref": "#/components/schemas/ShowItems"
-                },
-                {
-                  "$ref": "#/components/schemas/Distractor"
-                },
-                {
-                  "$ref": "#/components/schemas/Recall"
-                },
-                {
-                  "$ref": "#/components/schemas/Choice"
-                },
-                {
-                  "$ref": "#/components/schemas/Timer"
-                },
-                {
-                  "$ref": "#/components/schemas/Rule"
-                },
-                {
-                  "$ref": "#/components/schemas/React"
-                },
-                {
-                  "$ref": "#/components/schemas/Feedback"
-                }
-              ]
-            },
-            "maxItems": 10,
-            "minItems": 1,
-            "title": "Steps",
-            "type": "array"
-          },
-          "title": {
-            "maxLength": 40,
-            "minLength": 3,
-            "title": "Title",
-            "type": "string"
-          }
-        },
-        "required": [
-          "title",
-          "dims",
-          "steps"
-        ],
-        "title": "CustomGameContent",
-        "type": "object"
-      },
       "DataExported": {
         "additionalProperties": false,
         "properties": {
@@ -2446,37 +2344,88 @@
         "title": "DimensionView",
         "type": "object"
       },
-      "Distractor": {
+      "DocumentView": {
         "additionalProperties": false,
-        "description": "A filler task between seeing and recalling (not scored).",
         "properties": {
-          "block": {
-            "const": "distractor",
-            "title": "Block",
+          "chapter": {
+            "default": "",
+            "title": "Chapter",
             "type": "string"
           },
-          "seconds": {
-            "maximum": 60,
-            "minimum": 5,
-            "title": "Seconds",
+          "concepts": {
+            "additionalProperties": {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "title": "Concepts",
+            "type": "object"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "doc_id": {
+            "format": "uuid",
+            "title": "Doc Id",
+            "type": "string"
+          },
+          "extraction_method": {
+            "default": "text",
+            "title": "Extraction Method",
+            "type": "string"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "pages": {
+            "title": "Pages",
             "type": "integer"
           },
-          "task": {
-            "enum": [
-              "arithmetic:easy",
-              "arithmetic:hard",
-              "tapping"
+          "passages": {
+            "title": "Passages",
+            "type": "integer"
+          },
+          "review_required": {
+            "default": false,
+            "title": "Review Required",
+            "type": "boolean"
+          },
+          "searchable": {
+            "default": true,
+            "title": "Searchable",
+            "type": "boolean"
+          },
+          "subject_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
             ],
-            "title": "Task",
+            "title": "Subject Id"
+          },
+          "title": {
+            "title": "Title",
             "type": "string"
           }
         },
         "required": [
-          "block",
-          "task",
-          "seconds"
+          "doc_id",
+          "title",
+          "filename",
+          "pages",
+          "passages",
+          "concepts",
+          "created_at"
         ],
-        "title": "Distractor",
+        "title": "DocumentView",
         "type": "object"
       },
       "Event": {
@@ -2494,6 +2443,7 @@
             "experiment.session_logged": "#/components/schemas/ExperimentSessionLogged",
             "experiment.started": "#/components/schemas/ExperimentStarted",
             "goal.set": "#/components/schemas/GoalSet",
+            "library.changed": "#/components/schemas/LibraryChanged",
             "llm.selection_changed": "#/components/schemas/LlmSelectionChanged",
             "memory.written": "#/components/schemas/MemoryWritten",
             "round.completed": "#/components/schemas/RoundCompleted",
@@ -2573,6 +2523,9 @@
           },
           {
             "$ref": "#/components/schemas/AssessmentContested"
+          },
+          {
+            "$ref": "#/components/schemas/LibraryChanged"
           }
         ]
       },
@@ -3220,31 +3173,6 @@
           "sessions"
         ],
         "title": "FatiguePoint",
-        "type": "object"
-      },
-      "Feedback": {
-        "additionalProperties": false,
-        "description": "Show how the round is going so far (not scored).",
-        "properties": {
-          "block": {
-            "const": "feedback",
-            "title": "Block",
-            "type": "string"
-          },
-          "level": {
-            "default": "brief",
-            "enum": [
-              "brief",
-              "full"
-            ],
-            "title": "Level",
-            "type": "string"
-          }
-        },
-        "required": [
-          "block"
-        ],
-        "title": "Feedback",
         "type": "object"
       },
       "ForecastBand": {
@@ -4323,6 +4251,115 @@
         "title": "LabelInput",
         "type": "object"
       },
+      "LibraryChanged": {
+        "additionalProperties": false,
+        "properties": {
+          "event_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Assigned by Postgres (uuidv7)",
+            "title": "Event Id"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/LibraryPayload"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Session Id"
+          },
+          "ts": {
+            "format": "date-time",
+            "title": "Ts",
+            "type": "string"
+          },
+          "type": {
+            "const": "library.changed",
+            "default": "library.changed",
+            "title": "Type",
+            "type": "string"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "ts",
+          "payload"
+        ],
+        "title": "LibraryChanged",
+        "type": "object"
+      },
+      "LibraryPayload": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "subject_created",
+              "document_uploaded",
+              "document_deleted",
+              "document_reviewed"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "doc_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Doc Id"
+          },
+          "subject_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subject Id"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "LibraryPayload",
+        "type": "object"
+      },
       "LifeContextLine": {
         "additionalProperties": false,
         "properties": {
@@ -5137,6 +5174,47 @@
         "title": "NewUser",
         "type": "object"
       },
+      "PassageView": {
+        "additionalProperties": false,
+        "properties": {
+          "concepts": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Concepts",
+            "type": "array"
+          },
+          "doc_id": {
+            "title": "Doc Id",
+            "type": "string"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "score": {
+            "title": "Score",
+            "type": "number"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "doc_id",
+          "title",
+          "page",
+          "text",
+          "score"
+        ],
+        "title": "PassageView",
+        "type": "object"
+      },
       "PatternsView": {
         "additionalProperties": false,
         "properties": {
@@ -5542,79 +5620,6 @@
         "title": "QuizOption",
         "type": "object"
       },
-      "React": {
-        "additionalProperties": false,
-        "description": "Press as soon as the target shows, hold back for distractors.",
-        "properties": {
-          "block": {
-            "const": "react",
-            "title": "Block",
-            "type": "string"
-          },
-          "deadline_ms": {
-            "maximum": 3000,
-            "minimum": 300,
-            "title": "Deadline Ms",
-            "type": "integer"
-          },
-          "distractors": {
-            "items": {
-              "maxLength": 12,
-              "minLength": 1,
-              "type": "string"
-            },
-            "maxItems": 5,
-            "title": "Distractors",
-            "type": "array"
-          },
-          "target": {
-            "maxLength": 12,
-            "minLength": 1,
-            "title": "Target",
-            "type": "string"
-          },
-          "trials": {
-            "maximum": 30,
-            "minimum": 4,
-            "title": "Trials",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "block",
-          "target",
-          "deadline_ms",
-          "trials"
-        ],
-        "title": "React",
-        "type": "object"
-      },
-      "Recall": {
-        "additionalProperties": false,
-        "description": "Recall the items of the last `show_items`: tap them in order, in any order, or say for\neach probe whether it was shown.",
-        "properties": {
-          "block": {
-            "const": "recall",
-            "title": "Block",
-            "type": "string"
-          },
-          "kind": {
-            "enum": [
-              "free",
-              "ordered",
-              "recognition"
-            ],
-            "title": "Kind",
-            "type": "string"
-          }
-        },
-        "required": [
-          "block",
-          "kind"
-        ],
-        "title": "Recall",
-        "type": "object"
-      },
       "Receipt": {
         "additionalProperties": false,
         "properties": {
@@ -5722,6 +5727,52 @@
           "value"
         ],
         "title": "ResumeInput",
+        "type": "object"
+      },
+      "ReviewInput": {
+        "additionalProperties": false,
+        "properties": {
+          "pages": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 400,
+            "minItems": 1,
+            "title": "Pages",
+            "type": "array"
+          }
+        },
+        "required": [
+          "pages"
+        ],
+        "title": "ReviewInput",
+        "type": "object"
+      },
+      "ReviewPage": {
+        "additionalProperties": false,
+        "properties": {
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "page",
+          "text",
+          "warnings"
+        ],
+        "title": "ReviewPage",
         "type": "object"
       },
       "Rhythm": {
@@ -5912,52 +5963,6 @@
           "ended_at"
         ],
         "title": "RoundResult",
-        "type": "object"
-      },
-      "Rule": {
-        "additionalProperties": false,
-        "description": "Sort numbers 1-9 by a rule; with `switch_after`, the rule swaps every that many trials.",
-        "properties": {
-          "block": {
-            "const": "rule",
-            "title": "Block",
-            "type": "string"
-          },
-          "rule": {
-            "enum": [
-              "odd_even",
-              "high_low"
-            ],
-            "title": "Rule",
-            "type": "string"
-          },
-          "switch_after": {
-            "anyOf": [
-              {
-                "maximum": 20,
-                "minimum": 2,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "title": "Switch After"
-          },
-          "trials": {
-            "maximum": 30,
-            "minimum": 4,
-            "title": "Trials",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "block",
-          "rule",
-          "trials"
-        ],
-        "title": "Rule",
         "type": "object"
       },
       "ScoringInputs": {
@@ -6565,48 +6570,6 @@
         "title": "SettingsChangedPayload",
         "type": "object"
       },
-      "ShowItems": {
-        "additionalProperties": false,
-        "description": "Flash items one at a time: `\"digits:7\"` (drawn in the browser) or an explicit list.",
-        "properties": {
-          "block": {
-            "const": "show_items",
-            "title": "Block",
-            "type": "string"
-          },
-          "items": {
-            "anyOf": [
-              {
-                "pattern": "^(digits|letters|words|shapes):([2-9]|1[0-2])$",
-                "type": "string"
-              },
-              {
-                "items": {
-                  "maxLength": 20,
-                  "minLength": 1,
-                  "type": "string"
-                },
-                "type": "array"
-              }
-            ],
-            "description": "\"<digits|letters|words|shapes>:<2-12>\" or 2-12 short items",
-            "title": "Items"
-          },
-          "ms_each": {
-            "maximum": 3000,
-            "minimum": 300,
-            "title": "Ms Each",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "block",
-          "items",
-          "ms_each"
-        ],
-        "title": "ShowItems",
-        "type": "object"
-      },
       "SkillPriors": {
         "additionalProperties": false,
         "description": "Observed-score correlations between skills from NCPT (registry/priors.yaml).",
@@ -7019,6 +6982,43 @@
         "title": "StoryChapterPayload",
         "type": "object"
       },
+      "SubjectInput": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "pattern": ".*\\S.*",
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "SubjectInput",
+        "type": "object"
+      },
+      "SubjectView": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "subject_id": {
+            "format": "uuid",
+            "title": "Subject Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "subject_id",
+          "name"
+        ],
+        "title": "SubjectView",
+        "type": "object"
+      },
       "SwitchInput": {
         "additionalProperties": false,
         "properties": {
@@ -7074,29 +7074,6 @@
           "granted"
         ],
         "title": "SwitchView",
-        "type": "object"
-      },
-      "Timer": {
-        "additionalProperties": false,
-        "description": "A countdown (not scored).",
-        "properties": {
-          "block": {
-            "const": "timer",
-            "title": "Block",
-            "type": "string"
-          },
-          "seconds": {
-            "maximum": 30,
-            "minimum": 1,
-            "title": "Seconds",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "block",
-          "seconds"
-        ],
-        "title": "Timer",
         "type": "object"
       },
       "TraceRow": {
@@ -8208,6 +8185,436 @@
         "summary": "Post Demo",
         "tags": [
           "users"
+        ]
+      }
+    },
+    "/documents": {
+      "get": {
+        "operationId": "list_documents_documents_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DocumentView"
+                  },
+                  "title": "Response List Documents Documents Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Documents",
+        "tags": [
+          "documents"
+        ]
+      },
+      "post": {
+        "operationId": "upload_documents_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_documents_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Upload",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/documents/search": {
+      "get": {
+        "operationId": "search_documents_search_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "doc_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Doc Id"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PassageView"
+                  },
+                  "title": "Response Search Documents Search Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Search",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/documents/{doc_id}": {
+      "delete": {
+        "operationId": "delete_document_documents__doc_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "doc_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Doc Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Document",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/documents/{doc_id}/original": {
+      "get": {
+        "operationId": "original_documents__doc_id__original_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "doc_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Doc Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Original",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/documents/{doc_id}/pages": {
+      "get": {
+        "operationId": "document_pages_documents__doc_id__pages_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "doc_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Doc Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ReviewPage"
+                  },
+                  "title": "Response Document Pages Documents  Doc Id  Pages Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Document Pages",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/documents/{doc_id}/review": {
+      "put": {
+        "operationId": "review_document_documents__doc_id__review_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "doc_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Doc Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Review Document",
+        "tags": [
+          "documents"
         ]
       }
     },
@@ -9740,6 +10147,116 @@
         "tags": [
           "twin",
           "sessions"
+        ]
+      }
+    },
+    "/subjects": {
+      "get": {
+        "operationId": "subjects_subjects_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SubjectView"
+                  },
+                  "title": "Response Subjects Subjects Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Subjects",
+        "tags": [
+          "documents"
+        ]
+      },
+      "post": {
+        "operationId": "create_subject_subjects_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubjectInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubjectView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Subject",
+        "tags": [
+          "documents"
         ]
       }
     },

@@ -62,7 +62,11 @@ def build_graph() -> StateGraph[LodestarState, LodestarContext, Any, Any]:
     g.add_edge("confirm", "use_tool")
     g.add_edge("use_tool", "answer")
     g.add_edge("plan_next", "prepare_exercise")
-    g.add_edge("prepare_exercise", "play")
+    g.add_conditional_edges(
+        "prepare_exercise",
+        lambda s: "play" if s.exercise is not None else END,
+        {"play": "play", END: END},
+    )
     g.add_edge("play", "score_update")
     g.add_edge("score_update", "monitor")
     g.add_edge("monitor", "reflect")

@@ -15,6 +15,7 @@ import { Insights } from '../dashboard/Insights'
 import { Memory } from '../dashboard/Memory'
 import { ClassPanel } from '../dashboard/ClassPanel'
 import { ConceptMap } from '../dashboard/ConceptMap'
+import { Documents } from '../dashboard/Documents'
 import { SkillPage } from '../dashboard/SkillPage'
 import { useDashboard } from '../dashboard/useDashboard'
 import { setSpeakReplies, speakReplies, stopSpeaking } from '../voice/tts'
@@ -34,6 +35,11 @@ type NavItem = { id: Panel; label: string; icon: ReactNode }
 
 /** Line icons on a 24px grid, drawn with `currentColor`. */
 const PLAY: NavItem[] = [
+  {
+    id: 'documents',
+    label: 'Documents',
+    icon: <path d="M4 3h10l6 6v12H4zM14 3v6h6M8 13h8M8 17h5" />,
+  },
   {
     id: 'games',
     label: 'Practice',
@@ -115,6 +121,7 @@ const SETTINGS: NavItem = {
 }
 const ALL = [...PLAY, ...NAV, TEACHER, SETTINGS]
 const SUBTITLE: Record<Panel, string> = {
+  documents: 'Your subjects and chapters, with answers grounded in your own course pages.',
   games: 'A quiz and an explain-it-back for every concept of the course.',
   coach: 'Four coaches, one set of facts. Pick the voice you like.',
   insights: 'What Lodestar has learned about how you study, each with its range.',
@@ -442,6 +449,15 @@ export function App() {
       <section className="panel-block">
         <AcsPanel acs={acs} />
       </section>
+    )
+  } else if (panel === 'documents') {
+    body = (
+      <Documents
+        onAsk={(message) => {
+          setPanel(null)
+          void session.send(message)
+        }}
+      />
     )
   } else if (panel === 'settings') {
     body = (

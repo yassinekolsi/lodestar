@@ -1,6 +1,15 @@
 import type { components } from '../contracts/api'
 
 type Schemas = components['schemas']
+export type DocumentView = Schemas['DocumentView']
+export type SubjectView = Schemas['SubjectView']
+export type PassageView = Schemas['PassageView']
+
+export interface DocumentSource {
+  title: string
+  page: number
+  text: string
+}
 
 export type ExerciseSpec = Schemas['ExerciseSpec']
 export type RoundResult = Schemas['RoundResult']
@@ -48,6 +57,7 @@ export interface WidenedRange {
 
 /** A card the agent adds to the conversation, one kind per stress case. */
 export type AgentCard =
+  | { card: 'sources'; question: string; sources: DocumentSource[] }
   | {
       card: 'rushed'
       round_id: string
@@ -86,6 +96,7 @@ export type AgentCard =
     }
   | {
       card: 'lesson'
+      sources?: DocumentSource[]
       dim: string
       name: string
       section_id: string

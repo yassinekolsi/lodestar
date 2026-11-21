@@ -7,6 +7,7 @@ them: the verifier rejects any number that isn't in a fact.
 """
 
 import re
+from uuid import UUID
 from dataclasses import replace
 from typing import Any
 
@@ -20,6 +21,8 @@ from backend.contracts.common import Contract, DimensionId
 from backend.contracts.facts import Fact, FactsPacket
 from backend.contracts.session import ToolCall, ToolOutcome
 from backend.db.twin_store import read_twin
+from backend.documents import library
+from backend.documents.math_text import safe_cut
 from backend.memory.store import PassageHit
 from backend.registry.course import Concept, Course
 from backend.scoring.kalman_elo import Belief
@@ -69,7 +72,25 @@ async def _from_documents(
     if concept is not None and concept.name.lower() not in query.lower():
         query = f"{query} {concept.name}"
     try:
-        hits = await memory.search_documents(ctx.user_id, query, limit=6)
+        hits = await memory.search_documents(
+            ctx.user_id, query, limit=6, doc_id=library.requested_document(question)
+        )
+        from sqlalchemy import select
+
+        from backend.db import tables as t
+
+        async with ctx.services.engine.connect() as conn:
+            allowed = set(
+                (
+                    await conn.execute(
+                        select(t.documents.c.doc_id).where(
+                            t.documents.c.user_id == ctx.user_id,
+                            t.documents.c.review_required.is_(False),
+                        )
+                    )
+                ).scalars()
+            )
+        hits = [h for h in hits if UUID(h.doc_id) in allowed]
     except Exception:  # search down: answer from the course notes alone
         return []
     if concept is not None:
@@ -81,8 +102,8 @@ def _excerpt(text: str, limit: int = 420) -> str:
     flat = " ".join(text.split())
     if len(flat) <= limit:
         return flat
-    cut = flat[:limit]
-    return cut[: cut.rfind(" ")] + "…"
+    end = safe_cut(flat, limit)
+    return flat[:end].rstrip() + "…"
 
 
 def _doc_facts(hits: list[PassageHit], start: int = 1) -> list[Fact]:

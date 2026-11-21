@@ -4410,3 +4410,94 @@ button.primary.pick__go {
   gap: 0.4rem;
   flex-wrap: wrap;
 }
+/* Course library follows the existing card and action styles. */
+.math-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.4rem 0;
+}
+.course-code {
+  white-space: pre;
+  overflow-x: auto;
+  padding: 1rem;
+  background: var(--color-surface);
+  border-radius: 0.6rem;
+}
+.document-review {
+  display: grid;
+  gap: 1rem;
+}
+.document-review__pages {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
+  gap: 1rem;
+}
+.document-review iframe {
+  width: 100%;
+  min-height: 38rem;
+  border: 1px solid var(--color-line);
+  border-radius: 0.6rem;
+}
+.document-review textarea {
+  width: 100%;
+  min-height: 18rem;
+  padding: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+.documents {
+  display: grid;
+  gap: 1.5rem;
+}
+.documents__fields,
+.documents__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+.documents label {
+  display: grid;
+  gap: 0.4rem;
+  flex: 1;
+  min-width: 12rem;
+}
+.documents input,
+.documents select {
+  max-width: 100%;
+  padding: 0.65rem;
+  border: 1px solid #d4d8df;
+  border-radius: 0.6rem;
+  background: white;
+  color: #263247;
+}
+.documents__drop {
+  border: 1px dashed #a6b4a6;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  background: #f7faf7;
+}
+.documents__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+  gap: 1rem;
+}
+.documents__grid h3 {
+  overflow-wrap: anywhere;
+}
+.documents__passage {
+  margin: 1rem 0;
+  border-left: 3px solid #829e87;
+  padding: 0.5rem 1rem;
+}
+.documents__passage p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.documents__passage summary {
+  cursor: pointer;
+}

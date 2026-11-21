@@ -2,17 +2,19 @@
 index), list, delete, and pick passages for a quiz. Every query filters by user."""
 
 import logging
+import re
 from collections.abc import Sequence
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from sqlalchemy import delete, func, insert, select
+from sqlalchemy import delete, func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from backend.contracts.common import Contract
+from backend.contracts.events import LibraryChanged, LibraryPayload
 from backend.db import tables as t
-from backend.db.twin_store import user_scope
+from backend.db.twin_store import append_event, user_scope
 from backend.documents import questions
 from backend.documents.ingest import Extracted
 from backend.memory.store import MemoryStore
@@ -22,27 +24,46 @@ log = logging.getLogger(__name__)
 QUIZ_PASSAGES = 8
 
 
+def requested_document(text: str) -> UUID | None:
+    """Explicit chapter selection from a library action, never inferred from a title."""
+    match = re.search(r"\[document:([0-9a-fA-F-]{36})\]", text)
+    if match:
+        try:
+            return UUID(match.group(1))
+        except ValueError:
+            pass
+    return None
+
+
 class DocumentView(Contract):
     doc_id: UUID
     title: str
     filename: str
+    subject_id: UUID | None = None
+    chapter: str = ""
     pages: int
     passages: int
     concepts: dict[str, list[int]]
     created_at: datetime
     searchable: bool = True
+    extraction_method: str = "text"
+    review_required: bool = False
 
 
-def _view(r: Any, searchable: bool = True) -> DocumentView:
+def _view(r: Any, searchable: bool | None = None) -> DocumentView:
     return DocumentView(
         doc_id=r.doc_id,
         title=r.title,
         filename=r.filename,
+        subject_id=r.subject_id,
+        chapter=r.chapter,
         pages=r.pages,
         passages=r.passages,
         concepts=dict(r.concepts or {}),
         created_at=r.created_at,
-        searchable=searchable,
+        searchable=r.indexed if searchable is None else searchable,
+        extraction_method=(r.extraction or {}).get("method", "text"),
+        review_required=r.review_required,
     )
 
 
@@ -52,6 +73,9 @@ async def save(
     user_id: UUID,
     filename: str,
     doc: Extracted,
+    subject_id: UUID | None = None,
+    chapter: str = "",
+    source_pdf: bytes | None = None,
 ) -> DocumentView:
     """Rows first (the source of truth), then the search index. If Qdrant is down the document is
     still saved and can be quizzed on; search comes back when the index is rebuilt."""
@@ -70,6 +94,12 @@ async def save(
     ]
     async with engine.begin() as conn:
         await user_scope(conn, user_id)
+        if subject_id is not None and not await conn.scalar(
+            select(t.subjects.c.subject_id).where(
+                t.subjects.c.user_id == user_id, t.subjects.c.subject_id == subject_id
+            )
+        ):
+            raise ValueError("Choose one of your subjects first.")
         row = (
             await conn.execute(
                 insert(t.documents)
@@ -78,6 +108,15 @@ async def save(
                     user_id=user_id,
                     title=doc.title,
                     filename=filename[:200],
+                    subject_id=subject_id,
+                    chapter=chapter,
+                    source_pdf=source_pdf,
+                    extraction={
+                        "method": doc.method,
+                        "pages": doc.page_texts,
+                        "warnings": doc.warnings,
+                    },
+                    review_required=doc.review_required,
                     pages=doc.pages,
                     passages=len(rows),
                     concepts=doc.concepts(),
@@ -87,10 +126,27 @@ async def save(
         ).one()
         if rows:
             await conn.execute(insert(t.document_passages), rows)
+        await append_event(
+            conn,
+            LibraryChanged(
+                user_id=user_id,
+                ts=datetime.now(UTC),
+                payload=LibraryPayload(
+                    action="document_uploaded", doc_id=doc_id, subject_id=subject_id
+                ),
+            ),
+        )
     searchable = False
-    if memory is not None:
+    if memory is not None and not doc.review_required:
         try:
             await memory.write_passages(user_id, doc_id, doc.title, rows)
+            async with engine.begin() as conn:
+                await user_scope(conn, user_id)
+                await conn.execute(
+                    update(t.documents)
+                    .where(t.documents.c.user_id == user_id, t.documents.c.doc_id == doc_id)
+                    .values(indexed=True)
+                )
             searchable = True
         except Exception:
             log.warning(
@@ -127,6 +183,15 @@ async def remove(
                 t.documents.c.doc_id == doc_id, t.documents.c.user_id == user_id
             )
         )
+        if gone.rowcount:
+            await append_event(
+                conn,
+                LibraryChanged(
+                    user_id=user_id,
+                    ts=datetime.now(UTC),
+                    payload=LibraryPayload(action="document_deleted", doc_id=doc_id),
+                ),
+            )
     if memory is not None:
         try:
             await memory.delete_document(user_id, doc_id)
@@ -151,10 +216,11 @@ async def passages(
         t.documents.c.title,
     ).join(t.documents, t.documents.c.doc_id == t.document_passages.c.doc_id)
     q = q.where(t.document_passages.c.user_id == user_id)
-    if concept is not None:
-        q = q.where(t.document_passages.c.concepts.any(concept))
-    elif doc_id is not None:
+    q = q.where(t.documents.c.review_required.is_(False))
+    if doc_id is not None:
         q = q.where(t.document_passages.c.doc_id == doc_id)
+    elif concept is not None:
+        q = q.where(t.document_passages.c.concepts.any(concept))
     else:
         latest = (
             select(t.documents.c.doc_id)
@@ -192,11 +258,12 @@ async def quiz_content(
     seed: int,
     concept: str | None = None,
     draft: Any = None,
+    doc_id: UUID | None = None,
 ) -> tuple[dict[str, Any] | None, dict[str, float]]:
     """A quiz from the student's own document, and the concepts it counts for (0.5 each: questions
     from notes aren't calibrated). `draft` is an async callable (prompt -> DraftQuiz) when a model
     is available. None when there's no document or too little text to ask about."""
-    doc_id, title, sources = await passages(conn, user_id, concept=concept)
+    document_id, title, sources = await passages(conn, user_id, concept=concept, doc_id=doc_id)
     if not sources:
         return None, {}
     made: list[dict[str, Any]] = []
@@ -214,7 +281,7 @@ async def quiz_content(
     if not made:
         return None, {}
     concepts = sorted({c for q in made for c in q["concepts"]} | ({concept} if concept else set()))
-    return questions.as_content(made[: questions.QUESTIONS], title, doc_id, made_by), {
+    return questions.as_content(made[: questions.QUESTIONS], title, document_id, made_by), {
         c: 0.5 for c in concepts if registry.course_of(c)
     }
 
