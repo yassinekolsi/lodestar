@@ -47,6 +47,7 @@ or two longer while it wakes. The connection pool checks connections before usin
 | `DATABASE_URL` | The Neon connection string from step 1 |
 | `QDRANT_URL` | The Qdrant cluster URL from step 2, ending in `:443` |
 | `QDRANT_API_KEY` | The Qdrant API key |
+| `GEMINI_API_KEY` | Optional: a Gemini key for OCR and Cloud AI replies; defaults to Gemini 3.5 Flash Lite |
 | `LODESTAR_OPERATOR_LLM_PROVIDER` | Optional, for example `gemini` (see below) |
 | `LODESTAR_OPERATOR_LLM_KEY` | Optional: that provider's API key |
 | `LODESTAR_OPERATOR_LLM_MODEL` | Optional, for example `gemini-3.5-flash-lite` |
@@ -73,6 +74,8 @@ Render has no Ollama, so there are three cases:
 Scanned PDF pages use Gemini 3.5 Flash Lite. With Cloud AI enabled, OCR uses the student's
 Gemini key first, or the host's `LODESTAR_OPERATOR_LLM_KEY` when
 `LODESTAR_OPERATOR_LLM_PROVIDER=gemini`. A host key for another provider cannot read scans.
+Setting only `GEMINI_API_KEY` configures those Gemini defaults automatically. Explicit operator
+settings take precedence, and students must still enable Cloud AI before any page is sent.
 
 ### Memory and plan size
 

@@ -45,6 +45,16 @@ def _optional_secret(name: str) -> SecretStr | None:
 
 @lru_cache
 def get_settings() -> Settings:
+    # A single Gemini key is enough for the hosted demo. Explicit operator settings win;
+    # a different provider's key must never be paired with Gemini by accident.
+    gemini_key = _optional_secret("GEMINI_API_KEY")
+    operator_provider = _optional("LODESTAR_OPERATOR_LLM_PROVIDER")
+    operator_key = _optional_secret("LODESTAR_OPERATOR_LLM_KEY")
+    operator_model = _optional("LODESTAR_OPERATOR_LLM_MODEL")
+    if gemini_key and operator_provider in (None, "gemini") and operator_key is None:
+        operator_provider = "gemini"
+        operator_key = gemini_key
+        operator_model = operator_model or "gemini-3.5-flash-lite"
     return Settings(
         database_url=os.environ.get(
             "DATABASE_URL", "postgresql://lodestar:lodestar@localhost:5442/lodestar"
@@ -54,9 +64,9 @@ def get_settings() -> Settings:
         ollama_url=os.environ.get("OLLAMA_URL", "http://localhost:11434"),
         local_model=os.environ.get("LODESTAR_LOCAL_MODEL", "qwen3.5:4b"),
         master_key=_optional_secret("LODESTAR_MASTER_KEY"),
-        operator_llm_provider=_optional("LODESTAR_OPERATOR_LLM_PROVIDER"),
-        operator_llm_key=_optional_secret("LODESTAR_OPERATOR_LLM_KEY"),
-        operator_llm_model=_optional("LODESTAR_OPERATOR_LLM_MODEL"),
+        operator_llm_provider=operator_provider,
+        operator_llm_key=operator_key,
+        operator_llm_model=operator_model,
         memory_dir=os.environ.get("LODESTAR_MEMORY_DIR", "memory"),
         registry_dir=os.environ.get("LODESTAR_REGISTRY_DIR", "registry"),
         whisper_model=os.environ.get("LODESTAR_WHISPER_MODEL", "base.en"),
