@@ -61,6 +61,14 @@ per chapter foundation. The choice and the reason are in `simulator/experiments.
 
 ## Safety and data
 
+The experimental format bandit has **not** demonstrated an improvement over random format choice
+on the current course catalog. With seed 2026, 600 prior students and 200 comparison students over
+30 sessions, true gain was 1.393 for random choice and 1.386 for the bandit; the paired 95% interval
+was -0.028 to +0.014, with 45% gaining more under the bandit. Reproduce with
+`python -m simulator.bandit --first 600 --users 200 --sessions 30` (it returns failure when the
+interval includes zero). The core study planner uses prerequisites, review and plateau rules;
+no course-format uplift claim is made.
+
 | Rule | Enforced by |
 |---|---|
 | No labels about the person in any user-facing text | `make lint-language` in CI; `backend/coach/verify.py` on every reply |

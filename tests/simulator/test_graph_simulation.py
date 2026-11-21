@@ -21,7 +21,7 @@ async def test_graph_keeps_balanced_success_near_80(
     success, n = balanced_success(runs)
     assert n >= 80
     assert abs(success - 0.8) <= 0.05, success
-    first = runs[0].rounds[:6]
+    first = runs[0].rounds[: len(registry.batteries["onboarding"].games)]
     assert [r.game_id for r in first] == registry.batteries["onboarding"].games
 
 

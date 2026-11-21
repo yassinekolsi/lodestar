@@ -1,6 +1,7 @@
 """Database fixtures. Tests run against a throwaway database in the compose Postgres
 (`make up`). Set LODESTAR_REQUIRE_DB=1 (as CI does) to fail instead of skipping when it's down."""
 
+import asyncio
 import os
 import uuid
 from collections.abc import AsyncIterator, Iterator
@@ -11,6 +12,7 @@ import pytest
 from alembic import command
 from alembic.config import Config
 from qdrant_client import AsyncQdrantClient
+from qdrant_client.http.exceptions import ResponseHandlingException
 from sqlalchemy import Connection, Engine, create_engine
 from sqlalchemy.engine import make_url
 
@@ -89,5 +91,16 @@ async def memory(embedder: Embedder) -> AsyncIterator[MemoryStore]:
     store = MemoryStore(client, embedder, prefix=f"test_{uuid.uuid4().hex[:8]}_")
     await store.ensure_collections()
     yield store
-    await store.drop_collections()
-    await client.close()
+    try:
+        for attempt in range(3):
+            try:
+                await store.drop_collections()
+                break
+            except ResponseHandlingException:
+                # A Qdrant keep-alive connection can close during collection removal.
+                # Deletion is idempotent; retry cleanup, then fail if it still cannot finish.
+                if attempt == 2:
+                    raise
+                await asyncio.sleep(0.2)
+    finally:
+        await client.close()

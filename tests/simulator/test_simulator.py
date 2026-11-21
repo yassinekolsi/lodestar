@@ -30,9 +30,9 @@ def test_practice_follows_a_power_law() -> None:
     user = make_population(registry, 1, np.random.default_rng(1))[0]
     gains = []
     for _ in range(5):
-        before = user.theta("working_memory")
-        user.practise("working_memory", 1.0)
-        gains.append(user.theta("working_memory") - before)
+        before = user.theta("conditional")
+        user.practise("conditional", 1.0)
+        gains.append(user.theta("conditional") - before)
     assert gains == sorted(gains, reverse=True) and gains[0] > 0
 
 
