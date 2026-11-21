@@ -44,6 +44,8 @@ USER_TABLES: tuple[Table, ...] = (
     t.traces,
     t.experiments,
     t.content_served,
+    t.document_passages,
+    t.documents,
 )
 # Never exported: encrypted keys and bearer-token hashes.
 SECRET_COLUMNS = {"key_ciphertext", "nonce", "token_hash"}

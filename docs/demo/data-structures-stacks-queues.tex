@@ -1,0 +1,45 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.4cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\title{Data Structures -- Chapter 3: Stacks, Queues and Linked Lists}
+\author{Computer Science, second year}
+\date{}
+\begin{document}
+\maketitle
+
+\section{Abstract data types}
+
+An abstract data type is a description of the operations a structure offers and what they do, without saying how the structure is stored in memory. The same abstract data type can have several implementations with different costs.
+
+\section{Stacks}
+
+A stack is a collection where the last element added is the first one removed. This rule is called last in, first out, or LIFO. The two main operations are push, which adds an element on top, and pop, which removes the element on top.
+
+A stack overflow is the error raised when we push onto a stack that has no free space left. A stack underflow is the error raised when we pop from an empty stack.
+
+The call stack of a program is a stack of function calls: when a function returns, the most recent call is removed first. Undo in a text editor and checking balanced parentheses are other classic uses of stacks.
+
+\section{Queues}
+
+A queue is a collection where the first element added is the first one removed. This rule is called first in, first out, or FIFO. Enqueue adds an element at the back of the queue, and dequeue removes the element at the front.
+
+A circular buffer is an array used as a queue in which the indices of the front and the back wrap around to the start of the array. With a circular buffer, enqueue and dequeue both run in constant time.
+
+A priority queue is a queue in which each element has a priority and the element with the highest priority is removed first, whatever its arrival order. Priority queues are usually implemented with a binary heap.
+
+\section{Linked lists}
+
+A linked list is a sequence of nodes in which each node stores a value and a pointer to the next node. The first node is called the head, and the last node points to nothing.
+
+A doubly linked list is a linked list in which each node also stores a pointer to the previous node, so the list can be walked in both directions.
+
+Inserting at the head of a linked list takes constant time, because only one pointer changes. Accessing the k-th element takes time proportional to k, because the list has to be walked from the head. An array gives access to the k-th element in constant time, but inserting at the front of an array moves every element.
+
+\section{Complexity summary}
+
+Push and pop on a stack run in constant time. Enqueue and dequeue on a circular buffer run in constant time. Searching for a value in an unsorted linked list takes linear time in the worst case, because every node may have to be visited.
+
+Amortized analysis is a way of measuring the average cost of an operation over a long sequence of operations. A dynamic array that doubles its capacity when it is full has an amortized constant cost per append, even though a single append can occasionally copy the whole array.
+
+\end{document}

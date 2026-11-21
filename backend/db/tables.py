@@ -251,6 +251,33 @@ life_context = Table(
     schema="twin",
 )
 
+documents = Table(
+    "documents",
+    metadata,
+    _uuid_pk("doc_id"),
+    _user_fk(),
+    Column("title", Text, nullable=False),
+    Column("filename", Text, nullable=False),
+    Column("pages", Integer, nullable=False),
+    Column("passages", Integer, nullable=False),
+    Column("concepts", JSONB, nullable=False, server_default=text("'{}'::jsonb")),
+    Column("created_at", TZ, nullable=False, server_default=NOW),
+    schema="app",
+)
+
+document_passages = Table(
+    "document_passages",
+    metadata,
+    _uuid_pk("passage_id"),
+    Column("doc_id", UUID(as_uuid=True), nullable=False),
+    _user_fk(),
+    Column("page", Integer, nullable=False),
+    Column("position", Integer, nullable=False),
+    Column("text", Text, nullable=False),
+    Column("concepts", ARRAY(Text), nullable=False, server_default=text("'{}'")),
+    schema="app",
+)
+
 # agent ------------------------------------------------------------------------------------
 
 sessions = Table(

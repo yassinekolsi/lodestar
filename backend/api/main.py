@@ -16,6 +16,7 @@ from backend.api import (
     affect,
     course,
     demo,
+    documents,
     experiments,
     goals,
     insights,
@@ -104,6 +105,7 @@ def create_app(*, with_lifespan: bool = True) -> FastAPI:
     )
     app.include_router(registry.router)
     app.include_router(course.router)
+    app.include_router(documents.router)
     app.include_router(twin.router)
     app.include_router(demo.router)
     app.include_router(llm.router)

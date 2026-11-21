@@ -20,8 +20,11 @@ from backend.contracts.common import Contract, DimensionId
 from backend.contracts.facts import Fact, FactsPacket
 from backend.contracts.session import ToolCall, ToolOutcome
 from backend.db.twin_store import read_twin
+from backend.memory.store import PassageHit
 from backend.registry.course import Concept, Course
 from backend.scoring.kalman_elo import Belief
+
+DOC_PASSAGES = 3
 
 
 class TeachArgs(Contract):
@@ -54,19 +57,102 @@ def _passage(course: Course, concept: Concept) -> str:
     return _sentences(course.section(concept.section).text, 3)
 
 
+async def _from_documents(
+    ctx: LodestarContext, question: str, concept: Concept | None
+) -> list[PassageHit]:
+    """The student's own passages that answer the question (RAG): hybrid search over their
+    uploads, filtered by user. Passages tagged with the concept come first."""
+    memory = ctx.services.memory
+    if memory is None:
+        return []
+    query = question if question.strip() else (concept.name if concept else "")
+    if concept is not None and concept.name.lower() not in query.lower():
+        query = f"{query} {concept.name}"
+    try:
+        hits = await memory.search_documents(ctx.user_id, query, limit=6)
+    except Exception:  # search down: answer from the course notes alone
+        return []
+    if concept is not None:
+        hits.sort(key=lambda h: concept.id not in h.concepts)
+    return hits[:DOC_PASSAGES]
+
+
+def _excerpt(text: str, limit: int = 420) -> str:
+    flat = " ".join(text.split())
+    if len(flat) <= limit:
+        return flat
+    cut = flat[:limit]
+    return cut[: cut.rfind(" ")] + "…"
+
+
+def _doc_facts(hits: list[PassageHit], start: int = 1) -> list[Fact]:
+    return [
+        Fact(
+            id=f"F{start + i}",
+            text=f'Your document "{h.title}", page {h.page}: {_excerpt(h.text)}',
+        )
+        for i, h in enumerate(hits)
+    ]
+
+
+def _sources(hits: list[PassageHit]) -> list[dict[str, Any]]:
+    return [{"title": h.title, "page": h.page, "text": h.text} for h in hits]
+
+
 async def teach(
     ctx: LodestarContext, state: LodestarState, call: ToolCall
 ) -> tuple[ToolOutcome, dict[str, Any]]:
-    """ "I don't get Bayes": the notes on it, where the student stands, their usual mistake on it,
-    and a shaky prerequisite if there is one. Then a quiz is one tap away."""
+    """ "I don't get Bayes": the student's own pages on it first (retrieved from their uploads),
+    then the course notes, where they stand, their usual mistake on it, and a shaky prerequisite
+    if there is one. A question that matches no concept is answered from their documents alone,
+    so any uploaded course works."""
     args = TeachArgs.model_validate(call.args)
     registry = ctx.services.registry
-    if not registry.courses:
-        return ToolOutcome(name="teach", reply="There's no course loaded yet."), {}
-    course = registry.course
-    if args.dim is None or registry.course_of(args.dim) is None:
-        return ToolOutcome(name="teach", reply=which_concept(course)), {}
-    concept = course.concept(args.dim)
+    course = registry.course if registry.courses else None
+    concept = (
+        course.concept(args.dim)
+        if course is not None and args.dim is not None and registry.course_of(args.dim)
+        else None
+    )
+    hits = await _from_documents(ctx, args.question, concept)
+
+    if concept is None or course is None:
+        if not hits:
+            reply = (
+                which_concept(course)
+                if course is not None
+                else "Upload your course notes and I'll answer from them."
+            )
+            reply += (
+                " You can also upload your own notes or slides in Documents, and I'll answer "
+                "from them."
+            )
+            return ToolOutcome(name="teach", reply=reply), {}
+        facts = _doc_facts(hits)
+        emit(
+            {
+                "kind": "card",
+                "card": "sources",
+                "question": args.question,
+                "sources": _sources(hits),
+            }
+        )
+        first = hits[0]
+        text = (
+            f'From your document "{first.title}", page {first.page}: '
+            f"{_excerpt(first.text, 300)} [F1]"
+        )
+        if len(hits) > 1:
+            text += f" Page {hits[1].page} says more [F2]."
+        instruction = (
+            f'The user asked: "{args.question}". Answer in at most 5 sentences using only these '
+            "passages from their own document, citing each one you use. If the passages don't "
+            "answer it, say so plainly. Add no fact, formula or number that isn't in them."
+        )
+        return ToolOutcome(
+            name="teach", facts=FactsPacket(facts=facts), instruction=instruction, fallback=text
+        ), {}
+
     section = course.section(concept.section)
     norms = ctx.services.norms
     async with ctx.services.engine.connect() as conn:
@@ -81,9 +167,15 @@ async def teach(
     view = next((v for v in twin.dims if v.dim == concept.id and v.n > 0), None)
     passage = _passage(course, concept)
 
-    facts = [
-        Fact(id="F1", text=f"Notes {section.id}, {section.title}: {passage}", dim=concept.id),
-        Fact(id="F2", text=f"Key ideas: {'; '.join(concept.key_ideas)}.", dim=concept.id),
+    facts = _doc_facts(hits)
+    notes_ref = f"F{len(facts) + 1}"
+    facts += [
+        Fact(id=notes_ref, text=f"Notes {section.id}, {section.title}: {passage}", dim=concept.id),
+        Fact(
+            id=f"F{len(facts) + 2}",
+            text=f"Key ideas: {'; '.join(concept.key_ideas)}.",
+            dim=concept.id,
+        ),
     ]
     if view is not None:
         facts.append(
@@ -134,6 +226,7 @@ async def teach(
             "section_title": section.title,
             "passage": section.text.strip(),
             "key_ideas": concept.key_ideas,
+            "sources": _sources(hits),
             "mastery": (
                 {
                     "now": round(view.percent),
@@ -156,7 +249,13 @@ async def teach(
             "gap": gap_view,
         }
     )
-    text = f"From your notes ({section.id}, {section.title}): {passage} [F1]"
+    if hits:
+        text = (
+            f'Your document "{hits[0].title}" covers it on page {hits[0].page}: '
+            f"{_excerpt(hits[0].text, 260)} [F1]"
+        )
+    else:
+        text = f"From your notes ({section.id}, {section.title}): {passage} [{notes_ref}]"
     if mistake is not None:
         ref = next(f.id for f in facts if f.text.startswith("Usual mix-up"))
         text += f" The mix-up I see most in your answers: {_first_lower(mistake.text)} [{ref}]. "
@@ -170,10 +269,10 @@ async def teach(
     text += " Want five questions on it?"
     instruction = (
         f'The user asked: "{args.question}". Explain {concept.name.lower()} in plain words using '
-        "only the course notes and key ideas in the facts, citing them, in at most 5 sentences. "
-        "If a fact names their usual mix-up, say it and the fix. If a fact says it builds on a "
-        "shaky concept, say so. End by offering five questions. Add no formula, number or example "
-        "that isn't in the facts."
+        "only the passages from their own documents, the course notes and the key ideas in the "
+        "facts, citing them (their own pages first), in at most 5 sentences. If a fact names their "
+        "usual mix-up, say it and the fix. If a fact says it builds on a shaky concept, say so. "
+        "End by offering five questions. Add no formula, number or example that isn't in the facts."
     )
     return ToolOutcome(
         name="teach", facts=FactsPacket(facts=facts), instruction=instruction, fallback=text

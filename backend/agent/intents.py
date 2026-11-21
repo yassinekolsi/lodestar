@@ -197,6 +197,18 @@ _CHAT_TOOLS: list[tuple[ToolChoice, re.Pattern[str]]] = [
         ),
     ),
 ]
+# The student's own uploads (docs/plan/20).
+NOTES_QUIZ = "quiz_notes"
+_NOTES = re.compile(
+    r"\b(my|the|our|from (my|the)) (own )?(notes|slides?|pdfs?|documents?|docs?|uploads?|"
+    r"handouts?|lecture notes|course notes|course file|files?|chapter|lectures?)\b",
+    re.I,
+)
+_QUIZ_WORDS = re.compile(r"\b(quiz|test me|questions?|practi[cs]e|exercises?|revise)\b", re.I)
+_QUESTION = re.compile(
+    r"(\?\s*$)|^\s*(how|why|what|when|which|who|where|is|are|does|do|can|could|should|explain)\b",
+    re.I,
+)
 _PLAY = re.compile(
     r"\b(quiz( me)?|test me|questions? on|exercises?|revise|review|study|"
     r"play|game|round|start|train|practi[cs]e|let'?s (go|do)|go|again|another|one more|"
@@ -280,7 +292,18 @@ def classify(text: str, trigger: str, registry: Registry | None = None) -> Route
         pause = re.search(r"\b(stop suggesting|don'?t suggest)\b(?P<rest>.{0,40})", stripped, re.I)
         dims = skills_in(pause.group("rest"), registry) if pause else []
         return Routed(Intent(kind="settings", text=stripped, avoid_dims=dims), sure=True)
+    notes = bool(_NOTES.search(stripped))
+    if notes and _QUIZ_WORDS.search(stripped):
+        # "Quiz me on my slides": questions made from the student's own document.
+        dims = skills_in(stripped, registry)
+        intent = Intent(
+            kind="play", text=stripped, game_id=NOTES_QUIZ, dim=dims[0] if dims else None
+        )
+        return Routed(intent, sure=True)
     tool = chat_tool(stripped)
+    asks = notes or _QUESTION.search(stripped)
+    if tool is None and asks and not _SMALL_TALK.search(stripped) and not _PLAY.search(stripped):
+        tool = "teach"  # a real question: answer it from their documents and the course
     if tool in ("teach", "mistakes"):
         dims = skills_in(stripped, registry)
         intent = Intent(kind="chat", text=stripped, tool=tool, dim=dims[0] if dims else None)

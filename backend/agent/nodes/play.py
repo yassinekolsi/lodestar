@@ -8,6 +8,7 @@ from typing import Any
 from uuid import uuid4
 
 import numpy as np
+from langchain_core.messages import HumanMessage
 from langgraph.runtime import Runtime
 from langgraph.types import interrupt
 from sqlalchemy import any_, func, literal, select
@@ -15,6 +16,7 @@ from sqlalchemy import any_, func, literal, select
 from backend.agent import experiments, learning, why
 from backend.agent.affect import estimate, recent_cues
 from backend.agent.context import LodestarContext
+from backend.agent.intents import NOTES_QUIZ
 from backend.agent.nodes.perceive import read_twin_snapshot
 from backend.agent.nodes.talk import emit_reply
 from backend.agent.patterns import last_played, new_format, read_patterns
@@ -27,6 +29,7 @@ from backend.contracts.exercise import ExerciseSpec, RoundResult
 from backend.contracts.session import RoundSummary, SessionPlan, Verdict
 from backend.db import tables as t
 from backend.db.twin_store import append_event, score_round_tx, start_round
+from backend.documents import library, questions
 from backend.ml import bandit
 from backend.registry.models import Game, Registry
 from backend.scoring.kalman_elo import SIGMA_START, Belief
@@ -283,6 +286,19 @@ def _break_plateau(
     return game.primary_dims[0], game, reason
 
 
+def _drafter(ctx: LodestarContext) -> Any:
+    """Questions drafted by the student's model (or the local one) from their document; the
+    caller checks every one in code, and a missing model just means code-made questions."""
+
+    async def draft(prompt: str) -> questions.DraftQuiz:
+        out = await ctx.services.llm.structured(
+            ctx.user_id, ctx.llm, [HumanMessage(prompt)], questions.DraftQuiz
+        )
+        return out.value
+
+    return draft
+
+
 def _quiz(options: list[Game]) -> Game | None:
     """A course concept is checked with a quiz first."""
     return next((g for g in options if g.plugin_id == "quiz"), None)
@@ -299,6 +315,8 @@ def _consolidate(
     if last is None or last.mean_score is None or last.mean_score < CONSOLIDATE_SCORE:
         return None
     if registry.game(last.game_id).plugin_id != "quiz" or last.quality_verdict in FLAGGED:
+        return None
+    if not registry.game(last.game_id).primary_dims:  # a quiz on the student's own notes
         return None
     dim = registry.game(last.game_id).primary_dims[0]
     explain = next((g for g in formats.get(dim, []) if g.plugin_id == "explain"), None)
@@ -433,7 +451,24 @@ async def plan_next(state: LodestarState, runtime: Runtime[LodestarContext]) -> 
             "Fun idea. I'll build it from my game blocks. "
             "I'm only counting it a little until it's been tested more."
         )
-    elif requested is not None:
+    elif requested is not None and requested.id == NOTES_QUIZ:
+        dim = intent.dim if intent is not None and intent.dim else candidates[0].option
+        async with ctx.services.engine.connect() as conn:
+            has_notes = await library.has_documents(conn, ctx.user_id)
+        if has_notes:
+            game = requested
+            reason = (
+                "Questions made from your own document, each citing its page. They count, at "
+                "half weight, for the course concepts the pages are about."
+            )
+        else:
+            game = _quiz(by_dim.get(dim, [])) or _pick(pool[candidates[0].option], last_game, seed)
+            dim = game.primary_dims[0]
+            reason = (
+                "You haven't uploaded a document yet (Documents, in the sidebar), so here's a "
+                f"quiz on {registry.dimension(dim).name.lower()} from the course instead."
+            )
+    elif requested is not None and requested.primary_dims:
         dim, game = requested.primary_dims[0], requested
         reason = f"You asked for {game.name}."
     elif themed is not None and intent is not None and intent.theme:
@@ -494,7 +529,11 @@ async def plan_next(state: LodestarState, runtime: Runtime[LodestarContext]) -> 
         )
         update["onboarding"] = state.onboarding[1:]
         force_assess = True
-    elif last is not None and last.quality_verdict in FLAGGED:
+    elif (
+        last is not None
+        and last.quality_verdict in FLAGGED
+        and registry.game(last.game_id).primary_dims
+    ):
         # The last round said nothing about the person, so ask again.
         game = registry.game(last.game_id)
         dim = game.primary_dims[0]
@@ -664,7 +703,8 @@ async def prepare_exercise(
     registry = ctx.services.registry
     assert state.plan is not None and state.plan.game_id
     game = registry.game(state.plan.game_id)
-    belief = _belief(state, game.primary_dims[0])
+    primary = game.primary_dims[0] if game.primary_dims else None
+    belief = _belief(state, primary) if primary else Belief()
     level = next_level(belief, state.plan.target_p)
     round_id = uuid4()
     knobs = knobs_for(game, level)
@@ -689,6 +729,18 @@ async def prepare_exercise(
     loadings = (
         recipe_loadings(content.content, registry) if content and game.origin == "custom" else None
     )
+    notes_content = None
+    if game.id == NOTES_QUIZ:
+        # Questions from the student's own document; they count for the concepts on its pages.
+        async with ctx.services.engine.connect() as conn:
+            notes_content, loadings = await library.quiz_content(
+                conn,
+                ctx.user_id,
+                registry,
+                seed,
+                concept=state.intent.dim if state.intent else None,
+                draft=_drafter(ctx),
+            )
     async with ctx.services.engine.begin() as conn:
         played_before = (
             await conn.execute(
@@ -706,9 +758,9 @@ async def prepare_exercise(
             level=level,
             loadings=loadings,
         )
-    course = registry.course_of(game.primary_dims[0])
-    if content is None and course is not None and game.plugin_id in ("quiz", "explain"):
-        concept = game.primary_dims[0]
+    course = registry.course_of(primary) if primary else None
+    if content is None and course is not None and primary and game.plugin_id in ("quiz", "explain"):
+        concept = primary
         if game.plugin_id == "quiz":
             async with ctx.services.engine.connect() as conn:
                 seen = await learning.seen_questions(conn, ctx.user_id, game.id)
@@ -728,7 +780,7 @@ async def prepare_exercise(
         level=level,
         difficulty_b=b_for_level(level),
         knobs=knobs,
-        content=content.content if content else course_content,
+        content=content.content if content else (course_content or notes_content),
         content_item_id=content.item_id if content else None,
         theme=theme,
         seed=seed,

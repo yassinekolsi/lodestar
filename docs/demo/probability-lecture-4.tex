@@ -1,0 +1,63 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.4cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\title{Probability 1 -- Lecture 4: Conditioning and Bayes}
+\author{Faculty of Sciences, first year}
+\date{}
+\begin{document}
+\maketitle
+
+\section{Why we condition}
+
+Information changes probabilities. When we learn that an event $B$ has happened, the outcomes outside $B$ are no longer possible, and we must recompute every probability inside the smaller world of $B$.
+
+A conditional probability is the probability of an event computed after we learn that another event has happened. We write $P(A \mid B)$ and read it ``the probability of $A$ given $B$''. It is defined by
+\[ P(A \mid B) = \frac{P(A \cap B)}{P(B)}, \qquad P(B) > 0. \]
+The denominator is the probability of the event we condition on, never the probability of the whole sample space.
+
+\textbf{Example (survey of 200 students).} 120 students take the bus, 80 walk. Of the bus users, 30 are late at least once a week; of the walkers, 8 are late. Given that a student is late, the probability that they took the bus is $30/38 \approx 0.79$, while the probability that a bus user is late is $30/120 = 0.25$. The two numbers answer different questions.
+
+\section{The multiplication rule and trees}
+
+Rearranging the definition gives the multiplication rule: $P(A \cap B) = P(B)\,P(A \mid B)$. A probability tree draws this rule: each branch carries a conditional probability, and the probability of a path is the product of its branches.
+
+Drawing without replacement is the standard example. From an urn with 4 red and 6 green balls, the probability that the first two balls are red is $\frac{4}{10}\cdot\frac{3}{9} = \frac{2}{15}$. The second factor is conditional: one red ball is already gone.
+
+\section{Independence}
+
+Two events are independent when learning one does not change the probability of the other, that is when $P(A \mid B) = P(A)$. Equivalently, $P(A \cap B) = P(A)\,P(B)$.
+
+Independence must be checked with numbers. Disjoint events with positive probabilities are never independent: if they cannot happen together, learning that one happened tells us the other did not.
+
+The gambler's fallacy is the belief that after a run of one outcome the other outcome is due. Successive spins of a fair roulette wheel are independent, so a run of reds changes nothing about the next spin.
+
+\section{The law of total probability}
+
+A partition is a family of events that do not overlap and together cover the whole sample space. If $B_1, \dots, B_k$ form a partition, then
+\[ P(A) = \sum_{i=1}^{k} P(A \mid B_i)\,P(B_i). \]
+This is a weighted average of the conditional probabilities, weighted by how likely each case is.
+
+\textbf{Example.} A factory has two lines: line 1 makes 70\% of the phones and 1\% of them are faulty; line 2 makes 30\% and 4\% are faulty. The proportion of faulty phones is $0.7 \times 0.01 + 0.3 \times 0.04 = 0.019$.
+
+\section{Bayes' formula}
+
+Bayes' formula reverses a conditional probability:
+\[ P(B_j \mid A) = \frac{P(A \mid B_j)\,P(B_j)}{\sum_i P(A \mid B_i)\,P(B_i)}. \]
+The prior probability is the probability of a hypothesis before we see the evidence. The posterior probability is the probability of the hypothesis after the evidence has been taken into account.
+
+\textbf{Example.} In the factory above, a phone is faulty. The posterior probability that it came from line 2 is $\frac{0.3 \times 0.04}{0.019} \approx 0.63$, although line 2 makes only 30\% of the phones.
+
+Base-rate neglect is the error of ignoring the prior probability. A screening test that is right 95\% of the time still gives mostly false alarms when the condition it looks for is very rare. A good habit: turn percentages into counts out of 1000 and count each group.
+
+\section{Summary}
+
+\begin{itemize}
+\item Conditioning restricts the sample space to the event we know happened.
+\item $P(A \mid B)$ and $P(B \mid A)$ are different numbers; confusing them is the most common error of this chapter.
+\item Independence means $P(A \mid B) = P(A)$; disjoint is not independent.
+\item Total probability is a weighted average over a partition; Bayes' formula reverses a conditional and depends on the prior.
+\end{itemize}
+
+\end{document}

@@ -22,8 +22,8 @@ from qdrant_client import AsyncQdrantClient, models
 from backend.contracts.memory import MemoryHit
 from backend.memory.embeddings import DENSE_SIZE, Embedder
 
-UserCollection = Literal["episodic", "facts", "exercises"]
-USER_COLLECTIONS: tuple[UserCollection, ...] = ("episodic", "facts", "exercises")
+UserCollection = Literal["episodic", "facts", "exercises", "documents"]
+USER_COLLECTIONS: tuple[UserCollection, ...] = ("episodic", "facts", "exercises", "documents")
 KNOWLEDGE = "knowledge"
 
 PREFETCH = 30
@@ -63,6 +63,23 @@ class KnowledgeHit:
     source: str
     evidence_level: str | None
     score: float
+
+
+@dataclass(frozen=True)
+class PassageHit:
+    """A passage of one of the student's own documents, with where it came from."""
+
+    passage_id: str
+    doc_id: str
+    title: str
+    page: int
+    text: str
+    concepts: list[str]
+    score: float
+
+
+# Passages are longer than memories, so their cosine with a short question runs a little lower.
+PASSAGE_FLOOR = 0.5
 
 
 @dataclass
@@ -128,7 +145,7 @@ class MemoryStore:
                 {"sparse": models.SparseVectorParams(modifier=models.Modifier.IDF)}
                 if collection != "exercises"
                 else None
-            )
+            )  # episodic, facts, documents and knowledge are searched by keyword too
             await self._client.create_collection(
                 name,
                 vectors_config={
@@ -147,6 +164,7 @@ class MemoryStore:
                 models.KeywordIndexParams(type=models.KeywordIndexType.KEYWORD, is_tenant=True),
             )
             for field, schema in (
+                ("doc_id", models.PayloadSchemaType.KEYWORD),
                 ("kind", models.PayloadSchemaType.KEYWORD),
                 ("dims", models.PayloadSchemaType.KEYWORD),
                 ("created_at", models.PayloadSchemaType.DATETIME),
@@ -384,6 +402,108 @@ class MemoryStore:
             self.name("exercises"), query=q.dense, using="dense", query_filter=flt, limit=1
         )
         return response.points[0].score if response.points else 0.0
+
+    # Documents (the student's own course files, docs/plan/20) -----------------------------
+
+    async def write_passages(
+        self, user_id: UUID, doc_id: UUID, title: str, passages: Sequence[dict[str, Any]]
+    ) -> int:
+        """Index passages ({passage_id, page, position, text, concepts}) for search."""
+        uid = _require(user_id)
+        if not passages:
+            return 0
+        embs = await self.embedder.embed([p["text"] for p in passages])
+        points = [
+            models.PointStruct(
+                id=str(p["passage_id"]),
+                vector={
+                    "dense": e.dense,
+                    "sparse": models.SparseVector(indices=e.sparse_indices, values=e.sparse_values),
+                },
+                payload={
+                    "user_id": uid,
+                    "doc_id": str(doc_id),
+                    "title": title,
+                    "page": int(p["page"]),
+                    "position": int(p["position"]),
+                    "text": p["text"],
+                    "dims": list(p.get("concepts", [])),
+                    "created_at": datetime.now(UTC).isoformat(),
+                },
+            )
+            for p, e in zip(passages, embs, strict=True)
+        ]
+        for start in range(0, len(points), 128):
+            await self._client.upsert(self.name("documents"), points=points[start : start + 128])
+        return len(points)
+
+    async def search_documents(
+        self,
+        user_id: UUID,
+        query: str,
+        *,
+        limit: int = 4,
+        doc_id: UUID | None = None,
+        concept: str | None = None,
+    ) -> list[PassageHit]:
+        """Hybrid search (dense + BM25, fused with RRF) over the student's own passages, gated by
+        relevance so an unrelated question finds nothing rather than something."""
+        extra: list[models.Condition] = []
+        if doc_id is not None:
+            extra.append(
+                models.FieldCondition(key="doc_id", match=models.MatchValue(value=str(doc_id)))
+            )
+        if concept is not None:
+            extra.append(models.FieldCondition(key="dims", match=models.MatchValue(value=concept)))
+        flt = user_filter(user_id, *extra)
+        q = await self.embedder.embed_query(query)
+        response = await self._client.query_points(
+            self.name("documents"),
+            prefetch=[
+                models.Prefetch(query=q.dense, using="dense", filter=flt, limit=PREFETCH),
+                models.Prefetch(
+                    query=models.SparseVector(indices=q.sparse_indices, values=q.sparse_values),
+                    using="sparse",
+                    filter=flt,
+                    limit=PREFETCH,
+                ),
+            ],
+            query=models.FusionQuery(fusion=models.Fusion.RRF),
+            query_filter=flt,
+            limit=PREFETCH,
+            with_payload=True,
+            with_vectors=["dense"],
+        )
+        hits = []
+        for point in response.points:
+            payload = point.payload or {}
+            cos = _cos(q.dense, _dense(point))
+            if cos < PASSAGE_FLOOR:
+                continue
+            hits.append(
+                PassageHit(
+                    passage_id=str(point.id),
+                    doc_id=payload["doc_id"],
+                    title=payload.get("title", ""),
+                    page=int(payload.get("page", 0)),
+                    text=payload["text"],
+                    concepts=list(payload.get("dims", [])),
+                    score=point.score * cos,
+                )
+            )
+        hits.sort(key=lambda h: h.score, reverse=True)
+        return hits[:limit]
+
+    async def delete_document(self, user_id: UUID, doc_id: UUID) -> None:
+        await self._client.delete(
+            self.name("documents"),
+            points_selector=models.FilterSelector(
+                filter=user_filter(
+                    user_id,
+                    models.FieldCondition(key="doc_id", match=models.MatchValue(value=str(doc_id))),
+                )
+            ),
+        )
 
     # Knowledge (shared, no user data) -----------------------------------------------------
 

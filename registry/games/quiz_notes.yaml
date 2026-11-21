@@ -1,0 +1,31 @@
+# A quiz made from the student's own document (docs/plan/20). It counts, at half weight, for the
+# course concepts its passages are about (per-round loadings), and for nothing when the document
+# names none: then it's practice. Played only on request ("quiz me on my slides").
+id: quiz_notes
+name: "Quiz: your document"
+kind: probe
+phase: P2
+dims: {}
+origin: custom
+reliability: 0.5
+paradigm: Questions drafted from the student's own pages, checked in code, each citing its page
+code_source: own
+does: Answer questions made from your own notes or slides
+scoring: binary
+duration_s: 180
+metrics:
+- accuracy
+knobs: {}
+level_map: none
+content: code_with_llm_hints
+modalities:
+- keyboard
+- touch
+acs_hooks:
+- autonomy
+practice_trials: 0
+available: true
+terminal: true
+plugin: quiz
+chance: 0.25
+rushed_ms: 2500
