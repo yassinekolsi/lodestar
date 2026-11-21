@@ -1,0 +1,7 @@
+# Every text file is stored and checked out with LF line endings, on every OS: the backend runs on
+# Linux, shell scripts break with CR, and LightGBM rejects model files with CRLF.
+* text=auto eol=lf
+*.png binary
+*.pdf binary
+*.wav binary
+*.woff2 binary
