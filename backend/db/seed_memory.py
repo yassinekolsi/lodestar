@@ -6,10 +6,9 @@ import asyncio
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
-from qdrant_client import AsyncQdrantClient
 from sqlalchemy import select
 
-from backend.config import get_settings
+from backend.config import get_settings, qdrant_client
 from backend.db import tables as t
 from backend.db.engine import get_engine
 from backend.db.seed import DEMO_NAME
@@ -70,7 +69,7 @@ async def seed_memory(user_id: UUID | None = None, memory: MemoryStore | None = 
             ).scalar_one()
     Notes(settings.memory_dir).write_core(user_id, CORE)
     if memory is None:
-        memory = MemoryStore(AsyncQdrantClient(url=settings.qdrant_url, timeout=10), Embedder())
+        memory = MemoryStore(qdrant_client(settings, timeout=10), Embedder())
         await memory.ensure_collections()
     now = datetime.now(UTC)
     for days, collection, kind, text in MOMENTS:

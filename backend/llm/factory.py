@@ -75,6 +75,7 @@ class _Rung:
     chat: BaseChatModel
     # Hosted rungs only see de-identified text: the user's name is replaced (docs/plan/14).
     hide_names: tuple[str, ...] | None = None
+    operator: bool = False  # the server's key, not the student's: its errors aren't theirs
 
     def outbound(self, messages: Sequence[BaseMessage]) -> list[BaseMessage]:
         if self.hide_names is None:
@@ -163,8 +164,32 @@ class LlmFactory:
                     ).scalar_one_or_none()
                 hide = (name,) if name else ()
                 rungs.append(_Rung(provider.id, selection.model, chat, hide_names=hide))
+        if (operator := await self._operator(user_id)) is not None:
+            rungs.append(operator)
         rungs.append(self._local())
         return rungs
+
+    async def _operator(self, user_id: UUID) -> _Rung | None:
+        """The server's own hosted model (LODESTAR_OPERATOR_LLM_*), for a deployment without
+        Ollama, such as Render. It is a cloud model, so it only runs for students who switched
+        Cloud AI on (docs/plan/14), and their name is hidden from it as with their own key."""
+        s = self.settings
+        if not (s.operator_llm_provider and s.operator_llm_key and s.operator_llm_model):
+            return None
+        async with self.engine.connect() as conn:
+            consent = await granted_switches(conn, user_id, self.registry.consent)
+            name = (
+                await conn.execute(
+                    select(t.users.c.display_name).where(t.users.c.user_id == user_id)
+                )
+            ).scalar_one_or_none()
+        if "cloud_ai" not in consent:
+            return None
+        provider = self.registry.provider(s.operator_llm_provider)
+        key = s.operator_llm_key.get_secret_value()
+        chat = build_chat_model(provider, s.operator_llm_model, key, self.base_for(provider.id))
+        hide = (name,) if name else ()
+        return _Rung(provider.id, s.operator_llm_model, chat, hide_names=hide, operator=True)
 
     async def _walk(
         self, user_id: UUID, selection: LlmSelection, call: Any
@@ -181,7 +206,7 @@ class LlmFactory:
             except Exception as exc:
                 log.warning("LLM call failed on %s: %s", rung.provider, type(exc).__name__)
                 status = _status_for(exc)
-                if status and rung.provider not in ("ollama", "stub"):
+                if status and rung.provider not in ("ollama", "stub") and not rung.operator:
                     async with self.engine.begin() as conn:
                         await set_credential_status(conn, user_id, rung.provider, status)
                 nxt = rungs[rungs.index(rung) + 1].provider if rung is not rungs[-1] else "template"

@@ -113,13 +113,12 @@ are in English.
    - Add tests for ingest, search and `quiz_notes`.
 7. **Docs:** add `docs/plan/20-documents.md`, update the README and `docs/EVIDENCE.md` with upload,
    RAG and quizzes from notes, and take new screenshots.
-8. **French and Tunisian Arabic (Derja).**
-   - French first: UI copy, the course YAML (notes, questions, misconceptions, fixes) and the
-     coach's templates and prompts. Most Tunisian university courses are taught in French.
-   - Derja: add Derja aliases, in Arabic script and in Latin letters (`ma fhemtech`, `3awedli`),
-     to the concepts and to `backend/agent/intents.py`. The coach replies in the student's register
-     with the course terms in French.
-   - Do the demo path first: home, quiz, misconception feedback, the lesson card, the concept map.
+8. **French and Tunisian Arabic (Derja): done (2026-11-21).** Interface in three languages
+   (`frontend/src/i18n`, picker in the sidebar and Settings, `?lang=fr|tn`), the course in French
+   (`registry/courses/i18n/`), French and Derja routing, the coach told the language, fixed replies
+   in all three (`backend/i18n.py`). Left: a read-through by Tunisian students; the panels off the
+   demo path (Insights, Agent, Experiments, Memory, About, Documents, parts of Settings) are still
+   English. Deploying: `render.yaml`, root `Dockerfile`, [docs/DEPLOY.md](docs/DEPLOY.md).
 9. **Pitch and demo script** for the challenge. The old brain-training demo script
    (`docs/demo-script.md`) and report (`docs/report/`) were deleted; write new ones from scratch:
    - Upload a PDF.

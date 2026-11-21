@@ -87,8 +87,7 @@ no course-format uplift claim is made.
 - An LLM grader for explain it back.
 - The growth forecast's coverage on course mastery (it was validated on 36,297 real learners'
   practice curves, not on course data).
-- French: the interface, the course notes, the questions and the coach's replies (most Tunisian
-  university courses are taught in French).
-- Tunisian Arabic (Derja): questions typed in Derja, in Arabic script or in Latin letters and mixed
-  with French, understood by the intent router and the coach, with replies in the same register
-  and course terms kept in French.
+- A review of the French and Derja text by native-speaking students and a teacher. The
+  interface, the course in French and the router in both languages are built and tested
+  (`tests/backend/test_i18n.py`, `frontend/src/i18n/i18n.test.ts`); the wording hasn't been
+  checked by people who study in them.

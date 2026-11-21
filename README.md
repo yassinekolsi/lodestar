@@ -10,6 +10,8 @@ Every estimate comes with a range, every number the coach says is cited, and eve
 its reason. Lodestar measures what a student knows about the course and nothing else: it never
 labels anyone.
 
+![Home: start studying, upload your course, your mistakes, and questions to try; English, French or Tunisian Arabic in the sidebar](docs/screens/en-home.png)
+
 ![Concept map: what each concept builds on, mastery with its range, the gap under Bayes' theorem](docs/screens/concept-map.png)
 
 ## The problem it answers
@@ -123,14 +125,34 @@ never saw (OULAD, 25,273 students: AUC 0.857). The growth-forecast model was tra
 real learners' practice curves (ranges held 79.7% on held-out players); on course mastery its
 coverage hasn't been measured yet.
 
-**Not done yet:** a pilot with a real class, courses drafted from uploaded PDFs, and the languages
-Tunisian students actually study in:
+**Not done yet:** a pilot with a real class, courses drafted from uploaded PDFs, and a review of
+the French and Derja text by native-speaking students and a teacher.
 
-- **French**: the interface, the course notes, the questions and the coach's replies. Most
-  Tunisian university courses are taught in French.
-- **Tunisian Arabic (Derja)**: students can ask in Derja, in Arabic script or in Latin letters
-  ("ma fhemtech Bayes"), mixed with French, and the coach answers in the same register while
-  keeping the course terms in French.
+## English, French and Tunisian Arabic
+
+Lodestar speaks the languages Tunisian students study in. Pick one in the sidebar or in Settings,
+or open a link with `?lang=fr` or `?lang=tn`.
+
+- **French**: the interface, the whole course (notes, 67 questions, every option, explanation,
+  key idea and misconception fix) and the coach's replies. Most Tunisian university courses are
+  taught in French.
+- **Tunisian Arabic (Derja)**, right to left: the interface and the coach speak Derja, and the
+  course stays in French, the way it is taught. Students can type in Arabic script or in Latin
+  letters ("ma fhemtech el conditionnelle"), mixed with French terms.
+
+Ids, answers and misconception tags are the same in every language, so the profile, the gap rule
+and the class view don't change with the language. The router understands all three (46 labelled
+French and Derja messages in `tests/backend/agent/intents_fr_tn.yaml`); a model, when one is used,
+is told the language and checked by the same verifier, decimal points and citations included;
+without a model the fixed replies are written in all three. A frontend test fails if a string on
+screen has no French or Derja translation. Course translations live in
+`registry/courses/i18n/` and are validated like the course itself when the server starts.
+
+## Deploy
+
+One Render web service from the root `Dockerfile`, with Neon for Postgres and Qdrant Cloud for
+memory search, all on free tiers: **New → Blueprint** in Render reads `render.yaml`. Step by step
+in [docs/DEPLOY.md](docs/DEPLOY.md).
 
 ## Development
 

@@ -1,0 +1,44 @@
+# Render blueprint (docs/DEPLOY.md). One web service from the root Dockerfile: the API under /api
+# and the built frontend everywhere else. Postgres is Neon and memory search is Qdrant Cloud, both
+# on their free tiers; their URLs and keys are entered in the Render dashboard (sync: false), never
+# committed.
+services:
+  - type: web
+    name: lodestar
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    # Free works for a demo, but the server uses about 500-600 MB once the embedding models are
+    # loaded, and Free and Starter stop at 512 MB. If Render restarts it for memory, use Standard.
+    plan: free
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      # Neon: the direct (not "-pooler") connection string, with ?sslmode=require. The LangGraph
+      # checkpointer uses prepared statements, which a transaction pooler doesn't keep.
+      - key: DATABASE_URL
+        sync: false
+      # Qdrant Cloud: the cluster URL (https://...cloud.qdrant.io:6333) and its API key.
+      - key: QDRANT_URL
+        sync: false
+      - key: QDRANT_API_KEY
+        sync: false
+      # Encrypts students' API keys at rest (AGENTS.md rule 9): 32 random bytes, base64. Render
+      # generates it once; changing it later makes saved keys unreadable.
+      - key: LODESTAR_MASTER_KEY
+        generateValue: true
+      # The "Demo person" button. Anyone with the link can look around as Alex; set 0 to hide it.
+      - key: LODESTAR_DEMO
+        value: "1"
+      # Optional: the server's own model for students who switch Cloud AI on (backend/llm/factory.py,
+      # _operator). Without it, replies are built from fixed templates, in all three languages.
+      # For example gemini / gemini-3.5-flash-lite with a Google AI Studio key.
+      - key: LODESTAR_OPERATOR_LLM_PROVIDER
+        sync: false
+      - key: LODESTAR_OPERATOR_LLM_KEY
+        sync: false
+      - key: LODESTAR_OPERATOR_LLM_MODEL
+        sync: false
+      # No Ollama on Render: point at a closed port so the local rung fails at once.
+      - key: OLLAMA_URL
+        value: http://127.0.0.1:9

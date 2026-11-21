@@ -131,9 +131,10 @@ checks all three).
 - **An LLM grader for explain it back**, verified against the key ideas.
 - **A pilot** with a real class: comprehension of the "why" cards, and whether the gap rule finds
   the gap a teacher would name.
-- **French**: the interface, the course notes, the questions, the misconception fixes and the
-  coach's replies. Most Tunisian university courses are taught in French, so this comes first.
-- **Tunisian Arabic (Derja)**: students ask in Derja, in Arabic script or in Latin letters
-  ("ma fhemtech Bayes", "3awedli el conditional"), often mixed with French. The intent router
-  needs Derja aliases for each concept, and the coach answers in the same register while keeping
-  the course terms in French. The verifier's number and citation checks apply unchanged.
+- **French and Derja, reviewed by the people who use them.** Both are built (as of
+  2026-11-21): the interface in three languages (`frontend/src/i18n`), the course in French
+  (`registry/courses/i18n/probability.fr.yaml`, validated at startup), French and Derja routing
+  in Arabic script and in Latin letters (`backend/agent/intents.py`, `_FR_TN_*`), the coach told
+  the language and held to the same verifier, and the fixed replies written in all three
+  (`backend/i18n.py`). In Derja the course stays in French. What's left is a read-through by
+  Tunisian students and a teacher, and Derja aliases learned from what students actually type.
