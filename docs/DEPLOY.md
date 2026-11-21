@@ -70,6 +70,10 @@ Render has no Ollama, so there are three cases:
   removed before anything is sent. Students who leave Cloud AI off keep the templates.
 - **A student adds their own key** in Settings → AI provider: that key is used first.
 
+Scanned PDF pages use Gemini 3.5 Flash Lite. With Cloud AI enabled, OCR uses the student's
+Gemini key first, or the host's `LODESTAR_OPERATOR_LLM_KEY` when
+`LODESTAR_OPERATOR_LLM_PROVIDER=gemini`. A host key for another provider cannot read scans.
+
 ### Memory and plan size
 
 The hosted image enables `LODESTAR_LOW_MEMORY=1`. It runs embeddings with one worker and one

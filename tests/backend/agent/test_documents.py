@@ -297,3 +297,68 @@ async def test_gemini_factory_requires_consent_and_hides_invalid_provider_data(
             "mime_type": "application/pdf",
             "data": base64.b64encode(b"source").decode(),
         }
+
+
+async def test_gemini_ocr_accepts_the_operator_key_only_with_cloud_consent(aengine, monkeypatch):
+    import json
+
+    from pydantic import SecretStr
+
+    from backend.db.llm_store import save_credential
+    from backend.documents.ocr import Transcription
+    from backend.llm.factory import LlmFactory
+    from tests.backend.agent.conftest import grant, new_user, test_settings
+    from tests.backend.llm import fake_provider as provider_module
+
+    user = await new_user(aengine)
+    operator = "operator-canary-key-12345678"
+    personal = "personal-canary-key-12345678"
+    with provider_module.fake_provider() as fake:
+        factory = LlmFactory(
+            load_registry(),
+            test_settings(
+                operator_llm_provider="gemini",
+                operator_llm_key=SecretStr(operator),
+            ),
+            aengine,
+            base_overrides={"gemini": fake.base},
+        )
+        with pytest.raises(ValueError, match="Enable Cloud AI"):
+            await factory.gemini_pdf_page(user, b"source", "Transcribe", Transcription)
+        assert not fake.requests
+        await grant(aengine, user, "cloud_ai")
+        monkeypatch.setattr(
+            provider_module,
+            "_route",
+            lambda *_: (
+                200,
+                {
+                    "candidates": [
+                        {
+                            "finishReason": "STOP",
+                            "content": {
+                                "parts": [
+                                    {
+                                        "text": json.dumps(
+                                            {"text": "$P(A)=1$", "uncertainties": []}
+                                        ),
+                                    }
+                                ]
+                            },
+                        }
+                    ],
+                },
+            ),
+        )
+        assert (
+            await factory.gemini_pdf_page(user, b"source", "Transcribe", Transcription)
+        ).text == "$P(A)=1$"
+        assert fake.requests[-1].headers["x-goog-api-key"] == operator
+        async with aengine.begin() as conn:
+            await save_credential(
+                conn, user, "gemini", factory.vault.seal(user, "gemini", personal), "ok"
+            )
+        await factory.gemini_pdf_page(user, b"source", "Transcribe", Transcription)
+        assert fake.requests[-1].headers["x-goog-api-key"] == personal
+        assert operator not in json.dumps(fake.requests[-1].body)
+        assert personal not in json.dumps(fake.requests[-1].body)

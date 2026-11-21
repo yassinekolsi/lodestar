@@ -238,9 +238,12 @@ class LlmFactory:
             stored = await get_credential(conn, user_id, "gemini")
         if "cloud_ai" not in consent:
             raise ValueError("Enable Cloud AI in Settings to read scanned pages with Gemini.")
-        if not self.vault.available or stored is None or stored.status == "rejected":
+        if stored is not None and stored.status != "rejected" and self.vault.available:
+            key = self.vault.open(user_id, "gemini", stored.ciphertext, stored.nonce)
+        elif self.settings.operator_llm_provider == "gemini" and self.settings.operator_llm_key:
+            key = self.settings.operator_llm_key.get_secret_value()
+        else:
             raise ValueError("Add your Gemini key in Settings to read scanned pages.")
-        key = self.vault.open(user_id, "gemini", stored.ciphertext, stored.nonce)
         model = "gemini-3.5-flash-lite"
         body = {
             "contents": [
