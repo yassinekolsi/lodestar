@@ -164,3 +164,20 @@ test('a slow initial library response cannot erase a newly uploaded chapter', as
   })
   expect(screen.getByRole('heading', { name: 'Probability' })).toBeInTheDocument()
 })
+
+test('practice is available while search indexing finishes, then search becomes available', async () => {
+  vi.mocked(api.subjects).mockResolvedValue([])
+  vi.mocked(api.documents)
+    .mockResolvedValueOnce([{ ...chapter, status: 'ready', review_required: false }])
+    .mockResolvedValue([{ ...chapter, status: 'ready', review_required: false, searchable: true }])
+  render(<Documents onAsk={vi.fn()} />)
+  const search = await screen.findByRole('button', { name: 'Search this chapter' })
+  expect(search).toBeDisabled()
+  expect(screen.getByText('Check understanding')).toBeEnabled()
+  await waitFor(
+    () => {
+      expect(search).toBeEnabled()
+    },
+    { timeout: 4000 },
+  )
+})

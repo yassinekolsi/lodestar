@@ -471,6 +471,7 @@ export function Documents({ onAsk }: { onAsk: (message: string) => void }) {
                     </button>
                     {canStudy(doc) && (
                       <button
+                        disabled={!doc.searchable}
                         onClick={() => {
                           searchThis(doc)
                         }}
