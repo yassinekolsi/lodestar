@@ -440,6 +440,95 @@ def issue_token(conn: Connection, user_id: UUID) -> str:
     return token
 
 
+DEMO_SUBJECT = "Probabilités"
+DEMO_CHAPTER_SECTIONS = ("2.1", "2.2", "2.3", "2.4")
+
+
+def ensure_demo_library(conn: Connection, user_id: UUID) -> bool:
+    """Give the demo person one validated chapter (French, the way the course is taught, with
+    its English version), so the library, search, quizzes on notes and cited answers can be shown
+    without uploading. Returns whether it was added (it's indexed for search afterwards)."""
+    from pathlib import Path
+
+    import yaml
+
+    from backend.agent.intents import skills_in
+    from backend.documents.ingest import split_passages
+
+    if conn.execute(
+        select(func.count()).select_from(t.documents).where(t.documents.c.user_id == user_id)
+    ).scalar_one():
+        return False
+    from backend.config import get_settings
+
+    root = Path(get_settings().registry_dir) / "courses"
+    fr = yaml.safe_load((root / "i18n" / "probability.fr.yaml").read_text(encoding="utf-8"))
+    en = yaml.safe_load((root / "probability.yaml").read_text(encoding="utf-8"))
+    en_sections = {s["id"]: s for s in en["sections"]}
+    pages = [
+        "## " + fr["sections"][i]["title"] + "\n\n" + fr["sections"][i]["text"].strip()
+        for i in DEMO_CHAPTER_SECTIONS
+    ]
+    pages_en = [
+        "## " + en_sections[i]["title"] + "\n\n" + en_sections[i]["text"].strip()
+        for i in DEMO_CHAPTER_SECTIONS
+    ]
+    registry = load_registry()
+    passages = split_passages(pages)
+    concepts: dict[str, list[int]] = {}
+    for p in passages:
+        p.concepts = skills_in(p.text, registry)
+        for c in p.concepts:
+            if p.page not in concepts.setdefault(c, []):
+                concepts[c].append(p.page)
+    subject_id = conn.execute(
+        insert(t.subjects)
+        .values(user_id=user_id, name=DEMO_SUBJECT)
+        .returning(t.subjects.c.subject_id)
+    ).scalar_one()
+    doc_id = conn.execute(
+        insert(t.documents)
+        .values(
+            user_id=user_id,
+            title="Chapitre 2 · Probabilité conditionnelle",
+            filename="chapitre-2-probabilite-conditionnelle.md",
+            subject_id=subject_id,
+            chapter="Chapitre 2",
+            extraction={
+                "method": "text",
+                "pages": pages,
+                "warnings": {},
+                "translations": {"en": pages_en},
+                "reviewed": True,
+            },
+            review_required=False,
+            status="ready",
+            pages=len(pages),
+            progress=len(pages),
+            passages=len(passages),
+            concepts=concepts,
+        )
+        .returning(t.documents.c.doc_id)
+    ).scalar_one()
+    if passages:
+        conn.execute(
+            insert(t.document_passages),
+            [
+                {
+                    "passage_id": uuid4(),
+                    "doc_id": doc_id,
+                    "user_id": user_id,
+                    "page": p.page,
+                    "position": p.position,
+                    "text": p.text,
+                    "concepts": p.concepts,
+                }
+                for p in passages
+            ],
+        )
+    return True
+
+
 def demo_sign_in(conn: Connection) -> tuple[UUID, str, bool]:
     """The demo user and a fresh sign-in token for them, seeding them first if they're missing.
     Returns whether they were just created. Safe when two tabs ask at once."""
@@ -448,6 +537,7 @@ def demo_sign_in(conn: Connection) -> tuple[UUID, str, bool]:
         select(t.users.c.user_id).where(t.users.c.display_name == DEMO_NAME)
     ).scalar_one_or_none()
     user_id = existing or seed_demo_user(conn)
+    ensure_demo_library(conn, user_id)
     return user_id, issue_token(conn, user_id), existing is None
 
 

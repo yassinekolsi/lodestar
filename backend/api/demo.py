@@ -14,6 +14,7 @@ from backend.contracts.views import CreatedUser
 from backend.db.engine import get_engine
 from backend.db.seed import demo_sign_in
 from backend.db.seed_memory import seed_memory
+from backend.documents import library
 
 router = APIRouter(tags=["users"])
 log = logging.getLogger(__name__)
@@ -36,6 +37,17 @@ async def _memory_notes(user: CreatedUser, request: Request) -> None:
             await seed_memory(user.user_id, memory)
     except Exception:
         log.warning("Demo memory notes skipped", exc_info=True)
+
+
+async def _index_library(user: CreatedUser, request: Request) -> None:
+    """The demo chapter goes into search the first time it's needed (it's saved in Postgres)."""
+    services = getattr(request.app.state, "services", None)
+    if services is None or services.memory is None:
+        return
+    try:
+        await library.index_pending(services.engine, services.memory, user.user_id)
+    except Exception:
+        log.warning("Demo chapter not indexed", exc_info=True)
 
 
 @router.post("/demo", response_model=CreatedUser | PreparingDemo)
@@ -64,4 +76,5 @@ async def post_demo(
     request.app.state.demo_preparation = None
     if created:
         background_tasks.add_task(_memory_notes, user, request)
+    background_tasks.add_task(_index_library, user, request)
     return user

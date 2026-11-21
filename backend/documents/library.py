@@ -471,6 +471,37 @@ async def interrupted(engine: AsyncEngine) -> int:
     return int(done.rowcount or 0)
 
 
+async def index_pending(engine: AsyncEngine, memory: MemoryStore, user_id: UUID) -> int:
+    """Index this student's validated chapters that aren't in search yet."""
+    async with engine.begin() as conn:
+        await user_scope(conn, user_id)
+        docs = (
+            await conn.execute(
+                select(t.documents.c.doc_id, t.documents.c.title).where(
+                    t.documents.c.user_id == user_id,
+                    t.documents.c.status == "ready",
+                    t.documents.c.indexed.is_(False),
+                )
+            )
+        ).all()
+        pending = []
+        for doc in docs:
+            rows = [
+                dict(r._mapping)
+                for r in await conn.execute(
+                    select(t.document_passages).where(
+                        t.document_passages.c.doc_id == doc.doc_id,
+                        t.document_passages.c.user_id == user_id,
+                    )
+                )
+            ]
+            pending.append((doc, rows))
+    done = 0
+    for doc, rows in pending:
+        done += await index(engine, memory, user_id, doc.doc_id, doc.title, rows)
+    return done
+
+
 _REINDEX: set[Any] = set()
 
 
