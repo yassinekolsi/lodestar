@@ -5058,3 +5058,81 @@ button.primary.pick__go {
     position: static;
   }
 }
+/* Keep document scrolling separate from the outer page and its validation footer. */
+.document-review {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+.document-review__pages {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  min-width: 0;
+}
+.document-review__pages--text {
+  grid-template-columns: minmax(0, 1fr);
+}
+.document-review__pages > div {
+  height: min(65dvh, 42rem);
+  max-height: min(65dvh, 42rem);
+  overflow: auto;
+  min-width: 0;
+  max-width: 100%;
+  overscroll-behavior: auto;
+  scrollbar-gutter: stable;
+}
+.document-review__original {
+  position: static;
+  display: flex;
+  flex-direction: column;
+}
+.document-review iframe {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  display: block;
+}
+.document-review__chapter {
+  padding-inline: 0.5rem;
+}
+.document-review__text,
+.document-review__section,
+.document-review .math-text {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.document-review .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  margin-inline: 0;
+}
+.document-review .katex:not(.katex-display > .katex) {
+  max-width: 100%;
+}
+.document-review .katex-error,
+.document-review .course-code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+.document-review__footer {
+  position: relative;
+  background: var(--color-surface);
+}
+@media (max-width: 48rem) {
+  .document-review__pages {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .document-review__pages > div {
+    height: min(55dvh, 30rem);
+    max-height: min(55dvh, 30rem);
+  }
+}
+.document-review .katex {
+  display: inline-block;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  vertical-align: middle;
+}

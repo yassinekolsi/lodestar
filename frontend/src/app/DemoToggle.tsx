@@ -34,26 +34,33 @@ export function DemoToggle({ variant }: { variant: 'rail' | 'welcome' }) {
     )
   }
   return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={on}
-      className="rail__item demo-toggle"
-      aria-label={t('Demo person')}
-      title={
-        error ??
-        (on
-          ? t('Showing Alex, a demo person. Switch off for your own data.')
-          : t('Show a demo person'))
-      }
-      disabled={busy}
-      onClick={() => void toggle()}
-    >
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM19 8v6M22 11h-6" />
-      </svg>
-      <span className="rail__label">{on ? t('Demo: Alex') : t('Demo person')}</span>
-      <span className="demo-toggle__track" aria-hidden="true" />
-    </button>
+    <>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={on}
+        className="rail__item demo-toggle"
+        aria-label={t('Demo person')}
+        title={
+          error ??
+          (on
+            ? t('Showing Alex, a demo person. Switch off for your own data.')
+            : t('Show a demo person'))
+        }
+        disabled={busy}
+        onClick={() => void toggle()}
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM19 8v6M22 11h-6" />
+        </svg>
+        <span className="rail__label">{on ? t('Demo: Alex') : t('Demo person')}</span>
+        <span className="demo-toggle__track" aria-hidden="true" />
+      </button>
+      {error && (
+        <p role="alert" className="rail__note">
+          {error}
+        </p>
+      )}
+    </>
   )
 }

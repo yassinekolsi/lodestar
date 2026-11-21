@@ -19,7 +19,7 @@ from backend.documents.ingest import (
     split_passages,
     title_of,
 )
-from backend.documents.math_text import math_issues
+from backend.documents.math_text import math_issues, repair_math
 from backend.llm.factory import LlmFactory
 from backend.registry.models import Registry
 
@@ -95,10 +95,10 @@ async def extract_document(
                         await on_page(i, result)
             except ValueError as exc:
                 raise UnreadableDocument(str(exc)) from None
-            pages[i] = result.text
+            pages[i] = repair_math(result.text)
             if result.uncertainties or "[unclear]" in result.text:
                 warnings[str(i + 1)] = result.uncertainties or ["Unclear text on this page."]
-            issues = math_issues(result.text)
+            issues = math_issues(pages[i])
             if issues:
                 warnings.setdefault(str(i + 1), []).extend(issues)
     if not any(p.strip() for p in pages):

@@ -3358,6 +3358,15 @@ export interface components {
       /** Source */
       source: string
     }
+    /** PreparingDemo */
+    PreparingDemo: {
+      /**
+       * Status
+       * @default preparing
+       * @constant
+       */
+      status: 'preparing'
+    }
     /** ProgressView */
     ProgressView: {
       by_hour: components['schemas']['HourHeatmap']
@@ -4729,7 +4738,8 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CreatedUser']
+          'application/json':
+            components['schemas']['CreatedUser'] | components['schemas']['PreparingDemo']
         }
       }
     }

@@ -1,6 +1,11 @@
 ﻿/** Student library copy, shared by the French and Derja dictionaries. */
 const COPY = [
   [
+    'The demo is still being prepared. Please try again shortly.',
+    'La démo est en préparation. Réessaie dans un instant.',
+    'الـdémo مازالت تتحضّر. عاود جرّب بعد شوية.',
+  ],
+  [
     'You can study now. Search is not ready yet.',
     'Tu peux réviser maintenant. La recherche est en préparation.',
     'تنجم تراجع توّا. البحث مازال يتحضّر.',

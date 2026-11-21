@@ -12,7 +12,7 @@ from backend.api.deps import engine_dep
 from backend.api.main import create_app
 from backend.db import tables as t
 from backend.documents import ingest, library, questions
-from backend.documents.math_text import math_issues
+from backend.documents.math_text import math_issues, repair_math
 from backend.registry.loader import load_registry
 
 
@@ -188,7 +188,7 @@ async def test_subject_upload_quiz_ownership_events_and_delete(aengine) -> None:
         assert (
             await c.put(f"{url}/review", json={"pages": [text]}, headers=other)
         ).status_code == 404
-        for bad in ("[unclear]", r"$$P(A)=1$", text + "\f" + text):
+        for bad in ("[unclear]", text + "\f" + text):
             pages = bad.split("\f")
             assert (
                 await c.put(f"{url}/review", json={"pages": pages}, headers=headers)
@@ -389,7 +389,7 @@ async def test_validation_commits_before_background_indexing(aengine, index_fail
         "A queue is a collection where the first item added is removed first. "
         "A tree is a collection with parent and child relationships. "
         "A graph is a collection of vertices connected by edges."
-    )
+    ) + r" $$P(A)=\frac{1}{4$"
     saved = await review_document(
         doc_id=doc.doc_id,
         body=ReviewInput(pages=[text]),
@@ -405,7 +405,7 @@ async def test_validation_commits_before_background_indexing(aengine, index_fail
         row = (
             await conn.execute(select(t.documents).where(t.documents.c.doc_id == doc.doc_id))
         ).one()
-        assert row.status == "ready" and row.extraction["pages"] == [text]
+        assert row.status == "ready" and row.extraction["pages"] == [repair_math(text)]
         quiz, _ = await library.quiz_content(conn, user, load_registry(), 42, doc_id=doc.doc_id)
         assert quiz is not None
     await tasks()

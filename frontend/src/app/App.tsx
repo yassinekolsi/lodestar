@@ -158,7 +158,6 @@ export function App() {
   const [panel, setPanel] = useState<Panel | null>(null)
   const [skill, setSkill] = useState<string | null>(null)
   const [why, setWhy] = useState<string | null>(null)
-  const [localMode, setLocalMode] = useState(false)
   const [receipt, setReceipt] = useState<Receipt | null>(null)
   const [twinAsk, setTwinAsk] = useState('')
   /** Where the Twin page's own chat starts in the session feed. */
@@ -191,21 +190,8 @@ export function App() {
     void session.send(message)
   }
 
-  const checkLlm = () => {
-    Promise.all([api.llm(), api.consent()]).then(
-      ([llm, consent]) => {
-        const cloud = consent.switches.some((s) => s.id === 'cloud_ai' && s.granted)
-        setLocalMode(llm.selection.mode !== 'hosted' || !cloud)
-      },
-      () => {
-        setLocalMode(false)
-      },
-    )
-  }
-
   useEffect(() => {
     if (!registered) return
-    checkLlm()
     api.me().then(
       (me) => {
         setPersona(me.persona as Persona)
@@ -523,7 +509,6 @@ export function App() {
             stopSpeaking()
           }
         }}
-        onLlmChange={checkLlm}
         onDeleted={(r) => {
           forgetUser()
           setReceipt(r)
@@ -585,12 +570,6 @@ export function App() {
           <p className="rail__group">{t('Behind the scenes')}</p>
           {NAV.slice(4).map(navButton)}
           <span className="rail__spacer" />
-          {localMode && (
-            <p className="rail__note" title={t('Lodestar uses the model on this server')}>
-              <span className="rail__dot" aria-hidden="true" />
-              <span className="rail__label">{t('Local mode')}</span>
-            </p>
-          )}
           <LanguagePicker variant="rail" />
           <DemoToggle variant="rail" />
           {navButton(SETTINGS)}

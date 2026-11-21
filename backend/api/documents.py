@@ -35,7 +35,7 @@ from backend.documents.ingest import (
     scanned_pages,
     split_passages,
 )
-from backend.documents.math_text import math_issues
+from backend.documents.math_text import FORMATTING_WARNINGS, math_issues, repair_math
 from backend.documents.ocr import OCR_MAX_PAGES
 
 router = APIRouter(tags=["documents"])
@@ -222,7 +222,15 @@ async def document_pages(doc_id: UUID, conn: Conn, user_id: CurrentUser) -> list
         texts = ["\n".join(p.text for p in rows if p.page == i) for i in range(1, row.pages + 1)]
     warnings = extraction.get("warnings", {})
     return [
-        ReviewPage(page=i + 1, text=text, warnings=warnings.get(str(i + 1), []))
+        ReviewPage(
+            page=i + 1,
+            text=repair_math(text),
+            warnings=[
+                w
+                for w in warnings.get(str(i + 1), [])
+                if w not in FORMATTING_WARNINGS or math_issues(repair_math(text))
+            ],
+        )
         for i, text in enumerate(texts)
     ]
 
@@ -254,8 +262,7 @@ async def review_document(
 ) -> library.DocumentView:
     if sum(len(p) for p in body.pages) > 5_000_000 or any("[unclear]" in p for p in body.pages):
         raise HTTPException(422, "Resolve every [unclear] marker before approving these pages.")
-    if any(math_issues(page) for page in body.pages):
-        raise HTTPException(422, "Fix unbalanced formula delimiters or braces before approving.")
+    body = body.model_copy(update={"pages": [repair_math(page) for page in body.pages]})
     services: Services = request.app.state.services
     passages = await run_in_threadpool(split_passages, body.pages)
     if not passages:

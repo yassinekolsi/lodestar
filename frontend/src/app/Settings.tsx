@@ -753,11 +753,11 @@ function Terminal() {
 }
 
 export function Settings({
-  onLlmChange,
+  onLlmChange = () => {},
   onVoiceChange,
   onDeleted,
 }: {
-  onLlmChange: () => void
+  onLlmChange?: () => void
   onVoiceChange: (speak: boolean) => void
   onDeleted: (receipt: Receipt) => void
 }) {

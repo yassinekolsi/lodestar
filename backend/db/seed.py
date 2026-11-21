@@ -21,6 +21,7 @@ import zlib
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, timedelta
+from typing import Any
 from uuid import UUID, uuid4
 
 from psycopg.types.range import Range
@@ -179,20 +180,20 @@ def _play_round(
     return Played(round_id, game, started, trials, outcome.mean_score)
 
 
-def _insert_round(conn: Connection, user_id: UUID, session_id: UUID, played: Played) -> None:
-    conn.execute(
-        insert(t.rounds).values(
+def _collect_round(
+    rows: dict[str, list[dict[str, Any]]], user_id: UUID, session_id: UUID, played: Played
+) -> None:
+    rows["rounds"].append(dict(
             round_id=played.round_id, user_id=user_id, session_id=session_id,
             game_id=played.game.id, level=played.trials[0].level, status="completed",
             score=played.score, started_at=played.started,
             ended_at=played.started + timedelta(minutes=3),
             scored_at=played.started + timedelta(minutes=3),
-        )
-    )  # fmt: skip
-    rows = [{**tr.model_dump(), "user_id": user_id, "practice": False} for tr in played.trials]
-    conn.execute(insert(t.trials), rows)
-    conn.execute(
-        insert(t.events),
+    ))  # fmt: skip
+    rows["trials"].extend(
+        {**tr.model_dump(), "user_id": user_id, "practice": False} for tr in played.trials
+    )
+    rows["events"].extend(
         [
             {
                 "user_id": user_id, "session_id": session_id, "ts": tr.ts,
@@ -220,6 +221,9 @@ def _simulate(
     }
     seen: dict[str, set[str]] = {}
     sessions: list[tuple[UUID, datetime]] = []
+    session_rows: list[dict[str, Any]] = []
+    history_rows: list[dict[str, Any]] = []
+    rows: dict[str, list[dict[str, Any]]] = {"rounds": [], "trials": [], "events": []}
     for offset in range(DAYS):
         day = start + timedelta(days=offset)
         if stopped_days_ago and offset >= DAYS - stopped_days_ago:
@@ -233,18 +237,14 @@ def _simulate(
         hour = rng.choice([9, 14, 17, 20, 21, 22])
         session_id = uuid4()
         sessions.append((session_id, _ts(day, hour)))
-        conn.execute(
-            insert(t.sessions).values(
+        session_rows.append(dict(
                 session_id=session_id, user_id=user_id, trigger="ui", status="ended",
                 started_at=_ts(day, hour), ended_at=_ts(day, hour, 20),
-            )
-        )  # fmt: skip
-        conn.execute(
-            insert(t.events).values(
+        ))  # fmt: skip
+        rows["events"].append(dict(
                 user_id=user_id, session_id=session_id, ts=_ts(day, hour),
                 type="session.started", payload={"trigger": "ui", "persona": "willow"},
-            )
-        )  # fmt: skip
+        ))  # fmt: skip
         # Mostly the newest concepts, some review, and the stuck one nearly every time.
         n = rng.randint(*sessions_rounds)
         newest = taught[-3:]
@@ -260,41 +260,42 @@ def _simulate(
                 student, registry, game, session_id, _ts(day, hour, 1 + 4 * r), offset / DAYS,
                 seen.setdefault(game.id, set()), day in hard_days, loadings,
             )  # fmt: skip
-            _insert_round(conn, user_id, session_id, played)
+            _collect_round(rows, user_id, session_id, played)
         if history:
             for dim, b in student.beliefs.items():
-                conn.execute(
-                    insert(t.history).values(
-                        user_id=user_id, day=day, dim=dim, mu=b.mu, sigma=b.sigma, n=b.n
-                    )
+                history_rows.append(
+                    dict(user_id=user_id, day=day, dim=dim, mu=b.mu, sigma=b.sigma, n=b.n)
                 )
-        conn.execute(
-            insert(t.events).values(
+        rows["events"].append(dict(
                 user_id=user_id, session_id=session_id, ts=_ts(day, hour, 20),
                 type="session.ended", payload={"reason": "budget", "rounds": n, "minutes": 4 * n},
-            )
-        )  # fmt: skip
-    for dim, b in student.beliefs.items():
-        conn.execute(
-            insert(t.dimension_state).values(
+        ))  # fmt: skip
+    for table, values in (
+        (t.sessions, session_rows),
+        (t.rounds, rows["rounds"]),
+        (t.trials, rows["trials"]),
+        (t.events, rows["events"]),
+        (t.history, history_rows),
+    ):
+        if values:
+            conn.execute(insert(table), values)
+    if student.beliefs:
+        conn.execute(insert(t.dimension_state), [dict(
                 user_id=user_id, dim=dim, mu=b.mu, sigma=b.sigma, n=b.n,
                 last_practised=b.last_practised,
-            )
-        )  # fmt: skip
+        ) for dim, b in student.beliefs.items()])  # fmt: skip
     return sessions
 
 
 def _consent(conn: Connection, registry: Registry, user_id: UUID, at: datetime) -> None:
-    for switch, granted in [
+    switches = [
         ("core", True), ("cloud_ai", False), ("microphone", True), ("camera", False),
         ("voice_tone", False), ("deliberate_mistakes", True), ("research_export", False),
-    ]:  # fmt: skip
-        conn.execute(
-            insert(t.consent).values(
+    ]  # fmt: skip
+    conn.execute(insert(t.consent), [dict(
                 user_id=user_id, switch=switch, granted=granted,
                 notice_version=registry.consent.version, changed_at=at,
-            )
-        )  # fmt: skip
+    ) for switch, granted in switches])  # fmt: skip
 
 
 def seed_demo_user(conn: Connection, today: date | None = None) -> UUID:
@@ -326,14 +327,10 @@ def seed_demo_user(conn: Connection, today: date | None = None) -> UUID:
     alex = Student(true=dict(ALEX_TRUE), habits=dict(ALEX_HABITS), rng=rng)
     sessions = _simulate(conn, registry, user_id, alex, today, 0.75, (3, 4), STUCK, history=True)
 
-    for component, rate in {"V": 0.55, "A": 0.6, "I": 0.5, "C": 0.45, "R": 0.8}.items():
-        for _ in range(40):
-            conn.execute(
-                insert(t.acs_observations).values(
-                    user_id=user_id, component=component, success=rng.random() < rate,
-                    source="seed",
-                )
-            )  # fmt: skip
+    conn.execute(insert(t.acs_observations), [dict(
+        user_id=user_id, component=component, success=rng.random() < rate, source="seed",
+    ) for component, rate in {"V": 0.55, "A": 0.6, "I": 0.5, "C": 0.45, "R": 0.8}.items()
+      for _ in range(40)])  # fmt: skip
     _seed_experiments(conn, user_id, rng, today)
     _seed_decisions(conn, user_id, rng, sessions[-20:], alex.beliefs, registry)
     seed_classmates(conn, registry, today)

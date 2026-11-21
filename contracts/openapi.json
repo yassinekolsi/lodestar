@@ -5429,6 +5429,19 @@
         "title": "PracticeGain",
         "type": "object"
       },
+      "PreparingDemo": {
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "const": "preparing",
+            "default": "preparing",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "title": "PreparingDemo",
+        "type": "object"
+      },
       "ProgressView": {
         "additionalProperties": false,
         "properties": {
@@ -8206,7 +8219,15 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CreatedUser"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/CreatedUser"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PreparingDemo"
+                    }
+                  ],
+                  "title": "Response Post Demo Demo Post"
                 }
               }
             },

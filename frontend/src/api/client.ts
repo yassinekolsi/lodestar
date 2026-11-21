@@ -164,7 +164,16 @@ export function inDemo(): boolean {
 /** Sign in as the demo user (Alex, four months of practice), keeping this browser's own sign-in to
  * come back to. The page reloads afterwards. */
 export async function startDemo(): Promise<void> {
-  const demo = await request<{ user_id: string; token: string }>('/demo', { method: 'POST' })
+  type DemoReply = { user_id: string; token: string } | { status: 'preparing' }
+  let demo = await request<DemoReply>('/demo', { method: 'POST' })
+  for (let attempt = 0; 'status' in demo && attempt < 300; attempt++) {
+    await new Promise<void>((resolve) => {
+      window.setTimeout(resolve, 1500)
+    })
+    demo = await request<DemoReply>('/demo', { method: 'POST' })
+  }
+  if ('status' in demo)
+    throw new Error(t('The demo is still being prepared. Please try again shortly.'))
   const own = memoryToken ?? getToken()
   try {
     if (own && !inDemo()) localStorage.setItem(OWN_TOKEN_KEY, own)
