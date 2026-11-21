@@ -2,6 +2,7 @@
 (backend/course_scope.py). The rest of the suite runs with LODESTAR_BUILT_IN_COURSE=all
 (tests/conftest.py); these tests switch to the product's default, "demo"."""
 
+import asyncio
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
@@ -108,7 +109,8 @@ async def test_studying_a_french_chapter_in_french_and_derja(
 ) -> None:
     runner = await make_runner()
     user_id = await new_user(aengine)
-    doc = ingest.extract(FRENCH_PDF.read_bytes(), FRENCH_PDF.name, REGISTRY)
+    data = await asyncio.to_thread(FRENCH_PDF.read_bytes)
+    doc = await asyncio.to_thread(ingest.extract, data, FRENCH_PDF.name, REGISTRY)
     await library.save(aengine, None, user_id, FRENCH_PDF.name, doc)
 
     i18n.set_current("fr")
@@ -122,9 +124,7 @@ async def test_studying_a_french_chapter_in_french_and_derja(
 
     i18n.set_current("tn")
     session_id = await runner.create_session(user_id, "ui")
-    spec = exercise(
-        await collect(runner, user_id, session_id, message="اختبرني على الnotes متاعي")
-    )
+    spec = exercise(await collect(runner, user_id, session_id, message="اختبرني على الnotes متاعي"))
     assert spec is not None and spec["game_id"] == "quiz_notes"
     # The course is taught in French: French questions, Derja hints.
     assert "ton document" in spec["content"]["questions"][0]["stem"]

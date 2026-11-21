@@ -38,6 +38,8 @@ jobs:
     env:
       LODESTAR_REQUIRE_DB: "1"
       FASTEMBED_CACHE_PATH: /home/runner/.cache/fastembed
+      HF_HOME: /home/runner/.cache/huggingface
+      PYTHONUNBUFFERED: "1"
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: astral-sh/setup-uv@v10.3.0
@@ -45,15 +47,18 @@ jobs:
           version: "0.11.19"
       - uses: actions/cache@v6.1.0
         with:
-          path: /home/runner/.cache/fastembed
-          key: fastembed-bge-small-en-v1.5-bm25
+          path: |
+            /home/runner/.cache/fastembed
+            /home/runner/.cache/huggingface/hub
+          key: inference-bge-small-en-v1.5-bm25-whisper-tiny-en
+          restore-keys: fastembed-bge-small-en-v1.5-bm25
       - run: uv sync --frozen --python 3.14 --extra whisper
       - name: Check Python formatting and types
         run: make lint-backend
       - name: Check study language
         run: make lint-language
       - name: Run backend tests
-        run: make test-backend
+        run: uv run pytest -vv --durations=15 -o faulthandler_timeout=120
       - name: Run simulated student thresholds
         run: make sim N=200
 

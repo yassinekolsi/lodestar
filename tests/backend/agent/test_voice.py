@@ -74,7 +74,9 @@ async def test_private_voice_round_trip_from_a_recording(client: httpx.AsyncClie
         reply = await client.post("/voice/transcribe", content=wav, headers=headers)
         assert reply.status_code == 200, reply.text
         text = reply.json()["text"].lower().strip(" .")
-        assert text == said and reply.json()["engine"] == "whisper:tiny.en"
+        # Whisper can write the same spoken number as a word or a digit across CPUs.
+        expected = {said, said.replace("four hours", "4 hours")}
+        assert text in expected and reply.json()["engine"] == "whisper:tiny.en"
 
 
 async def test_spoken_course_request_starts_a_quiz(
