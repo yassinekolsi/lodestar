@@ -36,7 +36,7 @@ function Experiment({ e, onStop }: { e: ExperimentView; onStop: () => void }) {
         </span>
       </div>
       <p className="muted small">
-        Games: {e.games.join(', ')} · {e.sessions_per_condition} sessions at each time of day
+        Exercises: {e.games.join(', ')} · {e.sessions_per_condition} sessions at each time of day
       </p>
 
       <ul className="experiment__arms">
@@ -123,7 +123,7 @@ export function Experiments({ onAsk }: { onAsk: () => void }) {
           </li>
           <li>
             <strong>Play at both times</strong>
-            <span>The same games, a few sessions each.</span>
+            <span>The same quizzes, a few sessions each.</span>
           </li>
           <li>
             <strong>Get a verdict</strong>

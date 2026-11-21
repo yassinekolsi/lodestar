@@ -9,7 +9,7 @@ const LAYERS: { title: string; items: { icon: GlyphName; name: string; what: str
   {
     title: 'You',
     items: [
-      { icon: 'chat', name: 'Web app', what: 'Chat, games, voice' },
+      { icon: 'chat', name: 'Web app', what: 'Chat, quizzes, voice' },
       { icon: 'terminal', name: 'Terminal', what: 'The same agent in a CLI' },
     ],
   },
@@ -23,8 +23,8 @@ const LAYERS: { title: string; items: { icon: GlyphName; name: string; what: str
   {
     title: 'The science',
     items: [
-      { icon: 'target', name: 'Scoring engine', what: 'Bayesian skill estimates with ranges' },
-      { icon: 'trend', name: 'Learned models', what: 'Forecast, rhythm, fatigue, next game' },
+      { icon: 'target', name: 'Scoring engine', what: 'Mastery per concept, with ranges' },
+      { icon: 'trend', name: 'Learned models', what: 'Drift, fatigue, next exercise' },
     ],
   },
   {
@@ -48,8 +48,8 @@ const BUILT_IN: { title: string; does: string; numbers: [string, string][] }[] =
     ],
   },
   {
-    title: 'Best next game',
-    does: 'Learns which game moves each skill most for you, and balances trying and repeating.',
+    title: 'Best next exercise',
+    does: 'Learns which exercise moves each concept most for you, and balances trying and repeating.',
     numbers: [
       ['Method', 'Thompson-sampling bandit'],
       ['Learns', 'From every round you play'],
@@ -57,18 +57,18 @@ const BUILT_IN: { title: string; does: string; numbers: [string, string][] }[] =
   },
 ]
 
-/** The last `make sim` run: 200 simulated users with known true skills, 10 sessions each
- * (docs/plan/15; the full table is docs/figures/sim_summary.md). */
+/** The last `make sim N=200` and `python -m simulator.gap_eval` runs: simulated students with
+ * known true levels per concept, 10 sessions of four 5-question quizzes (docs/EVIDENCE.md). */
 const SIMULATOR: [string, string, string][] = [
-  ['Finds your true skill after 3 sessions (correlation)', '0.82', 'above 0.80'],
-  ['80% ranges that contain the true skill', '80%', '75% to 85%'],
-  ['Success rate in Balanced mode', '78%', 'about 80%'],
-  ['Widest range left after the warm-up (SD)', '0.65', 'below 0.80'],
-  ['Bad data caught (precision / recall)', '100% / 100%', 'above 90% / 80%'],
+  ['Finds the true level after 10 sessions (correlation)', '0.84', 'above 0.80'],
+  ['80% ranges that contain the true level', '83%', '75% to 85%'],
+  ['Success rate in Balanced mode', '80%', 'about 80%'],
+  ['Finds a planted prerequisite gap', '72%', '"weakest first": 24%'],
+  ['Clicking through quizzes caught (precision / recall)', '100% / 100%', 'above 90% / 80%'],
 ]
 
 const RULES: [GlyphName, string][] = [
-  ['shield', 'No health labels, ever. A check screens every reply for them.'],
+  ['shield', 'No labels about the person, ever. A check screens every reply for them.'],
   ['target', 'Every number the coach says comes from a cited fact.'],
   ['trend', 'Every prediction is shown as a range, never a single number.'],
   ['ear', 'Camera and voice cues never change your profile or scores.'],
@@ -158,11 +158,11 @@ export function About() {
 
       <section className="card">
         <Heading as="h2" icon="check">
-          Tested on 200 simulated people
+          Tested on 200 simulated students
         </Heading>
         <p className="muted">
-          Each simulated person has a known true skill level. Lodestar never sees it, plays 10
-          sessions with them, and is checked against the truth.
+          Each simulated student has a known true level on every concept. Lodestar never sees it,
+          quizzes them for 10 sessions, and is checked against the truth.
         </p>
         <table className="sim">
           <thead>

@@ -1,7 +1,9 @@
 import type {
   AgentEvent,
   AcsView,
+  ClassView,
   ConsentView,
+  CourseMapView,
   Decision,
   ExperimentView,
   ForecastView,
@@ -198,6 +200,8 @@ export interface SessionStart {
 
 export const api = {
   registry: () => request<Registry>('/registry'),
+  course: () => request<CourseMapView>('/course'),
+  classView: () => request<ClassView>('/class'),
   twin: () => request<TwinView>('/twin'),
   startSession: (trigger: 'ui' | 'voice' = 'ui', message?: string) =>
     request<SessionStart>('/sessions', {

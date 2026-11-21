@@ -37,7 +37,8 @@ function toEvent(record: TrialRecord, spec: ExerciseSpec, sessionId: string): Tr
     round_id: spec.round_id,
     session_id: sessionId,
     game_id: spec.game_id,
-    level: spec.level,
+    // A course question carries its own difficulty; other games play at the round's level.
+    level: typeof record.stimulus['level'] === 'number' ? record.stimulus['level'] : spec.level,
     trial_index: record.trial_index,
     practice: record.practice,
     stimulus: record.stimulus,

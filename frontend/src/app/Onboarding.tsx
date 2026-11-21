@@ -53,12 +53,13 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
           </span>
           <h2>Welcome to Lodestar</h2>
           <p>
-            Lodestar picks short games that train how you focus, remember and reason, and explains
+            Lodestar is a study coach for your course. It finds which concepts aren&apos;t sticking
+            and why, explains them from your notes, quizzes you at the right level, and explains
             every choice it makes.
           </p>
           <p className="muted">
-            Lodestar is a practice coach. It doesn&apos;t assess medical or psychological
-            conditions.
+            Lodestar measures what you know about the course, nothing else. It never labels you, and
+            every number comes with how sure it is.
           </p>
           <button
             type="button"

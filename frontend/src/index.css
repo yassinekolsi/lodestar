@@ -3817,6 +3817,36 @@ button.primary.pick__go {
   --tone: #334155;
   --tone-soft: #f4f6f9;
 }
+.stress--lesson {
+  --tone: #1d4ed8;
+  --tone-soft: #eef4ff;
+}
+.stress--mistakes {
+  --tone: #be123c;
+  --tone-soft: #fff1f3;
+}
+.lesson-passage {
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  max-height: 16rem;
+  overflow: auto;
+  padding-right: 0.25rem;
+}
+.lesson-facts {
+  border-top: 1px solid color-mix(in srgb, var(--tone) 20%, transparent);
+  margin-top: 0.5rem;
+  padding-top: 0.25rem;
+}
+.mistake-list {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+  display: grid;
+  gap: 0.5rem;
+}
+.mistake-fix {
+  color: var(--color-ink);
+  opacity: 0.85;
+}
 .stress-tag {
   display: inline-block;
   font-size: 0.72rem;
@@ -3840,6 +3870,12 @@ button.primary.pick__go {
 }
 .stress-tag--forecast {
   background: #0f766e;
+}
+.stress-tag--lesson {
+  background: #1d4ed8;
+}
+.stress-tag--mistakes {
+  background: #be123c;
 }
 .stress-tag--advanced {
   background: #15803d;
@@ -4197,4 +4233,180 @@ button.primary.pick__go {
   gap: 0.375rem;
   align-items: center;
   margin-top: 1rem;
+}
+
+/* Concept map (docs/plan/19) */
+.concept-map {
+  display: grid;
+  gap: 0.9rem;
+}
+.concept-map__summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.concept-map__summary .pill {
+  margin: 0;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-line);
+  background: var(--color-card);
+  font-size: 0.875rem;
+}
+.concept-map__gap {
+  margin: 0;
+  border-left: 4px solid #be123c;
+  background: #fff1f3;
+  border-radius: 0.75rem;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.9375rem;
+}
+.concept-map__scroll {
+  position: relative;
+  overflow-x: auto;
+  padding: 0.5rem 0 0.75rem;
+}
+.concept-map__lines {
+  position: absolute;
+  top: 0.5rem;
+  left: 0;
+  pointer-events: none;
+}
+.concept-line {
+  fill: none;
+  stroke: #94a3b8;
+  stroke-width: 1.5;
+}
+.concept-line--gap {
+  stroke: #be123c;
+  stroke-width: 3;
+}
+.concept-map__nodes {
+  position: relative;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.concept-node {
+  position: absolute;
+}
+.concept-node button {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  align-content: start;
+  gap: 0.3rem;
+  text-align: left;
+  padding: 0.55rem 0.7rem;
+  border: 1.5px solid;
+  border-radius: 0.85rem;
+  cursor: pointer;
+}
+.concept-node--gap button {
+  box-shadow: 0 0 0 3px rgb(190 18 60 / 0.18);
+}
+.concept-node__top {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+.concept-node__name {
+  font-weight: 650;
+  font-size: 0.9rem;
+  line-height: 1.2;
+  color: var(--color-heading);
+}
+.concept-node__section {
+  font-size: 0.72rem;
+  color: var(--color-muted);
+}
+.concept-node__value {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+}
+.concept-range {
+  position: relative;
+  flex: 1;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: rgb(15 23 42 / 0.08);
+}
+.concept-range__band {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 999px;
+  opacity: 0.35;
+}
+.concept-range__dot {
+  position: absolute;
+  top: 50%;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+.concept-node__pct {
+  white-space: nowrap;
+  font-weight: 600;
+}
+.concept-node__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.concept-tag {
+  font-size: 0.68rem;
+  font-weight: 650;
+  border-radius: 999px;
+  padding: 0.05rem 0.45rem;
+  background: rgb(255 255 255 / 0.75);
+  border: 1px solid rgb(15 23 42 / 0.1);
+}
+.concept-tag--gap {
+  color: #be123c;
+  border-color: rgb(190 18 60 / 0.4);
+}
+.concept-tag--plateau {
+  color: #b45309;
+  border-color: rgb(180 83 9 / 0.4);
+}
+
+/* Class view */
+.class-suggestions {
+  display: grid;
+  gap: 0.5rem;
+  padding-left: 1.2rem;
+}
+.class-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.class-table th,
+.class-table td {
+  text-align: left;
+  padding: 0.45rem 0.5rem;
+  border-bottom: 1px solid var(--color-line);
+}
+.class-bar {
+  display: inline-block;
+  vertical-align: middle;
+  width: 6rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: rgb(15 23 42 / 0.08);
+  overflow: hidden;
+}
+.class-bar span {
+  display: block;
+  height: 100%;
+  background: #6d28d9;
+}
+.game-card__actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
 }

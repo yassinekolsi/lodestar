@@ -332,6 +332,61 @@ export function AgentCardView({
   onWhy: (decisionId: string) => void
 }) {
   switch (card.card) {
+    case 'lesson':
+      return (
+        <article className="turn-card stress stress--lesson" data-testid="lesson-card">
+          <p className="stress-tag stress-tag--lesson">
+            From your notes · {card.section_id} {card.section_title}
+          </p>
+          <div className="lesson-passage">
+            {card.passage.split('\n').map((line, i) => (
+              <p key={i}>{line}</p>
+            ))}
+          </div>
+          <div className="lesson-facts">
+            {card.mastery && (
+              <p>
+                <strong>Where you are:</strong> {card.mastery.now}% (likely {card.mastery.low}-
+                {card.mastery.high}%)
+              </p>
+            )}
+            {card.mistake && (
+              <p data-testid="lesson-mistake">
+                <strong>Your usual mix-up ({card.mistake.count} times):</strong> {card.mistake.text}
+                . {card.mistake.fix}
+              </p>
+            )}
+            {card.gap && (
+              <p data-testid="lesson-gap">
+                <strong>Builds on {card.gap.name.toLowerCase()}</strong>
+                {card.gap.now === null
+                  ? ', which I haven’t checked yet.'
+                  : `, still shaky: ${String(card.gap.now)}% (likely ${String(card.gap.low)}-${String(card.gap.high)}%). Notes ${card.gap.section}.`}
+              </p>
+            )}
+          </div>
+        </article>
+      )
+    case 'mistakes':
+      return (
+        <article className="turn-card stress stress--mistakes" data-testid="mistakes-card">
+          <p className="stress-tag stress-tag--mistakes">The mix-ups behind your wrong answers</p>
+          <ol className="mistake-list">
+            {card.rows.map((r) => (
+              <li key={`${r.dim}-${r.text}`}>
+                <p>
+                  <strong>{r.text}</strong>{' '}
+                  <span className="muted small">
+                    {r.concept} · {r.count} times
+                    {r.confident > 0 ? ` · ${String(r.confident)} while sure` : ''}
+                  </span>
+                </p>
+                <p className="mistake-fix">{r.fix}</p>
+              </li>
+            ))}
+          </ol>
+        </article>
+      )
     case 'why':
       return (
         <article className="turn-card stress stress--why" data-testid="why-card-inline">

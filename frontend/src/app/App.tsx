@@ -13,7 +13,8 @@ import { Games } from '../dashboard/Games'
 import { Goals } from '../dashboard/Goals'
 import { Insights } from '../dashboard/Insights'
 import { Memory } from '../dashboard/Memory'
-import { NightSky } from '../dashboard/NightSky'
+import { ClassPanel } from '../dashboard/ClassPanel'
+import { ConceptMap } from '../dashboard/ConceptMap'
 import { SkillPage } from '../dashboard/SkillPage'
 import { useDashboard } from '../dashboard/useDashboard'
 import { setSpeakReplies, speakReplies, stopSpeaking } from '../voice/tts'
@@ -22,7 +23,6 @@ import { Composer } from './Composer'
 import { Cited } from './Cited'
 import { DemoToggle } from './DemoToggle'
 import { PlateauToast, RushedScreen, SplitPlan } from './StressCases'
-import { skillMarks } from './stressHelpers'
 import { Conversation, Star, type Panel } from './Conversation'
 import { DecisionCard } from './DecisionCard'
 import { Heading } from './icons'
@@ -36,7 +36,7 @@ type NavItem = { id: Panel; label: string; icon: ReactNode }
 const PLAY: NavItem[] = [
   {
     id: 'games',
-    label: 'Games',
+    label: 'Practice',
     icon: (
       <path d="M6 11h4M8 9v4M15 12h.01M18 10h.01M17.3 5H6.7a4 4 0 0 0-4 3.6L2 15.4A3 3 0 0 0 7.3 17.6L9 16h6l1.7 1.6a3 3 0 0 0 5.3-2.2l-.7-6.8A4 4 0 0 0 17.3 5z" />
     ),
@@ -52,7 +52,7 @@ const PLAY: NavItem[] = [
 const NAV: NavItem[] = [
   {
     id: 'twin',
-    label: 'Brain Twin',
+    label: 'Concept map',
     icon: (
       <path d="M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3zM19 3v4M21 5h-4" />
     ),
@@ -99,6 +99,13 @@ const NAV: NavItem[] = [
     icon: <path d="M12 2l10 5-10 5L2 7zM2 17l10 5 10-5M2 12l10 5 10-5" />,
   },
 ]
+const TEACHER: NavItem = {
+  id: 'teacher',
+  label: 'Class view',
+  icon: (
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8" />
+  ),
+}
 const SETTINGS: NavItem = {
   id: 'settings',
   label: 'Settings',
@@ -106,18 +113,19 @@ const SETTINGS: NavItem = {
     <path d="M20 7h-9M14 17H5M17 20a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
   ),
 }
-const ALL = [...PLAY, ...NAV, SETTINGS]
+const ALL = [...PLAY, ...NAV, TEACHER, SETTINGS]
 const SUBTITLE: Record<Panel, string> = {
-  games: 'Every game, the Detective story, and games made to order.',
+  games: 'A quiz and an explain-it-back for every concept of the course.',
   coach: 'Four coaches, one set of facts. Pick the voice you like.',
-  insights: 'What Lodestar has learned about how you work, each with its range.',
+  insights: 'What Lodestar has learned about how you study, each with its range.',
   memory: 'What Lodestar remembers about you. Forget anything, any time.',
   about: 'The architecture, the models, how they were tested, and the rules.',
-  twin: 'Every skill, with how sure Lodestar is about it.',
-  progress: 'Your goals and how each skill has moved.',
-  experiments: 'Try one change and see if it helps you.',
+  twin: 'Every concept of the course, what it builds on, and how sure Lodestar is about you.',
+  progress: 'Your exam goals and how each concept has moved.',
+  experiments: 'Test one change to how you study and see if it helps you.',
   agent: 'What Lodestar did, step by step, and why.',
   acs: 'How you work with AI: checking, trying first, and taking breaks.',
+  teacher: 'The whole class, as counts: what it finds hard and the mix-ups behind it.',
   settings: 'Privacy, voice, your AI provider and your data.',
 }
 
@@ -148,7 +156,7 @@ export function App() {
   // Voice in, voice out: once someone talks to Lodestar, replies are spoken too (and always shown).
   const [voiceUsed, setVoiceUsed] = useState(false)
   useSpeakReplies(session.state, persona, voiceUsed || speakReplies())
-  const { registry, twin, progress, forecast, goals, acs, decisions, patterns } = dash
+  const { registry, twin, progress, forecast, goals, acs, decisions, patterns, course } = dash
 
   const checkLlm = () => {
     Promise.all([api.llm(), api.consent()]).then(
@@ -253,8 +261,13 @@ export function App() {
         progress={progress}
         forecast={forecast}
         plateau={patterns?.plateaus.find((p) => p.dim === skill)}
+        course={course}
         onTry={(p) => {
           tryNewFormat(p.name)
+        }}
+        onPlay={(ask) => {
+          setPanel(null)
+          void session.send(ask)
         }}
         onBack={() => {
           setSkill(null)
@@ -262,17 +275,15 @@ export function App() {
       />
     ) : (
       <>
-        <section aria-label="Skill map">
-          <NightSky
-            registry={registry}
-            dims={twin.dims}
-            pulse={dash.updates}
-            onSelect={setSkill}
-            marks={skillMarks(patterns)}
-          />
+        <section aria-label="Concept map">
+          {course ? (
+            <ConceptMap course={course} onSelect={setSkill} />
+          ) : (
+            <p className="muted">Loading the course…</p>
+          )}
         </section>
-        <section className="panel-block" aria-label="Ask your Twin">
-          <Heading icon="chat">Ask your Twin</Heading>
+        <section className="panel-block" aria-label="Ask about the course">
+          <Heading icon="chat">Ask about the course</Heading>
           {twinFrom !== null && (
             <ul className="twin-chat" data-testid="twin-chat" aria-live="polite">
               {session.state.feed.slice(twinFrom).map((item, i) =>
@@ -315,15 +326,15 @@ export function App() {
               setTwinAsk('')
               if (said) {
                 if (twinFrom === null) setTwinFrom(session.state.feed.length)
-                void session.send(`Twin, ${said}`)
+                void session.send(said)
               }
             }}
           >
             <input
               value={twinAsk}
               maxLength={2000}
-              placeholder="e.g. when am I sharpest?"
-              aria-label="Your question for the Twin"
+              placeholder="e.g. what is a random variable? or: what do I keep getting wrong?"
+              aria-label="Your question about the course"
               onChange={(e) => {
                 setTwinAsk(e.target.value)
               }}
@@ -334,7 +345,7 @@ export function App() {
           </form>
         </section>
         <section className="panel-block">
-          <Heading icon="radar">All skills at a glance</Heading>
+          <Heading icon="radar">All concepts at a glance</Heading>
           <Radar twin={twin} registry={registry} split={patterns?.split} />
           {patterns?.split && (
             <SplitPlan
@@ -403,6 +414,8 @@ export function App() {
     body = <Insights progress={progress} forecast={forecast} twin={twin} />
   } else if (panel === 'memory') {
     body = <Memory />
+  } else if (panel === 'teacher') {
+    body = <ClassPanel />
   } else if (panel === 'about') {
     body = <About />
   } else if (panel === 'experiments') {
@@ -493,10 +506,12 @@ export function App() {
             </Icon>
             <span className="rail__label">Conversation</span>
           </button>
-          <p className="rail__group">Play</p>
+          <p className="rail__group">Study</p>
           {PLAY.map(navButton)}
-          <p className="rail__group">Your mind</p>
+          <p className="rail__group">Your course</p>
           {NAV.slice(0, 4).map(navButton)}
+          <p className="rail__group">For teachers</p>
+          {navButton(TEACHER)}
           <p className="rail__group">Behind the scenes</p>
           {NAV.slice(4).map(navButton)}
           <span className="rail__spacer" />

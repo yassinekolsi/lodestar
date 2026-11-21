@@ -1,15 +1,16 @@
-import type { ForecastView, PlateauView, ProgressView, Registry, TwinView } from '../api/types'
+import type {
+  CourseMapView,
+  ForecastView,
+  PlateauView,
+  ProgressView,
+  Registry,
+  TwinView,
+} from '../api/types'
 import { PlateauNote } from '../app/StressCases'
 import { SkillCurve } from './charts'
 
-const BADGE: Record<string, string> = {
-  established: 'Well established in research',
-  moderate: 'Some research support',
-  experimental: 'Experimental: treat with care',
-}
-
-/** One skill (docs/plan/13, night sky "tap a constellation"): what it is, how it's measured, its
- * curve with the forecast, and what can bias it. */
+/** One concept (docs/plan/19): what it is, the notes on it, its key ideas, the student's mastery
+ * with its curve, what it builds on, and a quiz or an explain-it-back one tap away. */
 export function SkillPage({
   dim,
   registry,
@@ -17,7 +18,9 @@ export function SkillPage({
   progress,
   forecast,
   plateau,
+  course,
   onTry,
+  onPlay,
   onBack,
 }: {
   dim: string
@@ -26,32 +29,62 @@ export function SkillPage({
   progress: ProgressView
   forecast: ForecastView[]
   plateau?: PlateauView | undefined
+  course?: CourseMapView | null
   onTry?: (plateau: PlateauView) => void
+  onPlay?: (ask: string) => void
   onBack: () => void
 }) {
   const def = registry.dimensions.find((d) => d.id === dim)
   if (!def) return null
   const view = twin.dims.find((d) => d.dim === dim && d.n > 0)
   const band = forecast.find((f) => f.dim === dim)
-  const games = registry.games.filter((g) => g.available && dim in g.dims)
+  const concept = course?.concepts.find((c) => c.id === dim)
+  const section = course?.sections.find((s) => s.id === concept?.section)
+  const name = (id: string) => course?.concepts.find((c) => c.id === id)?.name ?? id
   return (
     <section className="card skill" data-testid="skill-page">
       <button type="button" className="link" onClick={onBack}>
-        ← Back to the sky
+        ← Back to the concept map
       </button>
       <h2>{def.name}</h2>
       <p>{def.plain}.</p>
-      <p>
-        <span className={`badge badge--${def.badge}`}>{BADGE[def.badge] ?? def.badge}</span>
-      </p>
       {view ? (
         <p className={view.still_learning ? 'muted' : ''}>
-          Estimate {Math.round(view.percent)}%, likely {Math.round(view.percent_low)}-
-          {Math.round(view.percent_high)}% ({view.norms} norms)
+          Mastery {Math.round(view.percent)}%, likely {Math.round(view.percent_low)}-
+          {Math.round(view.percent_high)}%: the chance of getting a typical question on it right
           {view.still_learning ? '. Still learning about you.' : '.'}
         </p>
       ) : (
-        <p className="muted">Not measured yet.</p>
+        <p className="muted">Not checked yet.</p>
+      )}
+      {concept && concept.requires.length > 0 && (
+        <p className="muted">Builds on {concept.requires.map(name).join(', ').toLowerCase()}.</p>
+      )}
+      {concept?.mistake && (
+        <p data-testid="concept-mistake">
+          <strong>Your usual mix-up ({concept.mistakes} times):</strong> {concept.mistake}
+        </p>
+      )}
+      {onPlay && (
+        <div className="game-card__actions">
+          <button
+            type="button"
+            className="primary"
+            onClick={() => {
+              onPlay(`play Quiz: ${def.name}`)
+            }}
+          >
+            Quiz me
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              onPlay(`play Explain it back: ${def.name}`)
+            }}
+          >
+            Explain it back
+          </button>
+        </div>
       )}
       {plateau && <PlateauNote plateau={plateau} onTry={onTry} />}
       <SkillCurve
@@ -68,17 +101,33 @@ export function SkillPage({
           {Math.round(band.low)}-{Math.round(band.high)}%. {band.note}
         </p>
       )}
-      <h3>Measured by</h3>
-      <ul className="lines">
-        {games.map((g) => (
-          <li key={g.id}>
-            <strong>{g.name}</strong> <span className="muted">· {g.does}</span>
-          </li>
-        ))}
-      </ul>
+      {section && (
+        <>
+          <h3>
+            From your notes · {section.id} {section.title}
+          </h3>
+          <div className="lesson-passage">
+            {section.text
+              .trim()
+              .split('\n')
+              .map((line, i) => (
+                <p key={i}>{line}</p>
+              ))}
+          </div>
+        </>
+      )}
+      {concept && (
+        <>
+          <h3>Key ideas</h3>
+          <ul className="lines">
+            {concept.key_ideas.map((k) => (
+              <li key={k}>{k}</li>
+            ))}
+          </ul>
+        </>
+      )}
       <h3>What can bias it</h3>
-      <p className="muted">{def.biases.join(', ')}.</p>
-      {def.note && <p className="muted">{def.note}</p>}
+      <p className="muted">{def.biases.join(' ')}</p>
     </section>
   )
 }

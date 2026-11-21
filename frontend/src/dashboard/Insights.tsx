@@ -98,11 +98,13 @@ export function Insights({
           Where you&apos;re heading
         </p>
         {ahead.length === 0 ? (
-          <p className="muted">Lodestar needs three days of practice on a skill to forecast it.</p>
+          <p className="muted">
+            Lodestar needs three days of practice on a concept to forecast it.
+          </p>
         ) : (
           <>
             <p className="insight__big">
-              In {ahead[0]?.sessions_ahead ?? 5} more sessions, your strongest skills look like
+              In {ahead[0]?.sessions_ahead ?? 5} more sessions, your strongest concepts look like
               this.
             </p>
             <ul className="heading-to">
@@ -135,7 +137,7 @@ export function Insights({
           </>
         )}
         <p className="insight__how">
-          Growth forecast model, trained on 36,000 players of similar games; it personalises as you
+          Growth forecast model, trained on 36,000 learners' practice curves; it personalises as you
           play.
         </p>
       </section>
@@ -143,7 +145,7 @@ export function Insights({
       <Insight
         icon="clock"
         title="Your best time"
-        big={best ? `You do best in the ${best.label.toLowerCase()}.` : 'Not enough games yet.'}
+        big={best ? `You do best in the ${best.label.toLowerCase()}.` : 'Not enough quizzes yet.'}
         how="From every answer you've given, by time of day."
       >
         {blocks.length > 0 && (
@@ -260,7 +262,7 @@ export function Insights({
             </li>
             <li>
               <strong>{rhythm.rounds}</strong>
-              <span>games played</span>
+              <span>exercises done</span>
             </li>
           </ul>
         )}

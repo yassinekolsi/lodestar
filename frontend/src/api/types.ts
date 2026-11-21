@@ -28,6 +28,9 @@ export type MeView = Schemas['MeView']
 export type ExperimentView = Schemas['ExperimentView']
 export type InsightsView = Schemas['InsightsView']
 export type ModelCard = Schemas['ModelCard']
+export type CourseMapView = Schemas['CourseMapView']
+export type ConceptStatus = Schemas['ConceptStatus']
+export type ClassView = Schemas['ClassView']
 export type PatternsView = Schemas['PatternsView']
 export type PlateauView = Schemas['PlateauView']
 export type SplitView = Schemas['SplitView']
@@ -79,6 +82,36 @@ export type AgentCard =
         low: number
         median: number
         high: number
+      }[]
+    }
+  | {
+      card: 'lesson'
+      dim: string
+      name: string
+      section_id: string
+      section_title: string
+      passage: string
+      key_ideas: string[]
+      mastery: { now: number; low: number; high: number } | null
+      mistake: { text: string; fix: string; count: number; confident: number } | null
+      gap: {
+        dim: string
+        name: string
+        section: string
+        now: number | null
+        low: number | null
+        high: number | null
+      } | null
+    }
+  | {
+      card: 'mistakes'
+      rows: {
+        dim: string
+        concept: string
+        text: string
+        fix: string
+        count: number
+        confident: number
       }[]
     }
   | {

@@ -6,9 +6,9 @@ import type { useSession } from './useSession'
 /** Things people often say, one tap away. Each is sent as if typed. */
 const STARTERS = [
   'Something quick',
-  'When am I sharpest?',
+  'Quiz me on conditional probability',
   'How am I doing this week?',
-  'Make me a game where I remember a phone number while doing maths',
+  'When do I study best?',
 ]
 
 /** Where you talk to Lodestar: type or tap the microphone, with a few starters. Hidden while a game
@@ -42,7 +42,7 @@ export function Composer({
               void send(s)
             }}
           >
-            {s.length > 34 ? 'Make me a game' : s}
+            {s}
           </button>
         ))}
     </div>
@@ -68,7 +68,9 @@ export function Composer({
           value={text}
           maxLength={2000}
           autoComplete="off"
-          placeholder={quiet ? 'Tell Lodestar how your day is going' : 'Reply to Lodestar'}
+          placeholder={
+            quiet ? 'Ask about the course, or say what you want to study' : 'Reply to Lodestar'
+          }
           onChange={(e) => {
             setText(e.target.value)
           }}

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { API_BASE, api, getToken } from '../api/client'
 import type {
   AcsView,
+  CourseMapView,
   Decision,
   ForecastView,
   GoalView,
@@ -21,6 +22,7 @@ export interface DashboardData {
   acs: AcsView | null
   decisions: Decision[]
   patterns: PatternsView | null
+  course: CourseMapView | null
   error: string | null
   /** Bumped on every live "twin updated" push, so views can animate a change. */
   updates: number
@@ -35,6 +37,7 @@ const EMPTY: DashboardData = {
   acs: null,
   decisions: [],
   patterns: null,
+  course: null,
   error: null,
   updates: 0,
 }
@@ -55,8 +58,9 @@ export function useDashboard(enabled: boolean): DashboardData & { refresh: () =>
       api.acs(),
       api.decisions(),
       api.patterns(),
+      api.course().catch(() => null),
     ]).then(
-      ([registry, twin, progress, forecast, goals, acs, decisions, patterns]) => {
+      ([registry, twin, progress, forecast, goals, acs, decisions, patterns, course]) => {
         setData((d) => ({
           ...d,
           registry,
@@ -67,6 +71,7 @@ export function useDashboard(enabled: boolean): DashboardData & { refresh: () =>
           acs,
           decisions,
           patterns,
+          course,
           error: null,
         }))
       },

@@ -4,7 +4,7 @@ import { api } from '../api/client'
 import type { GoalView, Persona, ProgressView, Registry, TwinView } from '../api/types'
 import { Goals } from '../dashboard/Goals'
 import { NightSky } from '../dashboard/NightSky'
-import { GAMES } from '../games'
+import { gameFor } from '../games'
 import { GameFrame } from '../taskhost/GameFrame'
 import { Cited } from './Cited'
 import { Glyph } from './icons'
@@ -23,6 +23,7 @@ export type Panel =
   | 'memory'
   | 'acs'
   | 'about'
+  | 'teacher'
   | 'settings'
 
 /** `?ask=...` starts the session with that request, as if the user had said it. */
@@ -166,13 +167,13 @@ function SurfaceCard({
         </li>
         <li>
           <strong>{progress.stats.rounds_this_week}</strong>
-          <span>rounds this week</span>
+          <span>exercises this week</span>
         </li>
         <li>
           <strong>
             {progress.stats.skills_measured}/{progress.stats.skills_total}
           </strong>
-          <span>skills measured</span>
+          <span>concepts checked</span>
         </li>
       </ul>
     )
@@ -292,8 +293,11 @@ export function Conversation({
           </div>
         )
       case 'pick': {
-        const game = GAMES[item.spec.game_id]
-        const name = game?.name ?? item.spec.game_id
+        const game = gameFor(item.spec)
+        const name =
+          registry?.games.find((g) => g.id === item.spec.game_id)?.name ??
+          game?.name ??
+          item.spec.game_id
         if (i !== livePick) {
           const played = state.feed.some(
             (x) => x.kind === 'result' && x.roundId === item.spec.round_id,
@@ -374,7 +378,9 @@ export function Conversation({
             (x): x is Extract<FeedItem, { kind: 'pick' }> =>
               x.kind === 'pick' && x.spec.round_id === item.roundId,
           )?.spec.game_id
-        const gameName = gameId ? (GAMES[gameId]?.name ?? gameId) : 'Round'
+        const gameName = gameId
+          ? (registry?.games.find((g) => g.id === gameId)?.name ?? gameId)
+          : 'Round'
         const dims = gameId
           ? Object.keys(registry?.games.find((g) => g.id === gameId)?.dims ?? {})
           : []
@@ -512,9 +518,9 @@ export function Conversation({
           <span className="hero__orb" aria-hidden="true" />
           <h1>{greeting(now)}</h1>
           <p className="hero__lede">
-            I&apos;m Lodestar, a practice coach for how you focus, remember and reason. Tell me how
-            you&apos;re doing, ask me anything, or let me pick a game. I don&apos;t assess medical
-            or psychological conditions.
+            I&apos;m Lodestar, your study coach for Probability 1. I find which concepts aren&apos;t
+            sticking and why, explain them from your own notes, and quiz you where it helps most.
+            Ask me about any part of the course.
           </p>
           {progress && (
             <ul className="pills" aria-label="Your week">
@@ -522,13 +528,13 @@ export function Conversation({
                 <strong>{progress.stats.streak_days}</strong> day streak
               </li>
               <li>
-                <strong>{progress.stats.rounds_this_week}</strong> rounds this week
+                <strong>{progress.stats.rounds_this_week}</strong> exercises this week
               </li>
               <li>
                 <strong>
                   {progress.stats.skills_measured}/{progress.stats.skills_total}
                 </strong>{' '}
-                skills measured
+                concepts checked
               </li>
             </ul>
           )}
@@ -544,22 +550,22 @@ export function Conversation({
                     <path d="M7 4.5v15l12-7.5z" />
                   </svg>
                 </span>
-                <span className="action__title">Start a session</span>
-                <span className="action__text">Short games, picked for how you are today</span>
+                <span className="action__title">Start studying</span>
+                <span className="action__text">The concept that needs you most, at your level</span>
               </button>
               <button
                 type="button"
                 className="action"
-                title="A short mystery where each chapter is one of the games"
-                onClick={() => void start('play the Detective story')}
+                title="The mix-ups behind your wrong answers, and the fix for each"
+                onClick={() => void start('What do I keep getting wrong?')}
               >
                 <span className="action__icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24">
                     <path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-5-5" />
                   </svg>
                 </span>
-                <span className="action__title">Detective story</span>
-                <span className="action__text">A mystery where every chapter is a game</span>
+                <span className="action__title">My mistakes</span>
+                <span className="action__text">What I keep getting wrong, and how to fix it</span>
               </button>
             </div>
           )}
@@ -567,9 +573,9 @@ export function Conversation({
             <div className="ask-chips" aria-label="Try asking">
               <span className="muted small">Try asking</span>
               {[
-                'Why did you pick my last game?',
-                'What did I play this week?',
-                'What exactly will my score be next month?',
+                "I don't get Bayes' theorem",
+                'Why did you pick my last exercise?',
+                'What exactly will my Bayes score be next month?',
                 "That wasn't fair, the room was noisy",
               ].map((ask) => (
                 <button
@@ -607,7 +613,8 @@ export function Conversation({
         <article className="turn-card" data-testid="resume">
           <p className="eyebrow">Welcome back</p>
           <p>
-            You were in the middle of {GAMES[state.spec.game_id]?.name ?? state.spec.game_id}.
+            You were in the middle of{' '}
+            {registry?.games.find((g) => g.id === state.spec?.game_id)?.name ?? state.spec.game_id}.
             Resume or skip?
           </p>
           <div className="actions">

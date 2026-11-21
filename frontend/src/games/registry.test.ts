@@ -3,15 +3,18 @@ import { join } from 'node:path'
 
 import { parse } from 'yaml'
 
-import { GAMES } from './index'
+import { GAMES, gameFor } from './index'
 
-test('the registry marks exactly the games the browser can run as available', () => {
-  const dir = join(import.meta.dirname, '../../../registry/games')
-  const available = readdirSync(dir)
+test('every course concept is played by a plugin the browser has', () => {
+  const dir = join(import.meta.dirname, '../../../registry/courses')
+  const courses = readdirSync(dir)
     .filter((f) => f.endsWith('.yaml'))
-    .map((f) => parse(readFileSync(join(dir, f), 'utf8')) as { id: string; available?: boolean })
-    .filter((g) => g.available === true)
-    .map((g) => g.id)
-    .sort()
-  expect(available).toEqual(Object.keys(GAMES).sort())
+    .map((f) => parse(readFileSync(join(dir, f), 'utf8')) as { concepts: { id: string }[] })
+  expect(courses.length).toBeGreaterThan(0)
+  for (const course of courses) {
+    for (const c of course.concepts) {
+      expect(gameFor({ game_id: `quiz_${c.id}`, plugin: 'quiz' })).toBe(GAMES['quiz'])
+      expect(gameFor({ game_id: `explain_${c.id}` })).toBe(GAMES['explain'])
+    }
+  }
 })

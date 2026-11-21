@@ -76,6 +76,27 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/class': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Class View
+     * @description Everyone studying the course on this server, as counts and medians only. In a school
+     *     deployment this sits behind a teacher role; the demo lets any signed-in user open it.
+     */
+    get: operations['class_view_class_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/consent': {
     parameters: {
       query?: never
@@ -106,6 +127,23 @@ export interface paths {
      * @description Turning a switch off stops that processing at once (docs/plan/14).
      */
     put: operations['put_consent_consent__switch__put']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/course': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Course Map */
+    get: operations['course_map_course_get']
+    put?: never
     post?: never
     delete?: never
     options?: never
@@ -1108,6 +1146,79 @@ export interface components {
       /** Question */
       question: string
     }
+    /** ClassConcept */
+    ClassConcept: {
+      /** Chapter */
+      chapter: string
+      /** Id */
+      id: string
+      /** Median Percent */
+      median_percent: number | null
+      /** Name */
+      name: string
+      /** Section */
+      section: string
+      /**
+       * Solid
+       * @description Students at 70% or more
+       */
+      solid: number
+      /**
+       * Struggling
+       * @description Students below the struggling line (45%)
+       */
+      struggling: number
+      /**
+       * Students
+       * @description Students with at least one counted answer on it
+       */
+      students: number
+    }
+    /** ClassMistake */
+    ClassMistake: {
+      /** Concept */
+      concept: string
+      /** Concept Name */
+      concept_name: string
+      /** Confident */
+      confident: number
+      /** Count */
+      count: number
+      /** Fix */
+      fix: string
+      /** Id */
+      id: string
+      /** Students */
+      students: number
+      /** Text */
+      text: string
+    }
+    /** ClassView */
+    ClassView: {
+      /**
+       * Active Week
+       * @description Studied in the last 7 days
+       */
+      active_week: number
+      /** Concepts */
+      concepts: components['schemas']['ClassConcept'][]
+      /** Course */
+      course: string
+      /**
+       * Drifting
+       * @description Studied before, nothing in the last 7 days
+       */
+      drifting: number
+      /** Mistakes */
+      mistakes: components['schemas']['ClassMistake'][]
+      /** Students */
+      students: number
+      /**
+       * Suggestions
+       * @description What to revisit in class, in plain words
+       */
+      suggestions: string[]
+    }
     /** CoachReply */
     CoachReply: {
       /** Cited Ids */
@@ -1125,6 +1236,91 @@ export interface components {
       text: string
       /** Used Template */
       used_template: boolean
+    }
+    /** Concept */
+    Concept: {
+      /**
+       * Aliases
+       * @description Words students use for it
+       */
+      aliases?: string[]
+      /** Id */
+      id: string
+      /** Key Ideas */
+      key_ideas: string[]
+      /** Misconceptions */
+      misconceptions?: components['schemas']['Misconception'][]
+      /** Name */
+      name: string
+      /** Plain */
+      plain: string
+      /** Questions */
+      questions: components['schemas']['Question'][]
+      /** Requires */
+      requires?: string[]
+      /** Section */
+      section: string
+    }
+    /** ConceptStatus */
+    ConceptStatus: {
+      /**
+       * Blocking
+       * @description Struggling concepts this one is the gap under
+       */
+      blocking?: string[]
+      /** Chapter */
+      chapter: string
+      /** High */
+      high: number | null
+      /** Id */
+      id: string
+      /** Key Ideas */
+      key_ideas: string[]
+      /** Low */
+      low: number | null
+      /**
+       * Mistake
+       * @description Most frequent mix-up on it
+       */
+      mistake?: string | null
+      /**
+       * Mistakes
+       * @default 0
+       */
+      mistakes: number
+      /**
+       * N
+       * @description Answers that counted
+       */
+      n: number
+      /** Name */
+      name: string
+      /**
+       * Percent
+       * @description Mastery: chance of a typical question right
+       */
+      percent: number | null
+      /** Plain */
+      plain: string
+      /**
+       * Plateau
+       * @default false
+       */
+      plateau: boolean
+      /** Requires */
+      requires: string[]
+      /**
+       * Review Due
+       * @default false
+       */
+      review_due: boolean
+      /** Section */
+      section: string
+      /**
+       * State
+       * @enum {string}
+       */
+      state: 'not_checked' | 'solid' | 'shaky' | 'struggling'
     }
     /** ConsentChanged */
     ConsentChanged: {
@@ -1300,6 +1496,55 @@ export interface components {
     CoreLine: {
       /** Line */
       line: string
+    }
+    /** Course */
+    Course: {
+      /** Audience */
+      audience: string
+      /** Concepts */
+      concepts: components['schemas']['Concept'][]
+      /** Id */
+      id: string
+      /** Name */
+      name: string
+      /** Sections */
+      sections: components['schemas']['Section'][]
+      source: components['schemas']['CourseSource']
+    }
+    /** CourseMapView */
+    CourseMapView: {
+      /** Audience */
+      audience: string
+      /** Concepts */
+      concepts: components['schemas']['ConceptStatus'][]
+      /** Course */
+      course: string
+      /**
+       * Exam
+       * @description The nearest exam goal's date
+       */
+      exam?: string | null
+      gap?: components['schemas']['GapView'] | null
+      /** Name */
+      name: string
+      /** Sections */
+      sections: components['schemas']['SectionView'][]
+      /** Source Title */
+      source_title: string
+      /** Source Url */
+      source_url: string
+    }
+    /** CourseSource */
+    CourseSource: {
+      /** License */
+      license: string
+      /** Title */
+      title: string
+      /**
+       * Url
+       * Format: uri
+       */
+      url: string
     }
     /** CreatedUser */
     CreatedUser: {
@@ -1508,9 +1753,9 @@ export interface components {
       framework: string[]
       /**
        * Group
-       * @enum {string}
+       * @description The course chapter a concept belongs to; colours the map
        */
-      group: 'attention' | 'control' | 'memory' | 'speed' | 'reasoning' | 'language' | 'style'
+      group: string
       /** Id */
       id: string
       /** In Overall */
@@ -1691,6 +1936,12 @@ export interface components {
        * @enum {string}
        */
       mode: 'assess' | 'train'
+      /**
+       * Plugin
+       * @description Browser plugin to run, when it isn't the game's own id
+       * @default null
+       */
+      plugin: string | null
       /** Practice Trials */
       practice_trials: number
       /**
@@ -2043,6 +2294,12 @@ export interface components {
        * @default false
        */
       available: boolean
+      /**
+       * Chance
+       * @description Success rate of pure guessing (4 options: 0.25)
+       * @default 0.5
+       */
+      chance: number
       /** Code Source */
       code_source: string
       /**
@@ -2109,10 +2366,21 @@ export interface components {
        * @enum {string}
        */
       phase: 'P1' | 'P2' | 'L'
+      /**
+       * Plugin
+       * @description Browser plugin that plays it, when not the game's own id
+       */
+      plugin?: string | null
       /** Practice Trials */
       practice_trials: number
       /** Reliability */
       reliability?: number | null
+      /**
+       * Rushed Ms
+       * @description Median answer time below which answers are rushed
+       * @default 200
+       */
+      rushed_ms: number
       /**
        * Scoring
        * @enum {string}
@@ -2138,6 +2406,15 @@ export interface components {
        * @default false
        */
       themable: boolean
+    }
+    /** GapView */
+    GapView: {
+      /** Chain */
+      chain: string[]
+      /** Concept */
+      concept: string
+      /** Prereq */
+      prereq: string
     }
     /** GoalPayload */
     GoalPayload: {
@@ -2720,6 +2997,21 @@ export interface components {
       /** Text */
       text: string
     }
+    /** Misconception */
+    Misconception: {
+      /**
+       * Fix
+       * @description What to do instead, written by the team
+       */
+      fix: string
+      /** Id */
+      id: string
+      /**
+       * Text
+       * @description The mistake, in plain words
+       */
+      text: string
+    }
     /** ModelCard */
     ModelCard: {
       /** Does */
@@ -2934,6 +3226,31 @@ export interface components {
       /** Notes */
       notes: string | null
     }
+    /** Question */
+    Question: {
+      /** Explain */
+      explain: string
+      /** Id */
+      id: string
+      /** Level */
+      level: number
+      /** Options */
+      options: components['schemas']['QuizOption'][]
+      /** Stem */
+      stem: string
+    }
+    /** QuizOption */
+    QuizOption: {
+      /**
+       * Correct
+       * @default false
+       */
+      correct: boolean
+      /** Misconception */
+      misconception?: string | null
+      /** Text */
+      text: string
+    }
     /**
      * React
      * @description Press as soon as the target shows, hold back for distractors.
@@ -2986,6 +3303,8 @@ export interface components {
         [key: string]: components['schemas']['Battery']
       }
       consent: components['schemas']['ConsentNotice']
+      /** Courses */
+      courses?: components['schemas']['Course'][]
       /** Dimensions */
       dimensions: components['schemas']['Dimension'][]
       /** Games */
@@ -3167,6 +3486,24 @@ export interface components {
       quality_verdict: string
       /** Trust */
       trust: number
+    }
+    /** Section */
+    Section: {
+      /** Id */
+      id: string
+      /** Text */
+      text: string
+      /** Title */
+      title: string
+    }
+    /** SectionView */
+    SectionView: {
+      /** Id */
+      id: string
+      /** Text */
+      text: string
+      /** Title */
+      title: string
     }
     /** SelectionInput */
     SelectionInput: {
@@ -4059,6 +4396,37 @@ export interface operations {
       }
     }
   }
+  class_view_class_get: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ClassView']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
   get_consent_consent_get: {
     parameters: {
       query?: never
@@ -4121,6 +4489,37 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['ConsentView']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  course_map_course_get: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CourseMapView']
         }
       }
       /** @description Validation Error */
