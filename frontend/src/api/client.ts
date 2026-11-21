@@ -69,7 +69,25 @@ export function signInCode(): string | null {
   return memoryToken ?? getToken()
 }
 
+/** A demo token can go stale (the demo person was seeded again). Every panel would then fail
+ * with "Unknown token"; instead, fetch one fresh demo token (shared by concurrent requests) and
+ * retry once. */
+let demoRefresh: Promise<void> | null = null
+
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  try {
+    return await send<T>(path, init)
+  } catch (e) {
+    if (!(e instanceof ApiError) || e.status !== 401 || path === '/demo' || !inDemo()) throw e
+    demoRefresh ??= startDemo().finally(() => {
+      demoRefresh = null
+    })
+    await demoRefresh
+    return send<T>(path, init)
+  }
+}
+
+async function send<T>(path: string, init: RequestInit): Promise<T> {
   const token = memoryToken ?? getToken()
   const headers = new Headers(init.headers)
   if (!(init.body instanceof FormData)) headers.set('Content-Type', 'application/json')
