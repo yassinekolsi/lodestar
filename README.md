@@ -123,8 +123,14 @@ never saw (OULAD, 25,273 students: AUC 0.857). The growth-forecast model was tra
 real learners' practice curves (ranges held 79.7% on held-out players); on course mastery its
 coverage hasn't been measured yet.
 
-**Not done yet:** a pilot with a real class, courses drafted from uploaded PDFs, and interfaces in
-French and Arabic.
+**Not done yet:** a pilot with a real class, courses drafted from uploaded PDFs, and the languages
+Tunisian students actually study in:
+
+- **French**: the interface, the course notes, the questions and the coach's replies. Most
+  Tunisian university courses are taught in French.
+- **Tunisian Arabic (Derja)**: students can ask in Derja, in Arabic script or in Latin letters
+  ("ma fhemtech Bayes"), mixed with French, and the coach answers in the same register while
+  keeping the course terms in French.
 
 ## Development
 

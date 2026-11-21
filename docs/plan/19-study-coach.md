@@ -131,4 +131,9 @@ checks all three).
 - **An LLM grader for explain it back**, verified against the key ideas.
 - **A pilot** with a real class: comprehension of the "why" cards, and whether the gap rule finds
   the gap a teacher would name.
-- **French and Arabic** interfaces.
+- **French**: the interface, the course notes, the questions, the misconception fixes and the
+  coach's replies. Most Tunisian university courses are taught in French, so this comes first.
+- **Tunisian Arabic (Derja)**: students ask in Derja, in Arabic script or in Latin letters
+  ("ma fhemtech Bayes", "3awedli el conditional"), often mixed with French. The intent router
+  needs Derja aliases for each concept, and the coach answers in the same register while keeping
+  the course terms in French. The verifier's number and citation checks apply unchanged.
