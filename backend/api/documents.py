@@ -2,10 +2,19 @@
 with page citations, delete."""
 
 from datetime import UTC, datetime
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Form, HTTPException, Request, Response, UploadFile, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Form,
+    HTTPException,
+    Request,
+    Response,
+    UploadFile,
+    status,
+)
 from pydantic import Field
 from sqlalchemy import delete, insert, select, update
 from sqlalchemy.exc import IntegrityError
@@ -239,6 +248,7 @@ async def review_document(
     doc_id: UUID,
     body: ReviewInput,
     request: Request,
+    background_tasks: BackgroundTasks,
     user_id: CurrentUser,
     registry: RegistryDep,
 ) -> library.DocumentView:
@@ -291,7 +301,7 @@ async def review_document(
             )
         )
         await conn.execute(insert(t.document_passages), rows)
-        await conn.execute(
+        result = await conn.execute(
             update(t.documents)
             .where(t.documents.c.doc_id == doc_id)
             .values(
@@ -302,7 +312,9 @@ async def review_document(
                 passages=len(rows),
                 concepts=concepts,
             )
+            .returning(*(c for c in t.documents.c if c.name != "source_pdf"))
         )
+        reviewed = result.one()
         await append_event(
             conn,
             LibraryChanged(
@@ -311,25 +323,30 @@ async def review_document(
                 payload=LibraryPayload(action="document_reviewed", doc_id=doc_id),
             ),
         )
+    if services.memory:
+        background_tasks.add_task(_index_reviewed, services, user_id, doc_id, doc.title, rows)
+    return library._view(reviewed)
+
+
+async def _index_reviewed(
+    services: Services, user_id: UUID, doc_id: UUID, title: str, rows: list[dict[str, Any]]
+) -> None:
+    """The reviewed source is committed and returned before embedding work begins."""
     indexed = False
     if services.memory:
         try:
             await services.memory.delete_document(user_id, doc_id)
-            await services.memory.write_passages(user_id, doc_id, doc.title, rows)
+            await services.memory.write_passages(user_id, doc_id, title, rows)
             indexed = True
         except Exception:
             pass  # Postgres holds the reviewed source even if the search service is offline.
     async with services.engine.begin() as conn:
         await user_scope(conn, user_id)
-        row = (
-            await conn.execute(
-                update(t.documents)
-                .where(t.documents.c.doc_id == doc_id, t.documents.c.user_id == user_id)
-                .values(indexed=indexed)
-                .returning(*(c for c in t.documents.c if c.name != "source_pdf"))
-            )
-        ).one()
-    return library._view(row)
+        await conn.execute(
+            update(t.documents)
+            .where(t.documents.c.doc_id == doc_id, t.documents.c.user_id == user_id)
+            .values(indexed=indexed)
+        )
 
 
 @router.delete("/documents/{doc_id}", status_code=204)

@@ -25,19 +25,29 @@ export function Documents({ onAsk }: { onAsk: (message: string) => void }) {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [offline, setOffline] = useState(false)
+  const [indexChecks, setIndexChecks] = useState(0)
   const [uploading, setUploading] = useState('')
   const [failed, setFailed] = useState<{ file: File; error: string }[]>([])
   const fileInput = useRef<HTMLInputElement>(null)
   const searchPanel = useRef<HTMLDetailsElement>(null)
   const processing = docs.some((doc) => doc.status === 'processing')
+  const polling =
+    processing ||
+    (indexChecks < 120 && docs.some((doc) => doc.status === 'ready' && !doc.searchable))
 
   useEffect(() => {
     let active = true
     Promise.all([api.subjects(), api.documents()]).then(
       ([s, d]) => {
         if (active) {
-          setSubjects(s)
-          setDocs(d)
+          setSubjects((previous) => [
+            ...previous,
+            ...s.filter((item) => !previous.some((p) => p.subject_id === item.subject_id)),
+          ])
+          setDocs((previous) => [
+            ...previous,
+            ...d.filter((item) => !previous.some((p) => p.doc_id === item.doc_id)),
+          ])
           setLoading(false)
         }
       },
@@ -54,7 +64,7 @@ export function Documents({ onAsk }: { onAsk: (message: string) => void }) {
   }, [])
 
   useEffect(() => {
-    if (!processing) return
+    if (!polling || busy) return
     let active = true
     let timer: number | undefined
     const poll = async () => {
@@ -67,6 +77,7 @@ export function Documents({ onAsk }: { onAsk: (message: string) => void }) {
       } catch {
         if (active) setOffline(true)
       } finally {
+        if (active) setIndexChecks((previous) => previous + 1)
         if (active)
           timer = window.setTimeout(() => {
             void poll()
@@ -80,7 +91,7 @@ export function Documents({ onAsk }: { onAsk: (message: string) => void }) {
       active = false
       window.clearTimeout(timer)
     }
-  }, [processing])
+  }, [polling, busy])
 
   const run = async (work: () => Promise<void>) => {
     setBusy(true)
@@ -342,6 +353,7 @@ export function Documents({ onAsk }: { onAsk: (message: string) => void }) {
             setReviewing(null)
           }}
           onSaved={(doc) => {
+            setIndexChecks(0)
             setDocs((previous) => previous.map((d) => (d.doc_id === doc.doc_id ? doc : d)))
             setReviewing(null)
           }}
@@ -472,7 +484,9 @@ export function Documents({ onAsk }: { onAsk: (message: string) => void }) {
               <footer className="documents__chapter-footer">
                 <span className="small muted">
                   {canStudy(doc)
-                    ? t('Answers cite your pages.')
+                    ? doc.searchable
+                      ? t('Answers cite your pages.')
+                      : t('You can study now. Search is not ready yet.')
                     : t('Available for study after validation.')}
                 </span>
                 <button

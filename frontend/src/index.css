@@ -5013,3 +5013,48 @@ button.primary.pick__go {
   justify-content: space-between;
   margin-bottom: 2rem;
 }
+.document-review__pages {
+  align-items: start;
+}
+.document-review__pages--text {
+  grid-template-columns: minmax(0, 1fr);
+}
+.document-review__pages > div {
+  max-height: none;
+  overflow: visible;
+  min-width: 0;
+}
+.document-review__original {
+  position: sticky;
+  top: 1rem;
+}
+.document-review iframe {
+  height: 75vh;
+}
+.document-review__section {
+  padding-block: 1rem;
+}
+.document-review__section + .document-review__section {
+  border-top: 1px solid var(--color-line);
+}
+.document-review__text {
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.document-review details {
+  margin-top: 1rem;
+}
+.document-review details > summary {
+  color: var(--color-muted);
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.document-review__footer {
+  border-top: 1px solid var(--color-line);
+  padding-top: 1rem;
+}
+@media (max-width: 60rem) {
+  .document-review__original {
+    position: static;
+  }
+}

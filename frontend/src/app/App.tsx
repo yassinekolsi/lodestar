@@ -168,12 +168,16 @@ export function App() {
   const [needsSubject, setNeedsSubject] = useState(false)
   useEffect(() => {
     if (!registered || inDemo()) return
+    let active = true
     api.subjects().then(
       (s) => {
-        setNeedsSubject(s.length === 0)
+        if (active) setNeedsSubject(s.length === 0)
       },
       () => undefined,
     )
+    return () => {
+      active = false
+    }
   }, [registered])
   const [persona, setPersona] = useState<Persona>('willow')
   // Voice in, voice out: once someone talks to Lodestar, replies are spoken too (and always shown).

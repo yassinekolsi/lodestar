@@ -362,3 +362,56 @@ async def test_gemini_ocr_accepts_the_operator_key_only_with_cloud_consent(aengi
         assert fake.requests[-1].headers["x-goog-api-key"] == personal
         assert operator not in json.dumps(fake.requests[-1].body)
         assert personal not in json.dumps(fake.requests[-1].body)
+
+
+@pytest.mark.parametrize("index_fails", [False, True])
+async def test_validation_commits_before_background_indexing(aengine, index_fails):
+    from unittest.mock import AsyncMock
+
+    from fastapi import BackgroundTasks
+
+    from backend.api.documents import ReviewInput, review_document
+    from tests.backend.agent.conftest import new_user
+
+    user = await new_user(aengine)
+    doc = await library.start(aengine, user, "chapter.md", 1, None, "", None)
+    memory = SimpleNamespace(
+        delete_document=AsyncMock(),
+        write_passages=AsyncMock(
+            side_effect=RuntimeError("search offline") if index_fails else None
+        ),
+    )
+    services = SimpleNamespace(engine=aengine, memory=memory)
+    request = SimpleNamespace(app=SimpleNamespace(state=SimpleNamespace(services=services)))
+    tasks = BackgroundTasks()
+    text = (
+        "A stack is a collection where the last item added is removed first. "
+        "A queue is a collection where the first item added is removed first. "
+        "A tree is a collection with parent and child relationships. "
+        "A graph is a collection of vertices connected by edges."
+    )
+    saved = await review_document(
+        doc_id=doc.doc_id,
+        body=ReviewInput(pages=[text]),
+        request=request,
+        background_tasks=tasks,
+        user_id=user,
+        registry=load_registry(),
+    )
+    assert saved.status == "ready" and not saved.review_required
+    memory.write_passages.assert_not_awaited()
+    assert len(tasks.tasks) == 1
+    async with aengine.connect() as conn:
+        row = (
+            await conn.execute(select(t.documents).where(t.documents.c.doc_id == doc.doc_id))
+        ).one()
+        assert row.status == "ready" and row.extraction["pages"] == [text]
+        quiz, _ = await library.quiz_content(conn, user, load_registry(), 42, doc_id=doc.doc_id)
+        assert quiz is not None
+    await tasks()
+    memory.write_passages.assert_awaited_once()
+    async with aengine.connect() as conn:
+        indexed = await conn.scalar(
+            select(t.documents.c.indexed).where(t.documents.c.doc_id == doc.doc_id)
+        )
+        assert indexed == (not index_fails)

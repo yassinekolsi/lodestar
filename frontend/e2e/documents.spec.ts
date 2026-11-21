@@ -31,8 +31,7 @@ test('student creates a subject, uploads a chapter, searches and starts its quiz
     timeout: 90_000,
   })
   await page.getByRole('button', { name: 'Review pages and formulas', exact: true }).click()
-  await expect(page.getByLabel('Extracted page text')).toContainText('A stack is a collection')
-  await page.getByLabel('I checked every page and formula against the original.').check()
+  await expect(page.locator('.document-review__text')).toContainText('A stack is a collection')
   await page.getByRole('button', { name: 'Validate chapter', exact: true }).click()
   await expect(page.getByRole('button', { name: 'Check understanding', exact: true })).toBeVisible({
     timeout: 30_000,
@@ -45,7 +44,7 @@ test('student creates a subject, uploads a chapter, searches and starts its quiz
     timeout: 30_000,
   })
   await page.getByRole('button', { name: 'Review pages and formulas', exact: true }).click()
-  await expect(page.getByLabel('Extracted page text')).toContainText('A stack is a collection')
+  await expect(page.locator('.document-review__text')).toContainText('A stack is a collection')
   await page.getByRole('button', { name: 'Close review', exact: true }).click()
   await page.getByRole('button', { name: 'Check understanding', exact: true }).click()
   await expect(page.getByTestId('suggestion')).toBeVisible({ timeout: 90_000 })
@@ -57,4 +56,42 @@ test('student creates a subject, uploads a chapter, searches and starts its quiz
   await page.getByTestId('sure-2').click()
   await expect(page.getByTestId('quiz-feedback')).toContainText('Page 1')
   await page.screenshot({ path: 'test-results/documents-quiz.png', fullPage: true })
+})
+
+test('reviews a whole multi-page chapter and validates it without a checkbox', async ({ page }) => {
+  await prepare(page)
+  await page.goto('/')
+  const first =
+    'Whole chapter\n\nA stack is a collection where the last item added is removed first. A queue is a collection where the first item added is removed first.'
+  const second =
+    'Conditional probability\n\nThe probability of A given B is $P(A|B)=P(A \\cap B)/P(B)$. The event B must have positive probability. This formula relates the intersection of two events to a conditional probability.'
+  await page
+    .getByLabel('Upload course files')
+    .setInputFiles({
+      name: 'whole-chapter.md',
+      mimeType: 'text/markdown',
+      buffer: Buffer.from(first + '\f' + second),
+    })
+  await page
+    .getByRole('button', { name: 'Review pages and formulas', exact: true })
+    .click({ timeout: 30000 })
+  const review = page.getByRole('region', { name: 'Review extracted pages' })
+  await expect(review.locator('.document-review__text')).toHaveCount(2)
+  await expect(review.locator('.document-review__text').first()).toContainText(
+    'A stack is a collection',
+  )
+  await expect(review.locator('.document-review__text').last()).toContainText(
+    'Conditional probability',
+  )
+  await expect(review.getByRole('combobox')).toHaveCount(0)
+  await expect(review.getByRole('checkbox')).toHaveCount(0)
+  await page.screenshot({ path: 'test-results/whole-chapter-review.png', fullPage: true })
+  await page.setViewportSize({ width: 390, height: 844 })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(391)
+  await page.screenshot({ path: 'test-results/whole-chapter-mobile.png', fullPage: true })
+  await review.getByRole('button', { name: 'Validate chapter', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Check understanding', exact: true })).toBeVisible({
+    timeout: 10000,
+  })
+  await expect(page.getByText('Ready to study', { exact: true })).toBeVisible()
 })

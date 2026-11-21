@@ -1,5 +1,23 @@
 ﻿/** Student library copy, shared by the French and Derja dictionaries. */
 const COPY = [
+  [
+    'You can study now. Search is not ready yet.',
+    'Tu peux réviser maintenant. La recherche est en préparation.',
+    'تنجم تراجع توّا. البحث مازال يتحضّر.',
+  ],
+  [
+    'Read the full chapter below. Compare it with the original, correct anything that needs attention, then validate to start studying.',
+    'Lis le chapitre entier ci-dessous. Compare-le à l’original, corrige les erreurs, puis valide pour réviser.',
+    'اقرا الـchapitre الكلّ، قارنو بالأصل وصلّح الأغلاط، وبعد ثبّتو باش تبدأ تراجع.',
+  ],
+  ['Loading your chapter…', 'Chargement du chapitre…', 'نحمّلو في الـchapitre…'],
+  ['Edit extracted text', 'Corriger le texte extrait', 'صلّح النص المقروء'],
+  [
+    'Validating saves your reviewed chapter. Search indexing continues in the background.',
+    'La validation enregistre ton chapitre vérifié. L’indexation pour la recherche continue en arrière-plan.',
+    'الـvalidation تحفظ الـchapitre اللي ثبّت فيه. تحضير البحث يكمّل في الخلفية.',
+  ],
+  ['Saving chapter…', 'Enregistrement du chapitre…', 'نحفظو في الـchapitre…'],
   ['Your study library', 'Ta bibliothèque', 'المكتبة متاعك'],
   ['Your course. Your pace.', 'Ton cours. À ton rythme.', 'الـcours متاعك، على ريتمك.'],
   [

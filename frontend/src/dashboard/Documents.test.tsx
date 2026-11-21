@@ -142,3 +142,25 @@ test('renders expandable page citations on document answers', () => {
   expect(screen.getByText('STL · page 4')).toBeInTheDocument()
   expect(screen.getByText('A vector stores elements.')).toBeInTheDocument()
 })
+
+test('a slow initial library response cannot erase a newly uploaded chapter', async () => {
+  let finish: (docs: never[]) => void = () => {}
+  vi.mocked(api.subjects).mockResolvedValue([])
+  vi.mocked(api.documents).mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve
+      }),
+  )
+  vi.mocked(api.uploadDocument).mockResolvedValue({ ...chapter, status: 'review' })
+  render(<Documents onAsk={vi.fn()} />)
+  fireEvent.change(screen.getByLabelText('Upload course files'), {
+    target: { files: [new File(['notes'], 'probability.pdf')] },
+  })
+  await screen.findByRole('heading', { name: 'Probability' })
+  finish([])
+  await waitFor(() => {
+    expect(screen.queryByText('Loading your library…')).not.toBeInTheDocument()
+  })
+  expect(screen.getByRole('heading', { name: 'Probability' })).toBeInTheDocument()
+})
