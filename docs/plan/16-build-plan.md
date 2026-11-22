@@ -13,7 +13,7 @@ The code is written by coding agents. This file splits the build into **work pac
 ### Prompt template
 
 ```
-You are building work package <ID> of the AI4Brain project.
+You are building work package <ID> of the Lodestar project.
 Follow AGENTS.md strictly. Read: <spec files>.
 Build: <Build list>.
 Do not change files outside: <paths>, except to add tests.

@@ -153,7 +153,7 @@ Pin these exactly (`==` in Python, exact versions in `package.json`, image tags 
 ## Repo layout
 
 ```
-ai4brain/
+lodestar/
 ├── AGENTS.md  README.md  LICENSE (MIT)  docker-compose.yml  Makefile
 ├── registry/                    # source of truth for skills, games and LLM providers
 │   ├── dimensions.yaml

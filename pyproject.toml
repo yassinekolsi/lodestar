@@ -1,5 +1,5 @@
 [project]
-name = "ai4brain"
+name = "lodestar"
 version = "0.1.0"
 description = "Lodestar, a study coach that finds why a concept won't stick"
 readme = "README.md"
