@@ -1,19 +1,28 @@
-# Lodestar: a study coach that finds why a concept won't stick
+<div align="center">
 
-**Live at [lodestar-2bej.onrender.com](https://lodestar-2bej.onrender.com/)**. Press "Demo person"
-to look around as Alex (free tier: the first load can take up to a minute).
+# 🧭 Lodestar
 
-### Stack
+### The study coach that finds *why* a concept won't stick
 
-| Layer | What it runs on |
-|---|---|
-| **Frontend** | React 19 · TypeScript 6 · Vite 8 · Tailwind CSS 4 · jsPsych 8 · ECharts 6 · KaTeX |
-| **Backend** | Python 3.14 · FastAPI · Pydantic v2 · SQLAlchemy 2 + Alembic |
-| **Agent** | LangGraph 1.2 (Postgres checkpoints) · LangChain providers (Gemini, Claude, OpenAI, Ollama…) · MCP server + CLI |
-| **Data** | PostgreSQL 18 on Neon (event log, profiles, `jsonb`) · Qdrant Cloud (memory and notes search) · fastembed / Gemini embeddings |
-| **Models** | Kalman-Elo mastery with 80% ranges · LightGBM engagement model (OULAD) · conformal growth forecast |
-| **Languages** | English · French · Tunisian Arabic (Derja, right to left) |
-| **Deploy** | Docker · Render (one web service) · GitHub Actions CI |
+**[▶ Try it live: lodestar-2bej.onrender.com](https://lodestar-2bej.onrender.com/)**
+
+Press **Demo person** to explore as Alex, five weeks into Probability 1.
+
+<br>
+
+<img alt="React" src="https://img.shields.io/badge/React-19-149eca?style=flat-square&logo=react&logoColor=white"> <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-6-3178c6?style=flat-square&logo=typescript&logoColor=white"> <img alt="Vite" src="https://img.shields.io/badge/Vite-8-646cff?style=flat-square&logo=vite&logoColor=white"> <img alt="Tailwind CSS" src="https://img.shields.io/badge/Tailwind_CSS-4-06b6d4?style=flat-square&logo=tailwindcss&logoColor=white"> <img alt="KaTeX" src="https://img.shields.io/badge/KaTeX-math-329894?style=flat-square&logo=latex&logoColor=white">
+<br>
+<img alt="Python" src="https://img.shields.io/badge/Python-3.14-3776ab?style=flat-square&logo=python&logoColor=white"> <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-API-009688?style=flat-square&logo=fastapi&logoColor=white"> <img alt="LangGraph" src="https://img.shields.io/badge/LangGraph-1.2-1c3c3c?style=flat-square&logo=langchain&logoColor=white"> <img alt="Gemini" src="https://img.shields.io/badge/Gemini-3.5-8e75b2?style=flat-square&logo=googlegemini&logoColor=white"> <img alt="Ollama" src="https://img.shields.io/badge/Ollama-local-000000?style=flat-square&logo=ollama&logoColor=white">
+<br>
+<img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-18_on_Neon-4169e1?style=flat-square&logo=postgresql&logoColor=white"> <img alt="Qdrant" src="https://img.shields.io/badge/Qdrant-vector_search-dc244c?style=flat-square&logo=qdrant&logoColor=white"> <img alt="LightGBM" src="https://img.shields.io/badge/LightGBM-OULAD-9acd32?style=flat-square&logo=python&logoColor=white"> <img alt="Docker" src="https://img.shields.io/badge/Docker-Render-2496ed?style=flat-square&logo=docker&logoColor=white">
+
+<br>
+
+**English · Français · تونسي (Derja)**
+
+</div>
+
+---
 
 Lodestar is an AI study coach for a university course. It finds **which** concepts aren't sticking
 and **why**: often the gap is in a concept they build on. It explains them **from the student's own

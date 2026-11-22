@@ -116,8 +116,11 @@ async def _read(
         await library.finish(services.engine, services.memory, user_id, doc_id, doc)
     except UnreadableDocument as exc:
         await library.fail(services.engine, user_id, doc_id, str(exc))
-    except Exception:
+    except Exception as exc:
         log.exception("reading document %s failed", doc_id)
         await library.fail(
-            services.engine, user_id, doc_id, "Something went wrong reading this file. Try again."
+            services.engine,
+            user_id,
+            doc_id,
+            f"Something went wrong reading this file ({type(exc).__name__}). Try again.",
         )
