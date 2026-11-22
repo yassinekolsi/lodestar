@@ -23,7 +23,7 @@ it measures:
 | Plateau and rushed-round detection, pushback, forecast ranges | Thresholds suited to 5-question quizzes; rushed = median answer under 2.5 s, since a question has to be read |
 | Engagement model trained on 25,273 real OULAD students | Now used on the population it was trained on: students |
 | Memory, consent, export, delete, choice of AI provider, local fallback, voice, terminal client | Copy, tips and memory notes rewritten for studying |
-| — | 43 cognitive games removed; two plugins (quiz, explain it back) play every concept of any course |
+| — | Two plugins (quiz, explain it back) play every concept of any course |
 | — | A **concept map** replaces the night sky; a **class view** for teachers |
 
 ## The course model
