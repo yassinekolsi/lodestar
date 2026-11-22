@@ -11,6 +11,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import delete, func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
+from backend import i18n
 from backend.contracts.common import Contract
 from backend.contracts.events import LibraryChanged, LibraryPayload
 from backend.db import tables as t
@@ -285,7 +286,10 @@ async def quiz_content(
             made_by = "model, checked by code" if made else "code"
         except Exception:
             log.info("no model for document questions; using the text itself", exc_info=True)
-    if len(made) < questions.QUESTIONS:
+    # Code questions quote the notes word for word, so they only fill in when the notes are in the
+    # quiz's language; otherwise one quiz would mix French and English.
+    same_language = questions.language_of(sources) == i18n.course_locale()
+    if len(made) < questions.QUESTIONS and (same_language or not made):
         made += questions.from_text(
             sources, vocabulary(registry), seed, questions.QUESTIONS - len(made)
         )
