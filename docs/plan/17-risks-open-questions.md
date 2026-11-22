@@ -30,7 +30,7 @@
 | Slow dashboard queries as events grow | Laggy UI | Indexes on `(user_id, ts)`, monthly partitions, materialised views refreshed after sessions |
 | Qdrant local mode lacks a feature | Test vs prod mismatch | Run Qdrant server in Docker for integration tests |
 | Requirements change late | Rework | Registry-driven design, simulator, extensibility drill (WP4.4) |
-| Copying GPL code by accident | Licence violation in a public repo | `AGENTS.md` rule; review of every reused file; `THIRD_PARTY.md` |
+| Copying GPL code by accident | Licence violation in a public repo | `AGENTS.md` rule; review of every reused file |
 
 ## What the evidence supports (for in-app claims and docs)
 

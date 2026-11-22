@@ -127,7 +127,7 @@ flowchart LR
    repetition. Every part is shown in "Why?".
 
 Design: [docs/plan/19-study-coach.md](docs/plan/19-study-coach.md). Everything else (agent, memory,
-coach, ethics) is in [docs/plan](docs/plan/README.md) and [docs/TECHNICAL.md](docs/TECHNICAL.md).
+coach, ethics) is in [docs/plan](docs/plan/).
 
 ## The course
 

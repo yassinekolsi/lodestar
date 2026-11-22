@@ -39,7 +39,7 @@ Everything else builds on these, so they go first and stay stable.
 
 | ID | Read | Build | Done when |
 |---|---|---|---|
-| **WP0.1 Repo and infra** | `02`, `AGENTS.md` | Monorepo layout from `02`; Docker Compose (frontend, backend, Postgres 18, Qdrant 1.19, Ollama) with the versions pinned in `02`; Makefile (`up`, `test`, `lint`, `sim`, `e2e`, `lint-language`); CI running lint + tests; MIT licence, `THIRD_PARTY.md` | `make up` starts all services healthy; `make lint test` pass on the empty skeleton |
+| **WP0.1 Repo and infra** | `02`, `AGENTS.md` | Monorepo layout from `02`; Docker Compose (frontend, backend, Postgres 18, Qdrant 1.19, Ollama) with the versions pinned in `02`; Makefile (`up`, `test`, `lint`, `sim`, `e2e`, `lint-language`); CI running lint + tests; MIT licence | `make up` starts all services healthy; `make lint test` pass on the empty skeleton |
 | **WP0.2 Contracts** | `03`, `04`, `05`, `06`, `07`, `09`, `11` | Pydantic models: event types, `ExerciseSpec`, `RoundResult`, `TrialEvent`, `TwinSnapshot`, `Decision`, `FactsPacket`, `AcsEvent`, `AffectReading`, `LodestarState`; OpenAPI schema; generated TypeScript types; registry YAML for all 16 dimensions, all games in `06` and the LLM providers (`03`), with a JSON Schema validator for the YAML | `make contracts` regenerates TS types with no diff; registry validates; contract tests pass |
 | **WP0.3 Database** | `04` | Alembic migration with every table in `04`, monthly partitions for `twin.events`, the append-only trigger, roles; DB access layer (SQLAlchemy Core); `AsyncPostgresSaver.setup()` in the migration step; seed script | `alembic upgrade head` on an empty DB works; tests insert and read each table; updating `twin.events` fails |
 

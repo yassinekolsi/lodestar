@@ -14,7 +14,7 @@ Every game is a jsPsych 8.3 plugin (or timeline) with our own UI. Classic tests 
 | PEBL | GPL-2.0 | **Ideas only.** Read test descriptions and parameters, cite Mueller & Piper (2014) |
 | PsyToolkit | GPL-3.0 / CC BY-NC-SA | **Ideas only** |
 
-Keep a `THIRD_PARTY.md` entry for any MIT/BSD code reused.
+Note the licence of any MIT/BSD code reused.
 
 ## Shared game rules
 

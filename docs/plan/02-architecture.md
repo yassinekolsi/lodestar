@@ -154,7 +154,7 @@ Pin these exactly (`==` in Python, exact versions in `package.json`, image tags 
 
 ```
 ai4brain/
-├── AGENTS.md  README.md  LICENSE (MIT)  THIRD_PARTY.md  docker-compose.yml  Makefile
+├── AGENTS.md  README.md  LICENSE (MIT)  docker-compose.yml  Makefile
 ├── registry/                    # source of truth for skills, games and LLM providers
 │   ├── dimensions.yaml
 │   ├── llm_providers.yaml       # provider ids, base URLs, default models, capabilities
