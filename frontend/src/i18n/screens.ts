@@ -149,7 +149,6 @@ const COPY = [
     'discute avec Lodestar, lance les jeux en texte et affiche ton profil et tes objectifs, avec les mêmes données que cette appli. Lance',
     'تحكي مع Lodestar، تلعب الألعاب النصية وتورّي الـprofil والأهداف متاعك، بنفس الـdonnées متاع هالتطبيق. شغّل',
   ],
-  ['lodestar login', 'lodestar login', 'lodestar login'],
   ['and paste your sign-in code.', 'et colle ton code de connexion.', 'وحطّ الـcode متاع الدخول.'],
   ['Show sign-in code', 'Afficher le code de connexion', 'ورّي الـcode متاع الدخول'],
   ['Hide', 'Masquer', 'خبّي'],

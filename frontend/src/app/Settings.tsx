@@ -733,7 +733,7 @@ function Terminal() {
         {t(
           'command chats with Lodestar, plays the text games and shows your profile and goals, from the same data as this app. Run',
         )}{' '}
-        <code>{t('lodestar login')}</code> {t('and paste your sign-in code.')}
+        <code>lodestar login</code> {t('and paste your sign-in code.')}
       </p>
       {code === null ? (
         <button

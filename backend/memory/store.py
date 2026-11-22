@@ -14,7 +14,7 @@ import uuid
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Any, Literal
+from typing import Any, Literal, cast
 from uuid import UUID
 
 from qdrant_client import AsyncQdrantClient, models
@@ -95,6 +95,11 @@ class _Candidate:
     point: Any
     collection: Literal["episodic", "facts"]
     score: float
+
+
+def _flat(vector: list[Any]) -> bool:
+    """A plain dense vector (not a multivector)."""
+    return all(isinstance(x, float | int) for x in vector)
 
 
 def _cos(a: Sequence[float], b: Sequence[float]) -> float:
@@ -518,7 +523,10 @@ class MemoryStore:
         hits = []
         for point in response.points:
             payload = point.payload or {}
-            vectors: dict[str, list[float]] = point.vector or {}
+            raw = point.vector if isinstance(point.vector, dict) else {}
+            vectors = {
+                k: cast(list[float], v) for k, v in raw.items() if isinstance(v, list) and _flat(v)
+            }
             if "gemini" in vectors:
                 if gq is None:
                     continue
