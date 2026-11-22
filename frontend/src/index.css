@@ -4520,7 +4520,7 @@ button.primary.pick__go {
 .setup {
   display: grid;
   grid-template-columns: minmax(18rem, 26rem) 1fr;
-  height: 100vh;
+  height: 100dvh;
   background: var(--color-bg);
 }
 .setup-list {
@@ -4621,7 +4621,7 @@ button.primary.pick__go {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  height: 100vh;
+  height: 100dvh;
   overflow: auto;
   background: var(--color-card);
 }
@@ -5161,4 +5161,82 @@ button.primary.pick__go {
 }
 .first-visit [role='alert'] {
   color: #b42318;
+}
+
+/* Phones (Android and iPhone) ------------------------------------------------------------------ */
+html,
+body {
+  overflow-x: clip;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+button,
+a,
+label,
+select {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation; /* no double-tap zoom delay */
+}
+.katex-display,
+pre {
+  max-width: 100%;
+  overflow-x: auto;
+}
+@media (max-width: 760px) {
+  /* iOS zooms into any field under 16px; keep them at 16px. */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+  /* The bottom tab bar sits above the iPhone home indicator. */
+  .rail {
+    height: calc(4rem + env(safe-area-inset-bottom));
+  }
+  .shell,
+  .shell--panel {
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom));
+  }
+  .composer {
+    bottom: calc(4rem + env(safe-area-inset-bottom));
+  }
+  .solo {
+    padding: calc(2rem + env(safe-area-inset-top)) 1rem calc(2rem + env(safe-area-inset-bottom));
+  }
+  .solo .card {
+    padding: 1.5rem 1.25rem;
+  }
+  .first-visit {
+    justify-content: flex-start;
+  }
+  .library-setup {
+    padding: 1.25rem 1rem;
+  }
+  .library-setup__heading,
+  .documents__heading,
+  .documents__actions {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .document-review__pages {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .document-review iframe {
+    height: 60dvh;
+  }
+  .feed,
+  .said,
+  .game-frame,
+  .card {
+    overflow-wrap: anywhere;
+  }
+  table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  button,
+  .rail__item {
+    min-height: 2.75rem;
+  }
 }
