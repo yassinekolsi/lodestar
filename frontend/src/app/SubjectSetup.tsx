@@ -59,7 +59,7 @@ export function SubjectSetup({ onDone }: { onDone: () => void }) {
   }
 
   return (
-    <main className="solo setup">
+    <main className="solo first-visit">
       <p className="brand brand--solo">
         <span className="brand__mark" aria-hidden="true" />
         Lodestar
