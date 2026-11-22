@@ -35,7 +35,7 @@ def test_seed_creates_a_consistent_demo_student_and_a_class(conn: Connection) ->
     measured = _count(conn, t.dimension_state, user_id)
     assert 0 < measured <= len(tracked_dims(registry))
     assert _count(conn, t.history, user_id) > 0
-    assert _count(conn, t.consent, user_id) == 7
+    assert _count(conn, t.consent, user_id) == 5
     assert _count(conn, t.goals, user_id) == 2
     assert _count(conn, t.experiments, user_id) == 2
     assert _count(conn, t.decisions, user_id) > 0

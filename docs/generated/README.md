@@ -8,7 +8,7 @@ Written by `make docs` from the registry and the code; `tests/backend/test_docs_
 - [Data policy](data-policy.md)
 - [Model cards](model-cards.md)
 
-## The 12 skills
+## The 16 skills
 
 | Skill | Plain meaning | Evidence | In overall |
 |---|---|---|---|
@@ -24,3 +24,7 @@ Written by `make docs` from the registry and the code; `tests/backend/test_docs_
 | [Expected value](dimensions/expectation.md) | The long-run average of a random variable | established | yes |
 | [Variance and standard deviation](dimensions/variance.md) | How spread out a random variable is around its mean | established | yes |
 | [The binomial distribution](dimensions/binomial.md) | Counting successes in independent tries with the same chance | established | yes |
+| [Continuous random variables](dimensions/continuous.md) | Probabilities as areas under a density curve | established | yes |
+| [The normal distribution](dimensions/normal.md) | The bell curve, its mean and spread, and the 68-95-99.7 rule | established | yes |
+| [z-scores and the standard normal](dimensions/z_scores.md) | Measuring distance from the mean in standard deviations, and reading Φ(z) | established | yes |
+| [The sample mean and the central limit theorem](dimensions/sample_mean.md) | Why averages are less spread out than single values, and nearly normal | established | yes |

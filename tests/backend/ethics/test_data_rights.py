@@ -138,7 +138,7 @@ async def test_consent_switches_are_logged_with_the_notice_version(
             .scalars()
             .all()
         )
-    assert len(rows) == 8  # seven at sign-up, one change
+    assert len(rows) == 6  # five at sign-up, one change
     assert rows[-1] == {
         "switch": "microphone",
         "granted": False,
