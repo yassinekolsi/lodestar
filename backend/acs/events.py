@@ -4,11 +4,9 @@ V  critical verification: every quiz answer with a "How sure?" reading: a succes
    your own answer well, sure when it is right and unsure when it is wrong (docs/plan/19).
 A  autonomy: every quiz answer, where hints are available: a success is getting it right without
    opening a hint first.
-I  iteration: a game played again after a failed round; a success is a better score. Also every
-   Guide the Robot item whose first try failed: a success is a changed retry that works.
+I  iteration: an exercise played again after a failed round; a success is a better score.
 R  responsible use: a suggested break; a success is not starting a new session within 10 minutes.
-C  clarification: every Guide the Robot and Teach Me item; a success is asking Lodestar first when
-   the request is ambiguous and not asking when it is clear.
+C  clarification: pushing back on Lodestar or asking when something is unclear.
 
 Pushing back on Lodestar's reading of a round (say, a noisy room) is a success for both V and I:
 the person checked the AI's claim and gave it something to correct.

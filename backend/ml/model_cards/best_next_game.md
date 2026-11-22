@@ -8,7 +8,7 @@ Gives `plan_next` a `bandit_gain` for each skill (weight 0.10, shown in every de
 
 ## How
 
-- **Reward.** The change in the Brain Twin estimate of the game's main skill, from the `twin.updated` events. A round measures what the person could do when it started, so each change is credited to the game played before it on the same skill.
+- **Reward.** The change in the learning profile estimate of the game's main skill, from the `twin.updated` events. A round measures what the person could do when it started, so each change is credited to the game played before it on the same skill.
 - **Everyone's prior.** One round's change is mostly measurement noise (about 0.3 logits against 0.02-0.05 of learning). So, for each skill, a least-squares fit across people relates how much their estimate moved after their first round of the skill to how many rounds of each game came before their last one. That gives each game's gain per round and its standard error; a skill needs 30 people with 3 or more rounds of it before its games get a prior. It is recomputed from the latest 50,000 rounds every 10 minutes.
 - **Each person.** A normal posterior per (person, game): the prior (with 0.01 for how far a person can differ), updated with the person's credited changes.
 - **Choice.** One sample per game; the best wins. Before there is a prior or 10 rounds of the person's own, `bandit_gain` is 0 and the game is picked as before.
@@ -24,7 +24,7 @@ The seed draws a whole new simulated world (every game's everyone-level rate), s
 ## Limits
 
 - The prior is a fit, not an experiment: in the app, people don't get games at random, so a game's estimated gain can carry some of who chooses it. The plan's own variety rules (no game twice in a row, skills chosen by uncertainty) keep the mix broad.
-- Gains are on the Brain Twin's scale for the game's main skill; secondary skills a game also trains are not counted.
+- Gains are on the learning profile's scale for the game's main skill; secondary skills a game also trains are not counted.
 
 ## Must not be used for
 

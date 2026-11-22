@@ -14,7 +14,7 @@ the range (AGENTS.md rule 5).
 Lumosity learning data (Steyvers & Schafer 2020, *Nature Human Behaviour*; https://osf.io/g9zkf/).
 1,084,854 learning curves (one per person and game family) from 36,297 players. One point per
 session in which the family was played. Scores are put on a population scale (0 = the family's
-first-session mean, 1 = its spread), close to a Brain Twin estimate. The OSF project states no
+first-session mean, 1 = its spread), close to a learning profile estimate. The OSF project states no
 licence: the data is used for research and this competition only, kept out of the repository and
 never redistributed. No demographic field is used.
 
@@ -66,7 +66,7 @@ Width and MAE are in population standard deviations.
 ## Limits
 
 - Lumosity players are mostly English-speaking adults who chose to train online; Lodestar's users,
-  games and scoring differ. In the app, the input is the Brain Twin estimate per day of practice,
+  games and scoring differ. In the app, the input is the learning profile estimate per day of practice,
   not a raw game score, and each skill is mapped to its closest Lumosity game family
   (`forecast_family` in registry/dimensions.yaml). Coverage on Lodestar users must be re-checked once
   pilot data exists.

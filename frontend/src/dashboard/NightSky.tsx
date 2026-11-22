@@ -200,7 +200,7 @@ export function NightSky({
         ref={svg}
         viewBox={`0 0 ${String(WIDTH)} ${String(HEIGHT)}`}
         role="group"
-        aria-label={t('Your Brain Twin: a map of your skills')}
+        aria-label={t('Your learning profile: a map of your concepts')}
         key={pulse}
       >
         <defs>

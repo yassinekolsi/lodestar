@@ -334,9 +334,9 @@ const COPY = [
     'كلّ شي هنا يقعد على هالـserveur. انسى سطر ويمشي؛ من الـParamètres تنجم تصدّر ولا تمسح كلّ شي.',
   ],
   [
-    'Your Brain Twin: a map of your skills',
-    'Ton Brain Twin : la carte de tes compétences',
-    'الـBrain Twin متاعك: خريطة مهاراتك',
+    'Your learning profile: a map of your concepts',
+    'Ton profil d’apprentissage : la carte de tes notions',
+    'الـprofil متاعك: خريطة الـnotions متاعك',
   ],
   [
     "The number is Lodestar's estimate and the bar under it the likely range; the softer the shadow, the less sure Lodestar is. Grey tags are skills not measured yet. Blue wires join skills that tend to go together. Drag any skill to move it. Dashed: experimental skills. Percentages use simulated norms.",

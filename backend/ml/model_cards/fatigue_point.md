@@ -18,7 +18,7 @@ Minutes into a session when this person's answers usually start to slow down, as
 
 ## Limits
 
-- Behaviour only: response times and right or wrong answers. It never uses the camera or the voice, and it never writes to the Brain Twin (docs/plan/12, AGENTS.md rule 3).
+- Behaviour only: response times and right or wrong answers. It never uses the voice, and it never writes to the learning profile (docs/plan/12, AGENTS.md rule 3).
 - Harder levels are slower too; the change test can mistake a run of hard items for slowing. The 0.5 SD threshold and the accuracy check guard against most of it.
 - Practice makes people faster over weeks, which shifts the usual time per game.
 

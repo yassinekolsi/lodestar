@@ -12,7 +12,7 @@ stalls:
 
 market_quantities: [one, two, three, half a kilo of, a kilo of, two kilos of, a bag of, a box of]
 
-# Common words by theme for Market List. A request for another theme (UW4: "football") is filled
+# Common words by theme for exercises that use a theme. A request for another theme (UW4: "football") is filled
 # by the LLM and checked for format and relevance; these lists are the fallback.
 word_themes:
   market: [apple, bread, cheese, olive, tomato, onion, carrot, lemon, rice, flour, sugar, honey, salt, egg, milk, butter, pepper, garlic, orange, grape, melon, bean, fish, chicken, coffee, tea, jam, oil, nut, peach]
