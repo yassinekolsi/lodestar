@@ -28,6 +28,7 @@ from backend.api import (
     voice,
 )
 from backend.api.llm import llm_factory_dep
+from backend.api.security import RateLimit, SecurityHeaders
 from backend.config import Settings, get_settings, qdrant_client
 from backend.db.engine import get_async_engine, libpq_url
 from backend.documents import library
@@ -133,6 +134,9 @@ def create_app(*, with_lifespan: bool = True) -> FastAPI:
     app.include_router(insights.router)
     # The language of every reply (backend/i18n.py): a header, or ?lang= on a WebSocket.
     app.add_middleware(LocaleMiddleware)
+    # Limits on what costs money or storage, and security headers (backend/api/security.py).
+    app.add_middleware(RateLimit)
+    app.add_middleware(SecurityHeaders)
     app.dependency_overrides[llm_factory_dep] = lambda: app.state.services.llm
     # The MCP tool server for the CLI (UW19), on the same runner as the web app's sessions.
     app.state.mcp = build_server(lambda: app.state.runner)

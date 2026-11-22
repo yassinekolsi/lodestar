@@ -64,8 +64,9 @@ def create_web(api: ASGIApp, web_dir: Path) -> ASGIApp:
 
 def _app() -> ASGIApp:
     from backend.api.main import app as api
+    from backend.api.security import SecurityHeaders
 
-    return create_web(api, Path(os.environ.get("LODESTAR_WEB_DIR", "web")))
+    return SecurityHeaders(create_web(api, Path(os.environ.get("LODESTAR_WEB_DIR", "web"))))
 
 
 app = _app()
