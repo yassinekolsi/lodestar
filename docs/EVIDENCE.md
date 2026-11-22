@@ -11,11 +11,11 @@ experiment).
 
 | It looks like… | What is actually there | Check |
 |---|---|---|
-| "The questions are generated, so they may be wrong" | The demo course's 67 questions, 36 misconceptions and their fixes were written and checked by the team. The loader rejects a question without exactly one right answer, an unknown misconception tag, or a prerequisite cycle. | `registry/courses/probability.yaml`, `backend/registry/course.py`, `tests/backend/agent/test_learning.py` |
+| "The questions are generated, so they may be wrong" | The demo course's 91 questions, 52 misconceptions and their fixes were written and checked by the team. The loader rejects a question without exactly one right answer, an unknown misconception tag, or a prerequisite cycle. | `registry/courses/probability.yaml`, `backend/registry/course.py`, `tests/backend/agent/test_learning.py` |
 | "The AI tutor can make things up" | Explanations are built from a facts packet: the notes section, the key ideas, the student's own data. A verifier rejects any number that isn't in a fact; without a model, a template quotes the notes. | `backend/agent/study_tools.py`, `backend/coach/verify.py` |
 | "The demo numbers are hand-written" | Every seeded answer is a real course question answered by a simulated student, and every estimate comes from the real scorer fed those answers in order. The plateau, the gap and the recurring misconception are computed, and a test checks all three. | `backend/db/seed.py`, `tests/backend/db/test_seed.py` |
 | "Needs a paid AI key" | No. A local Ollama model if one runs, fixed templates otherwise. Every screen of the demo works with neither. | `backend/llm/factory.py` |
-| "The gap rule is a heuristic nobody tested" | Experiment 13 plants a weak concept in simulated students: the rule finds it 72% of the time, against 24% for "practise your weakest concept", and fires for 5% of students with nothing planted. | `simulator/gap_eval.py` |
+| "The gap rule is a heuristic nobody tested" | Experiment 13 plants a weak concept in simulated students: the rule finds it 64% of the time, against 26% for "practise your weakest concept", and fires for 6% of students with nothing planted. | `simulator/gap_eval.py` |
 | "No real students" | True for Lodestar itself: a classroom pilot is planned, not done. The engagement model was trained and tested on real students (OULAD). | below |
 
 ## The claims
@@ -28,12 +28,12 @@ have informed routing fixes and are no longer an untouched held-out evaluation s
 
 | Claim | Evidence | Check |
 |---|---|---|
-| Finds why a concept won't stick | Gap rule: the deepest shaky prerequisite under a concept with low mastery (fairly surely low: the top of its 80% range under 50%). Experiment 13: 72% vs 24%. | `find_gap` in `backend/agent/learning.py`, `simulator/gap_eval.py` |
-| Names the misconception behind a wrong answer | 104 of the wrong options are tagged; the quiz shows the mix-up and its fix; the coach's **mistakes** tool counts them per student, and how many were made while sure | `frontend/src/games/quiz/plugin.ts`, `misconception_counts` |
+| Finds why a concept won't stick | Gap rule: the deepest shaky prerequisite under a concept with low mastery (fairly surely low: the top of its 80% range under 50%). Experiment 13: 64% vs 26%. | `find_gap` in `backend/agent/learning.py`, `simulator/gap_eval.py` |
+| Names the misconception behind a wrong answer | 141 of the wrong options are tagged; the quiz shows the mix-up and its fix; the coach's **mistakes** tool counts them per student, and how many were made while sure | `frontend/src/games/quiz/plugin.ts`, `misconception_counts` |
 | Explains from the student's own course | **teach** tool: notes section, key ideas, mastery, usual mix-up, shaky prerequisite, all as cited facts | `backend/agent/study_tools.py` |
 | Checks understanding, not only recall | Explain it back with a key-idea rubric (low weight, reliability 0.4, shown to the student) | `rubric_score`, `frontend/src/games/explain/plugin.ts` |
-| Honest uncertainty | Mastery with an 80% range everywhere; simulated ranges contain the true level 83.0% of the time | `backend/scoring/norms.py`, `make sim` |
-| Right difficulty | Balanced mode aims for 80% right; simulated students get 80.0% | `make sim` |
+| Honest uncertainty | Mastery with an 80% range everywhere; simulated ranges contain the true level 84.7% of the time | `backend/scoring/norms.py`, `make sim` |
+| Right difficulty | Balanced mode aims for 80% right; simulated students get 77.8% | `make sim` |
 | Comes back before it fades | Review after 1, 2, 5 or 10 days by mastery; uncertainty grows with time away | `review_due_in_days` |
 | Doesn't keep drilling what isn't working | Plateau (10 days, 40 answers, no trend) switches to explain it back with a new way to study | `backend/scoring/patterns.py`, `backend/agent/patterns.py` |
 | Rushed rounds don't count | Median answer under 2.5 s with low accuracy, or impossibly fast and right: precision and recall 1.00 on simulated clickers and cheaters | `backend/scoring/quality.py`, `make sim` |
@@ -48,11 +48,11 @@ sessions, through the real scorer (`make sim N=200`, seed 2026):
 
 | Check | Result | Target |
 |---|---|---|
-| Recovery of the true level after 10 sessions (mean r over 12 concepts) | 0.844 | > 0.80 |
-| Recovery after 1 and 3 sessions | 0.671, 0.666 | reported |
-| 80% ranges containing the true level (sessions 3 and 10) | 0.830 | 0.75–0.85 |
-| Success in Balanced mode | 0.800 | 0.80 ± 0.05 |
-| σ after placement, worst core concept | 0.858 | < 0.9 |
+| Recovery of the true level after 10 sessions (mean r over 16 concepts) | 0.833 | > 0.80 |
+| Recovery after 1 and 3 sessions | 0.681, 0.686 | reported |
+| 80% ranges containing the true level (sessions 3 and 10) | 0.847 | 0.75–0.85 |
+| Success in Balanced mode | 0.778 | 0.80 ± 0.05 |
+| σ after placement, worst core concept | 0.855 | < 0.9 |
 | Clickers and cheaters caught (precision / recall) | 1.00 / 1.00 | > 0.9 / > 0.8 |
 
 The targets of the cognitive-training version assumed 12-answer rounds; for a course, a round is 5

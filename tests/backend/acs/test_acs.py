@@ -52,10 +52,6 @@ def _trial(game: str, correct: bool, hints: int = 0) -> TrialEvent:
 
 
 def test_observations_from_play() -> None:
-    v = from_trials(
-        "spot_the_mistake", [_trial("spot_the_mistake", True), _trial("spot_the_mistake", False)]
-    )
-    assert [(o.component, o.success) for o in v] == [("V", True), ("V", False)]
     a = from_trials(
         "quiz_expectation",
         [_trial("quiz_expectation", True, 0), _trial("quiz_expectation", True, 2)],

@@ -110,7 +110,7 @@ class Game(Contract):
         default=False, description="A text version exists, so the CLI can play it (UW19)"
     )
     consent: ConsentSwitch | None = Field(
-        default=None, description="A consent switch this game needs, e.g. planted mistakes"
+        default=None, description="A consent switch this game needs"
     )
     themable: bool = Field(
         default=False, description="Its content can follow any theme the user asks for (UW4)"

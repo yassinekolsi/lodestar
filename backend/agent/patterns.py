@@ -41,6 +41,8 @@ STRATEGY = {
     "or a tree, and read the answer off the counts. Say which group you are dividing by.",
     "chapter_3": "Write the distribution as a small table of values and probabilities first, then "
     "compute from the table, one column at a time.",
+    "chapter_4": "Draw the curve first: mark the mean and one and two standard deviations on each "
+    "side, and shade the area the question asks for before you compute anything.",
 }
 DEFAULT_STRATEGY = (
     "Explain the idea out loud in your own words before answering, then check it on one example."
@@ -53,6 +55,8 @@ STRATEGY_FR = {
     "groupe tu divises.",
     "chapter_3": "Écris d'abord la loi comme un petit tableau de valeurs et de probabilités, puis "
     "calcule à partir du tableau, une colonne à la fois.",
+    "chapter_4": "Dessine d'abord la courbe : marque la moyenne et un et deux écarts-types de "
+    "chaque côté, et hachure l'aire demandée avant de calculer quoi que ce soit.",
 }
 DEFAULT_STRATEGY_FR = (
     "Explique l'idée à voix haute avec tes mots avant de répondre, puis vérifie-la sur un exemple."
@@ -64,6 +68,8 @@ STRATEGY_TN = {
     "arbre، واقرا الجواب من الأعداد. قول على أما groupe قاعد تقسم.",
     "chapter_3": "اكتب الloi في الأول كيف tableau صغير فيه القيم والprobabilités، ومن بعد احسب من "
     "الtableau، colonne بcolonne.",
+    "chapter_4": "ارسم الcourbe في الأول: علّم الmoyenne وécart-type واحد واثنين من كل جيهة، "
+    "وظلّل الaire اللي يطلبها السؤال قبل ما تحسب أي حاجة.",
 }
 DEFAULT_STRATEGY_TN = "فسّر الفكرة بصوت عالي بكلامك قبل ما تجاوب، ومن بعد ثبّتها على مثال واحد."
 

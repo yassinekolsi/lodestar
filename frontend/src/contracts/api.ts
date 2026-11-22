@@ -49,7 +49,7 @@ export interface paths {
     put?: never
     /**
      * Post Cues
-     * @description Each cue needs its own switch (camera, voice tone); a cue whose switch is off is refused.
+     * @description A cue needs its switch (voice tone); a cue whose switch is off is refused.
      *     Values are rounded to one decimal so only a coarse number is ever kept.
      */
     post: operations['post_cues_affect_cues_post']
@@ -976,7 +976,7 @@ export interface components {
     }
     /**
      * AffectBiometricCue
-     * @description A coarse camera or voice cue (WP3.5, WP3.9). Event log only: AGENTS.md rule 3.
+     * @description A coarse voice cue (WP3.9). Event log only: AGENTS.md rule 3.
      */
     AffectBiometricCue: {
       /**
@@ -1117,7 +1117,7 @@ export interface components {
       /** Frustration P */
       frustration_p: number
       /** Sources */
-      sources: ('behaviour' | 'camera' | 'voice')[]
+      sources: ('behaviour' | 'voice')[]
     }
     /** AssessmentContested */
     AssessmentContested: {
@@ -1219,12 +1219,6 @@ export interface components {
      *     Logged as `affect.biometric.cue`; nothing reads that event into the profile (rule 3).
      */
     BiometricCues: {
-      /**
-       * Strain Cue
-       * @description Camera, one per 10 s
-       * @default null
-       */
-      strain_cue: number | null
       /**
        * Voice Strain Cue
        * @description Voice, per utterance
@@ -1520,18 +1514,10 @@ export interface components {
       granted: boolean
       /** Notice Version */
       notice_version: string
-      /**
-       * Switch
-       * @enum {string}
-       */
+      /** Switch */
       switch:
-        | 'core'
-        | 'cloud_ai'
-        | 'microphone'
-        | 'camera'
-        | 'voice_tone'
-        | 'deliberate_mistakes'
-        | 'research_export'
+        | ('core' | 'cloud_ai' | 'microphone' | 'voice_tone' | 'research_export')
+        | ('camera' | 'deliberate_mistakes')
     }
     /** ConsentSwitchInfo */
     ConsentSwitchInfo: {
@@ -1541,14 +1527,7 @@ export interface components {
        * Id
        * @enum {string}
        */
-      id:
-        | 'core'
-        | 'cloud_ai'
-        | 'microphone'
-        | 'camera'
-        | 'voice_tone'
-        | 'deliberate_mistakes'
-        | 'research_export'
+      id: 'core' | 'cloud_ai' | 'microphone' | 'voice_tone' | 'research_export'
       /**
        * Plain
        * @description What the switch allows, in plain words
@@ -1742,11 +1721,6 @@ export interface components {
        * Format: uuid
        */
       session_id: string
-      /**
-       * Strain Cue
-       * @description Camera, one per 10 s
-       */
-      strain_cue?: number | null
       /**
        * Voice Strain Cue
        * @description Voice, per utterance
@@ -2441,19 +2415,9 @@ export interface components {
       code_source: string
       /**
        * Consent
-       * @description A consent switch this game needs, e.g. planted mistakes
+       * @description A consent switch this game needs
        */
-      consent?:
-        | (
-            | 'core'
-            | 'cloud_ai'
-            | 'microphone'
-            | 'camera'
-            | 'voice_tone'
-            | 'deliberate_mistakes'
-            | 'research_export'
-          )
-        | null
+      consent?: ('core' | 'cloud_ai' | 'microphone' | 'voice_tone' | 'research_export') | null
       /**
        * Content
        * @enum {string}
@@ -4122,14 +4086,7 @@ export interface components {
        * Id
        * @enum {string}
        */
-      id:
-        | 'core'
-        | 'cloud_ai'
-        | 'microphone'
-        | 'camera'
-        | 'voice_tone'
-        | 'deliberate_mistakes'
-        | 'research_export'
+      id: 'core' | 'cloud_ai' | 'microphone' | 'voice_tone' | 'research_export'
       /** Plain */
       plain: string
       /** Required */
@@ -4626,14 +4583,7 @@ export interface operations {
         authorization?: string | null
       }
       path: {
-        switch:
-          | 'core'
-          | 'cloud_ai'
-          | 'microphone'
-          | 'camera'
-          | 'voice_tone'
-          | 'deliberate_mistakes'
-          | 'research_export'
+        switch: 'core' | 'cloud_ai' | 'microphone' | 'voice_tone' | 'research_export'
       }
       cookie?: never
     }

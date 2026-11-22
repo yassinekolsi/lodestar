@@ -63,10 +63,10 @@ def test_slow_answers_read_as_fatigue() -> None:
 
 
 def test_optional_cues_never_outweigh_behaviour() -> None:
-    reading = estimate(_result(behaviour=BehaviourSignals()), 0.9, 0.0, cues=[("camera", 1.0)])
+    reading = estimate(_result(behaviour=BehaviourSignals()), 0.9, 0.0, cues=[("voice", 1.0)])
     assert reading.behaviour_weight == BEHAVIOUR_WEIGHT_MIN
     assert reading.frustration_p == pytest.approx(0.3)  # 0.7 x 0 + 0.3 x 1
-    assert reading.sources == ["behaviour", "camera"]
+    assert reading.sources == ["behaviour", "voice"]
 
 
 async def test_frustrated_play_eases_off_and_is_logged(

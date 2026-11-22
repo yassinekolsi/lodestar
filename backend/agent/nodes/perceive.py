@@ -85,7 +85,7 @@ async def read_profile_facts(ctx: LodestarContext, state: LodestarState) -> dict
             g
             for g in battery.games
             if registry.game(g).available
-            and registry.game(g).consent in (None, *ctx.consent)  # e.g. planted mistakes off
+            and registry.game(g).consent in (None, *ctx.consent)  # a game whose switch is off
         ]
         out["onboarding"] = games
         out["budget"] = state.budget.model_copy(update={"max_rounds": len(games)})

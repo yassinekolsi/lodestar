@@ -61,10 +61,10 @@ const BUILT_IN: { title: string; does: string; numbers: [string, string][] }[] =
 /** The last `make sim N=200` and `python -m simulator.gap_eval` runs: simulated students with
  * known true levels per concept, 10 sessions of four 5-question quizzes (docs/EVIDENCE.md). */
 const SIMULATOR: [string, string, string][] = [
-  ['Finds the true level after 10 sessions (correlation)', '0.84', 'above 0.80'],
-  ['80% ranges that contain the true level', '83%', '75% to 85%'],
-  ['Success rate in Balanced mode', '80%', 'about 80%'],
-  ['Finds a planted prerequisite gap', '72%', '"weakest first": 24%'],
+  ['Finds the true level after 10 sessions (correlation)', '0.83', 'above 0.80'],
+  ['80% ranges that contain the true level', '85%', '75% to 85%'],
+  ['Success rate in Balanced mode', '78%', 'about 80%'],
+  ['Finds a planted prerequisite gap', '64%', '"weakest first": 26%'],
   ['Clicking through quizzes caught (precision / recall)', '100% / 100%', 'above 90% / 80%'],
 ]
 
@@ -72,7 +72,7 @@ const RULES: [GlyphName, string][] = [
   ['shield', 'No labels about the person, ever. A check screens every reply for them.'],
   ['target', 'Every number the coach says comes from a cited fact.'],
   ['trend', 'Every prediction is shown as a range, never a single number.'],
-  ['ear', 'Camera and voice cues never change your profile or scores.'],
+  ['ear', 'Voice cues never change your profile or scores.'],
   ['database', 'Memory searches only ever see your own data.'],
   ['spark', 'Your AI key is encrypted, never logged, and shown only as its last 4 characters.'],
 ]

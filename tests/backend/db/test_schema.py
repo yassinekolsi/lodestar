@@ -115,7 +115,7 @@ def test_every_table_accepts_and_returns_a_row(conn: Connection) -> None:
             "user_id": user_id,
             "component": "V",
             "success": True,
-            "source": "spot_the_mistake",
+            "source": "quiz",
         },
         t.life_context: {
             "user_id": user_id,

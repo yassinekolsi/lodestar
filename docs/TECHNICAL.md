@@ -392,7 +392,7 @@ available: true
 | `kind` | `game`, `probe` (How sure are you?) or `story` (Detective) |
 | `dims` | loadings: how strongly each answer counts for each skill (0 to 1) |
 | `origin` | `classic` (a published paradigm rebuilt from its description), `original`, or `custom` (block games) |
-| `paradigm`, `code_source` | the research task it is based on, and any code it borrows ideas from (licences in `THIRD_PARTY.md`) |
+| `paradigm`, `code_source` | the research task it is based on, and any code it borrows ideas from |
 | `scoring` | `binary`, `hshs`, `span`, `continuous`, `rubric`, `style`, `calibration` or `none` (see [5.5](#55-scoring-rules)) |
 | `knobs` | difficulty parameters with their values at level 0 (easy) and level 1 (hard) |
 | `level_map` | how a level in 0..1 maps onto knob values (linear here) |

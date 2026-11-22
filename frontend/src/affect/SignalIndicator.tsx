@@ -5,11 +5,10 @@ import { activeSignals, stopSignal, subscribe, type CueSignal } from './cues'
 import { t } from '../i18n'
 
 const TEXT: Record<CueSignal, { label: string; switchId: string }> = {
-  camera: { label: 'Camera signal in use', switchId: 'camera' },
   voice: { label: 'Voice signal in use', switchId: 'voice_tone' },
 }
 
-/** Always on screen while a camera or voice signal is in use (docs/plan/12, rule 6), with a
+/** Always on screen while the voice signal is in use (docs/plan/12, rule 6), with a
  * one-tap way to turn it off. */
 export function SignalIndicator() {
   const signals = useSyncExternalStore(subscribe, activeSignals)

@@ -118,9 +118,7 @@ async def test_consent_switches_are_logged_with_the_notice_version(
         "core": True,
         "cloud_ai": False,
         "microphone": True,
-        "camera": False,
         "voice_tone": False,
-        "deliberate_mistakes": True,
         "research_export": False,
     }
     assert (
@@ -178,22 +176,20 @@ async def test_turning_cloud_ai_off_stops_it_at_once(
     assert len(fake.requests) == calls  # nothing went to the cloud provider
 
 
-async def test_planted_mistakes_switch_keeps_spot_the_mistake_out(
+async def test_a_game_behind_a_switched_off_switch_is_kept_out(
     app: FastAPI, aengine: AsyncEngine
 ) -> None:
     runner: SessionRunner = app.state.runner
     from dataclasses import replace
 
     registry = runner.services.registry
-    exercise = registry.game("quiz_conditional").model_copy(
-        update={"consent": "deliberate_mistakes"}
-    )
+    exercise = registry.game("quiz_conditional").model_copy(update={"consent": "voice_tone"})
     registry = registry.model_copy(
         update={"games": [exercise if game.id == exercise.id else game for game in registry.games]}
     )
     runner.services = replace(runner.services, registry=registry)
     user_id = await returning_user(aengine)
-    await grant(aengine, user_id, "deliberate_mistakes", granted=False)
+    await grant(aengine, user_id, "voice_tone", granted=False)
     session_id = await runner.create_session(user_id, "ui")
     events = await collect(
         runner, user_id, session_id, message="play Quiz: Conditional probability"

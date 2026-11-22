@@ -12,7 +12,7 @@ type Notice = Registry['consent']
 type Step = 'welcome' | 'age' | 'under' | 'consent' | 'coach'
 
 /** First visit (UW1): what Lodestar is, the age check, consent in plain words, and a coach. Nothing
- * is stored until the last step; the camera is never touched here. */
+ * is stored until the last step. */
 export function Onboarding({ onDone }: { onDone: () => void }) {
   const [step, setStep] = useState<Step>('welcome')
   const [notice, setNotice] = useState<Notice | null>(null)

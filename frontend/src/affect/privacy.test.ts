@@ -1,11 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { startCamera, strainFromBlendshapes, type FaceDetector } from './camera'
 import { HESITANT, STEADY, synthSpeech } from '../test/speechFixtures'
-import { activeSignals, sendCues } from './cues'
+import { sendCues } from './cues'
 import { BASELINE_N, finishTurn, framesFromSamples } from './voiceTone'
 
-/** Network test (WP3.5, WP3.9; docs/plan/12 rule 2): while the camera runs or tone is read,
+/** Network test (WP3.9; docs/plan/12 rule 2): while tone is read,
  * nothing at all leaves the browser; afterwards the only request is the coarse cue, one number
  * with one decimal. Every way out of the page is watched: fetch, XMLHttpRequest, WebSocket and
  * sendBeacon. */
@@ -45,71 +44,12 @@ afterEach(() => {
   fetchSpy.mockClear()
 })
 
-const close = vi.fn()
-
-function tenseFace(): FaceDetector {
-  const scores = {
-    browDownLeft: 0.5,
-    browDownRight: 0.5,
-    mouthPressLeft: 0.5,
-    mouthPressRight: 0.5,
-  }
-  return {
-    detectForVideo: () => ({
-      faceBlendshapes: [
-        {
-          categories: Object.entries(scores).map(([categoryName, score]) => ({
-            categoryName,
-            score,
-          })),
-        },
-      ],
-    }),
-    close,
-  }
-}
-
 function requests(): { url: string; body: unknown }[] {
   return fetchSpy.mock.calls.map(([url, init]) => ({
     url,
     body: JSON.parse(init?.body as string) as unknown,
   }))
 }
-
-describe('camera strain cues', () => {
-  it('reads brow furrow and mouth press as strain, a relaxed face as none', () => {
-    expect(strainFromBlendshapes({})).toBe(0)
-    const tense = strainFromBlendshapes({
-      browDownLeft: 0.6,
-      browDownRight: 0.6,
-      mouthPressLeft: 0.6,
-      mouthPressRight: 0.6,
-    })
-    expect(tense).toBeCloseTo(0.6)
-  })
-
-  it('sends no frames, only one coarse number', async () => {
-    const stop = await startCamera(tenseFace())
-    expect(activeSignals()).toEqual(['camera']) // the on-screen indicator reads this
-    await vi.advanceTimersByTimeAsync(25_000)
-    expect(fetchSpy).not.toHaveBeenCalled()
-    stop()
-    expect(activeSignals()).toEqual([])
-    expect(close).toHaveBeenCalled()
-
-    await sendCues(SESSION)
-    const sent = requests()
-    expect(sent).toHaveLength(1)
-    expect(sent[0]?.url).toBe('/api/affect/cues')
-    expect(sent[0]?.body).toEqual({ session_id: SESSION, strain_cue: 0.6, voice_strain_cue: null })
-    expect(xhrSpy).not.toHaveBeenCalled()
-    expect(wsSpy).not.toHaveBeenCalled()
-    expect(beaconSpy).not.toHaveBeenCalled()
-
-    await sendCues(SESSION) // nothing new: nothing sent
-    expect(fetchSpy).toHaveBeenCalledTimes(1)
-  })
-})
 
 describe('voice tone cues (WP3.9)', () => {
   it('keeps audio and features in the browser and sends only the coarse cue', async () => {
@@ -128,8 +68,7 @@ describe('voice tone cues (WP3.9)', () => {
     expect(sent).toHaveLength(1)
     expect(sent[0]?.url).toBe('/api/affect/cues')
     const body = sent[0]?.body as Record<string, unknown>
-    expect(Object.keys(body).sort()).toEqual(['session_id', 'strain_cue', 'voice_strain_cue'])
-    expect(body['strain_cue']).toBeNull()
+    expect(Object.keys(body).sort()).toEqual(['session_id', 'voice_strain_cue'])
     expect(body['voice_strain_cue']).toBe(Math.round((cue ?? 0) * 10) / 10)
     expect(xhrSpy).not.toHaveBeenCalled()
     expect(wsSpy).not.toHaveBeenCalled()

@@ -70,7 +70,7 @@ SMALL_TALK: list[tuple[re.Pattern[str], str]] = [
     ),
 ]
 SWITCHES = (
-    "The camera and microphone switches are in Settings, so you can see exactly what each one "
+    "The microphone and voice tone switches are in Settings, so you can see exactly what each one "
     "does before you turn it on."
 )
 WHICH_SKILL = (

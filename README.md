@@ -1,5 +1,20 @@
 # Lodestar: a study coach that finds why a concept won't stick
 
+**Live at [lodestar-2bej.onrender.com](https://lodestar-2bej.onrender.com/)**. Press "Demo person"
+to look around as Alex (free tier: the first load can take up to a minute).
+
+### Stack
+
+| Layer | What it runs on |
+|---|---|
+| **Frontend** | React 19 · TypeScript 6 · Vite 8 · Tailwind CSS 4 · jsPsych 8 · ECharts 6 · KaTeX |
+| **Backend** | Python 3.14 · FastAPI · Pydantic v2 · SQLAlchemy 2 + Alembic |
+| **Agent** | LangGraph 1.2 (Postgres checkpoints) · LangChain providers (Gemini, Claude, OpenAI, Ollama…) · MCP server + CLI |
+| **Data** | PostgreSQL 18 on Neon (event log, profiles, `jsonb`) · Qdrant Cloud (memory and notes search) · fastembed / Gemini embeddings |
+| **Models** | Kalman-Elo mastery with 80% ranges · LightGBM engagement model (OULAD) · conformal growth forecast |
+| **Languages** | English · French · Tunisian Arabic (Derja, right to left) |
+| **Deploy** | Docker · Render (one web service) · GitHub Actions CI |
+
 Lodestar is an AI study coach for a university course. It finds **which** concepts aren't sticking
 and **why**: often the gap is in a concept they build on. It explains them **from the student's own
 course notes**, quizzes at the right level, names the **misconception** behind a wrong answer, asks
@@ -108,7 +123,8 @@ coach, ethics) is in [docs/plan](docs/plan/README.md) and [docs/TECHNICAL.md](do
 ## The course
 
 The demo course is **Probability 1** ([registry/courses/probability.yaml](registry/courses/probability.yaml)):
-12 concepts in three chapters, 12 sections of notes, 67 questions, 104 wrong options tagged with 36
+16 concepts in four chapters (counting and events, conditional probability, random variables,
+continuous distributions), 16 sections of notes, 91 questions, 141 wrong options tagged with 52
 misconceptions, each with a fix. A course is data, not code: the loader turns each concept into a
 tracked skill with a quiz and an explain-it-back, and validates that every question has exactly one
 right answer, every tag exists and the prerequisites have no cycles.
@@ -120,9 +136,9 @@ session, through the real scorer (`make sim N=200`):
 
 | Check | Result | Target |
 |---|---|---|
-| Recovery of the true level after 10 sessions (correlation, mean over 12 concepts) | 0.84 (0.67 after 3) | > 0.80 |
-| 80% ranges containing the true level | 83.0% | 75–85% |
-| Success rate in Balanced mode | 80.0% | 80 ± 5% |
+| Recovery of the true level after 10 sessions (correlation, mean over 16 concepts) | 0.83 (0.69 after 3) | > 0.80 |
+| 80% ranges containing the true level | 84.7% | 75–85% |
+| Success rate in Balanced mode | 77.8% | 80 ± 5% |
 | Uncertainty after placement, worst core concept | σ 0.86 | < 0.9 |
 | Clicking through quizzes and impossible answers caught (precision / recall) | 1.00 / 1.00 | > 0.9 / > 0.8 |
 
@@ -132,9 +148,9 @@ solid. After 10 sessions:
 
 | | Found the planted gap |
 |---|---|
-| Lodestar's gap rule | **72%** (145/200) |
-| "Practise your weakest concept" | 24% (48/200) |
-| Gap named for students with nothing planted | 5% (10/200) |
+| Lodestar's gap rule | **64%** (128/200) |
+| "Practise your weakest concept" | 26% (53/200) |
+| Gap named for students with nothing planted | 6% (12/200) |
 
 **Real data:** the engagement model was trained on one set of real students and tested on others it
 never saw (OULAD, 25,273 students: AUC 0.857). The growth-forecast model was trained on 36,297
@@ -149,7 +165,7 @@ the French and Derja text by native-speaking students and a teacher.
 Lodestar speaks the languages Tunisian students study in. Pick one in the sidebar or in Settings,
 or open a link with `?lang=fr` or `?lang=tn`.
 
-- **French**: the interface, the whole course (notes, 67 questions, every option, explanation,
+- **French**: the interface, the whole course (notes, 91 questions, every option, explanation,
   key idea and misconception fix) and the coach's replies. Most Tunisian university courses are
   taught in French.
 - **Tunisian Arabic (Derja)**, right to left: the interface and the coach speak Derja, and the
@@ -179,8 +195,7 @@ make sim N=200   # the simulated-student checks above
 cd frontend && npx playwright test   # end-to-end, against the running stack
 ```
 
-Rules every contributor follows are in [AGENTS.md](AGENTS.md). Third-party code and licences:
-[THIRD_PARTY.md](THIRD_PARTY.md). Course notes follow the order of OpenStax Introductory Statistics
+Rules every contributor follows are in [AGENTS.md](AGENTS.md). Course notes follow the order of OpenStax Introductory Statistics
 2e (CC BY 4.0); notes and questions are the team's own.
 
 ## Licence

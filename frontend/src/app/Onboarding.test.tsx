@@ -7,7 +7,7 @@ const NOTICE = {
   age_minimum: 18,
   switches: [
     { id: 'core', title: 'Core practice data', required: true, default: true, plain: 'Needed.' },
-    { id: 'camera', title: 'Camera', required: false, default: false, plain: 'Off.' },
+    { id: 'voice_tone', title: 'Voice tone', required: false, default: false, plain: 'Off.' },
   ],
 }
 
@@ -67,6 +67,6 @@ test('core is locked on; the choices and coach are sent once, at the end', async
   expect(signup[0]?.body).toMatchObject({
     age_confirmed: true,
     persona: 'spark',
-    consent: { core: true, camera: false },
+    consent: { core: true, voice_tone: false },
   })
 })

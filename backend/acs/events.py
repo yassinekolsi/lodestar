@@ -1,8 +1,7 @@
 """Turn play into ACS observations (docs/plan/11, "Components and how we measure them").
 
 V  critical verification: every quiz answer with a "How sure?" reading: a success is checking
-   your own answer well, sure when it is right and unsure when it is wrong (docs/plan/19). Also
-   every Spot the AI's Mistake item, when that exercise is on.
+   your own answer well, sure when it is right and unsure when it is wrong (docs/plan/19).
 A  autonomy: every quiz answer, where hints are available: a success is getting it right without
    opening a hint first.
 I  iteration: a game played again after a failed round; a success is a better score. Also every
@@ -51,8 +50,6 @@ def from_trials(game_id: str, trials: Sequence[TrialEvent]) -> list[Observation]
             out.append(Observation("A", t.correct and t.hint_level == 0, "quiz"))
             if t.confidence is not None:
                 out.append(Observation("V", (t.confidence >= 0.75) == t.correct, "quiz"))
-        elif game_id == "spot_the_mistake":
-            out.append(Observation("V", t.correct, game_id))
         elif game_id == "pattern_gap":
             out.append(Observation("A", t.correct and t.hint_level == 0, game_id))
     return out

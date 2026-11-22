@@ -26,11 +26,11 @@ ConsentSwitch = Literal[
     "core",
     "cloud_ai",
     "microphone",
-    "camera",
     "voice_tone",
-    "deliberate_mistakes",
     "research_export",
 ]
+# Switches that were removed from the notice; only old consent.changed events still carry them.
+RetiredConsentSwitch = Literal["camera", "deliberate_mistakes"]
 PlayMode = Literal["assess", "train"]
 ProviderId = Literal[
     "anthropic",

@@ -1,13 +1,11 @@
 import { api } from '../api/client'
 
-/** Optional strain cues (docs/plan/12; WP3.5 camera, WP3.9 voice tone). Frames, audio and tone
- * features stay in this browser: the only thing that leaves it is one coarse number per signal
- * (0 to 1, one decimal), sent with the next round and only with that signal's switch on. */
-export type CueSignal = 'camera' | 'voice'
+/** Optional strain cue (docs/plan/12; WP3.9 voice tone). Audio and tone features stay in this
+ * browser: the only thing that leaves it is one coarse number (0 to 1, one decimal), sent with
+ * the next round and only with the voice tone switch on. */
+export type CueSignal = 'voice'
 
-const FIELD = { camera: 'strain_cue', voice: 'voice_strain_cue' } as const
-
-const latest: Record<CueSignal, number | null> = { camera: null, voice: null }
+const latest: Record<CueSignal, number | null> = { voice: null }
 const stoppers = new Map<CueSignal, () => void>()
 const listeners = new Set<() => void>()
 let snapshot: readonly CueSignal[] = []
@@ -54,13 +52,8 @@ export function subscribe(listener: () => void): () => void {
 
 /** Send the latest cues, if any, then forget them. A failure only loses the cue. */
 export async function sendCues(sessionId: string): Promise<void> {
-  if (latest.camera === null && latest.voice === null) return
-  const body = {
-    session_id: sessionId,
-    [FIELD.camera]: latest.camera,
-    [FIELD.voice]: latest.voice,
-  }
-  latest.camera = null
+  if (latest.voice === null) return
+  const body = { session_id: sessionId, voice_strain_cue: latest.voice }
   latest.voice = null
   try {
     await api.cues(body)

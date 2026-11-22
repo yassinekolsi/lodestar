@@ -54,7 +54,7 @@ STALENESS_CAP_DAYS = 21.0
 
 
 def allowed(game: Game, consent: frozenset[str] | None) -> bool:
-    """A game that needs a consent switch (planted mistakes) only runs with it on."""
+    """A game that needs a consent switch only runs with it on."""
     return game.consent is None or consent is None or game.consent in consent
 
 
@@ -1138,12 +1138,12 @@ async def monitor(state: LodestarState, runtime: Runtime[LodestarContext]) -> di
     accuracy = state.last_round.accuracy if state.last_round else None
     ctx = runtime.context
     fatigue_now = await session_fatigue(ctx)
-    # Easing and stopping follow behaviour alone. Optional camera and voice cues (fused at 0.3 at
+    # Easing and stopping follow behaviour alone. An optional voice cue (fused at 0.3 at
     # most) can only add a break suggestion and soften the coach's tone (docs/plan/12).
     behaviour = estimate(last, accuracy, fatigue_now)
     frustration, fatigue = behaviour.frustration_p, behaviour.fatigue_p
     cues: list[tuple[AffectSource, float]] = []
-    if last is not None and ctx.consent & {"camera", "voice_tone"}:
+    if last is not None and "voice_tone" in ctx.consent:
         async with ctx.services.engine.connect() as conn:
             since = now - CUE_WINDOW
             cues = await recent_cues(conn, ctx.user_id, ctx.session_id, since, ctx.consent)

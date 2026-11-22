@@ -1,5 +1,5 @@
-"""WP3.5 / WP3.9: coarse camera and voice cues. Each needs its own switch, only the coarse number
-is kept, it is fused at 0.3 at most, it can only add a break suggestion, and it never reaches the
+"""WP3.9: coarse voice cues. They need their own switch, only the coarse number
+is kept, a cue is fused at 0.3 at most, it can only add a break suggestion, and it never reaches the
 profile (AGENTS.md rule 3)."""
 
 from collections.abc import AsyncIterator
@@ -54,17 +54,15 @@ async def test_cues_need_their_own_switch_and_are_kept_coarse(
                 session_id=session_id, user_id=UUID(created["user_id"]), trigger="ui"
             )
         )
-    camera = {"session_id": session_id, "strain_cue": 0.437}
-    assert (await client.post("/affect/cues", json=camera, headers=headers)).status_code == 409
-    await client.put("/consent/camera", json={"granted": True}, headers=headers)
-    assert (await client.post("/affect/cues", json=camera, headers=headers)).status_code == 204
-    voice = {"session_id": session_id, "voice_strain_cue": 0.5}
+    voice = {"session_id": session_id, "voice_strain_cue": 0.437}
     assert (await client.post("/affect/cues", json=voice, headers=headers)).status_code == 409
+    await client.put("/consent/voice_tone", json={"granted": True}, headers=headers)
+    assert (await client.post("/affect/cues", json=voice, headers=headers)).status_code == 204
     empty = {"session_id": session_id}
     assert (await client.post("/affect/cues", json=empty, headers=headers)).status_code == 422
     other = (await client.post("/users", json={"age_confirmed": True, "consent": {}})).json()
     stranger = {"Authorization": f"Bearer {other['token']}"}
-    assert (await client.post("/affect/cues", json=camera, headers=stranger)).status_code == 404
+    assert (await client.post("/affect/cues", json=voice, headers=stranger)).status_code == 404
     async with aengine.connect() as conn:
         rows = (
             await conn.execute(
@@ -74,13 +72,13 @@ async def test_cues_need_their_own_switch_and_are_kept_coarse(
                 )
             )
         ).all()
-    assert [r.payload for r in rows] == [{"strain_cue": 0.4, "voice_strain_cue": None}]
+    assert [r.payload for r in rows] == [{"voice_strain_cue": 0.4}]
 
 
 async def _round(
     runner: Any, engine: AsyncEngine, cue: float | None
 ) -> tuple[list[dict[str, Any]], dict[str, Any], list[tuple[str, float, float]]]:
-    """Play a course round with rapid taps, with or without a camera cue.
+    """Play a course round with rapid taps, with or without a voice cue.
 
     Return events, the affect reading and the resulting profile.
     """
@@ -90,7 +88,7 @@ async def _round(
         )
     user_id = await returning_user(engine)
     async with engine.begin() as conn:
-        await set_consent(conn, user_id, REGISTRY.consent, "camera", True)
+        await set_consent(conn, user_id, REGISTRY.consent, "voice_tone", True)
     session_id = await runner.create_session(user_id, "ui")
     spec = interrupt_of(
         await collect(runner, user_id, session_id, message="play Quiz: Sample spaces and events")
@@ -103,7 +101,7 @@ async def _round(
                     user_id=user_id,
                     session_id=session_id,
                     ts=datetime.now(UTC),
-                    payload=BiometricCues(strain_cue=cue),
+                    payload=BiometricCues(voice_strain_cue=cue),
                 ),
             )
     events = await play(
@@ -135,7 +133,7 @@ async def test_a_cue_suggests_a_break_but_never_reaches_the_profile(
     cue_events, cued, cued_profile = await _round(runner, aengine, 1.0)
 
     assert calm["sources"] == ["behaviour"] and calm["frustration_p"] == pytest.approx(0.6)
-    assert cued["sources"] == ["behaviour", "camera"] and cued["behaviour_weight"] == 0.7
+    assert cued["sources"] == ["behaviour", "voice"] and cued["behaviour_weight"] == 0.7
     assert cued["frustration_p"] == pytest.approx(0.72)  # 0.7 x 0.6 + 0.3 x 1
     verdicts = [
         [e["chosen"] for e in evs if e["kind"] == "decision" and e["node"] == "monitor"]

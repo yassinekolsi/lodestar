@@ -2,8 +2,8 @@
 Lodestar acted on a frustration guess. They are training labels for the affect model (WP3.3)
 and go to the event log only.
 
-Coarse camera and voice cues (WP3.5, WP3.9) arrive here too: one number each, worked out in the
-browser. They need their own consent switch and go to the event log only (AGENTS.md rule 3)."""
+A coarse voice cue (WP3.9) arrives here too: one number, worked out in the browser. It needs
+its own consent switch and go to the event log only (AGENTS.md rule 3)."""
 
 from datetime import UTC, datetime
 from typing import Literal
@@ -78,7 +78,7 @@ async def post_label(body: LabelInput, user_id: CurrentUser, engine: Engine) -> 
 async def post_cues(
     body: CueInput, user_id: CurrentUser, engine: Engine, registry: RegistryDep
 ) -> None:
-    """Each cue needs its own switch (camera, voice tone); a cue whose switch is off is refused.
+    """A cue needs its switch (voice tone); a cue whose switch is off is refused.
     Values are rounded to one decimal so only a coarse number is ever kept."""
     sent = {k: v for k, v in body.model_dump(exclude={"session_id"}).items() if v is not None}
     if not sent:

@@ -10,7 +10,7 @@ from pydantic import Field
 
 from backend.contracts.common import Contract, Probability
 
-AffectSource = Literal["behaviour", "camera", "voice"]
+AffectSource = Literal["behaviour", "voice"]
 Mood = Literal["good", "ok", "tough"]
 
 BEHAVIOUR_WEIGHT_MIN = 0.7
@@ -33,12 +33,11 @@ class BiometricCues(Contract):
     """Coarse local cues, only when their consent switches are on. Never stored as raw data.
     Logged as `affect.biometric.cue`; nothing reads that event into the profile (rule 3)."""
 
-    strain_cue: Probability | None = Field(default=None, description="Camera, one per 10 s")
     voice_strain_cue: Probability | None = Field(default=None, description="Voice, per utterance")
 
 
-CUE_SWITCHES: dict[str, str] = {"strain_cue": "camera", "voice_strain_cue": "voice_tone"}
-CUE_SOURCES: dict[str, AffectSource] = {"strain_cue": "camera", "voice_strain_cue": "voice"}
+CUE_SWITCHES: dict[str, str] = {"voice_strain_cue": "voice_tone"}
+CUE_SOURCES: dict[str, AffectSource] = {"voice_strain_cue": "voice"}
 
 
 class AffectReading(Contract):

@@ -217,6 +217,7 @@ export const TN: Record<string, string> = {
   'Chapter 1 · Counting and events': 'Chapitre 1 · Dénombrement و événements',
   'Chapter 2 · Conditional probability': 'Chapitre 2 · Probabilité conditionnelle',
   'Chapter 3 · Random variables': 'Chapitre 3 · Variables aléatoires',
+  'Chapter 4 · Continuous distributions': 'Chapitre 4 · Lois continues',
   Other: 'أخرى',
 
   // Coach cards
@@ -375,18 +376,10 @@ export const TN: Record<string, string> = {
   'Talk to Lodestar instead of typing.': 'احكي مع Lodestar في بلاصة ما تكتب.',
   "Voice commands. Your browser's speech recognition may send the audio to its maker (for Chrome, Google). Audio is not kept.":
     'أوامر بالصوت. الnavigateur متاعك ينجم يبعث الصوت للشركة متاعو (لChrome، Google). الصوت ما يتحفظش.',
-  Camera: 'الكاميرا',
-  'Spot strain on this device. No images kept.': 'يلاحظ التعب على هالجهاز. حتى تصويرة ما تتحفظ.',
-  'Coarse "looks strained" cues worked out on this device only. No images leave it or are stored, and they never change your profile or scores.':
-    'علامات تقريبية متاع « يبان تعبان » تتحسب على هالجهاز برك. حتى تصويرة ما تخرج ولا تتحفظ، وعمرها ما تبدّل الprofil ولا الscores متاعك.',
   'Voice tone': 'نبرة الصوت',
   'Hear when you might need a break.': 'يحسّ وقتاش تنجم تستحق استراحة.',
   'Speaking speed and pauses, worked out on this device, to suggest a break. Never changes your profile or scores.':
     'سرعة الحكي والوقفات، تتحسب على هالجهاز، باش يقترح استراحة. عمرها ما تبدّل الprofil ولا الscores متاعك.',
-  'Games with planted mistakes': 'تمارين فيها غلطات بالقصد',
-  'Some games hide a mistake for you to find.': 'شوية تمارين يخبّيو غلطة باش تلقاها.',
-  "In Spot the AI's Mistake, Lodestar's worked answers sometimes contain a mistake on purpose, so you can practise checking AI. You're always told when a game does this.":
-    'في « لقى غلطة الIA »، الأجوبة متاع Lodestar ساعات فيها غلطة بالقصد، باش تتمرّن تثبّت في الIA. ديما نقولولك وقتاش تمرين يعمل هكا.',
   'Research export': 'Export للبحث',
   'Share anonymised results with the team.': 'شارك نتائج بلا هوية مع الفريق.',
   'Lets the team include your anonymised results in its evaluation of Lodestar.':

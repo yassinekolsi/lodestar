@@ -108,6 +108,41 @@ sections:
       E[X] = np et Var(X) = np(1 − p).
       Des tirages sans remise ne sont pas indépendants, donc ils ne suivent pas une loi binomiale.
       Exemple : 3 lancers équilibrés, P(exactement 2 piles) = C(3, 2) (1/2)² (1/2) = 3/8 (PPF, PFP, FPP).
+  "4.1":
+    title: Variables aléatoires continues
+    text: |
+      Une variable aléatoire continue peut prendre n'importe quelle valeur d'un intervalle : un temps d'attente, une taille, une température.
+      Sa loi est donnée par une courbe de densité f(x). Les probabilités sont des aires sous la courbe : P(a ≤ X ≤ b) est l'aire entre a et b.
+      La courbe n'est jamais en dessous de 0, et l'aire totale sous la courbe vaut 1.
+      Une valeur isolée a une probabilité nulle, car un trait n'a pas d'aire : P(X = a) = 0, donc P(X ≤ a) = P(X < a).
+      La hauteur f(x) n'est pas une probabilité, et elle peut dépasser 1. Si X suit la loi uniforme sur [0, 0.5], f(x) = 2 sur cet intervalle, et l'aire vaut bien 0.5 × 2 = 1.
+      Loi uniforme sur [a, b] : f(x) = 1/(b − a), donc P(c ≤ X ≤ d) = (d − c)/(b − a), la longueur du morceau divisée par la longueur totale.
+  "4.2":
+    title: La loi normale
+    text: |
+      La loi normale N(μ, σ²) a une densité symétrique en forme de cloche, centrée sur sa moyenne μ. L'écart-type σ règle sa largeur.
+      La moyenne, la médiane et le sommet sont tous en μ, donc la moitié de l'aire est de chaque côté de μ.
+      La règle 68-95-99.7 : environ 68 % des valeurs sont à moins de 1 σ de μ, environ 95 % à moins de 2 σ, et environ 99.7 % à moins de 3 σ. Le reste se partage également entre les deux queues : environ 16 % au-dessus de μ + σ, et environ 2.5 % au-dessus de μ + 2σ.
+      Changer μ fait glisser la courbe. Un σ plus grand la rend plus large et plus basse : l'aire totale reste 1.
+      N(μ, σ²) s'écrit avec la variance. N(10, 4) a une variance de 4 et un écart-type de 2.
+      Toutes les grandeurs ne sont pas normales : les revenus et les temps d'attente sont en général asymétriques.
+  "4.3":
+    title: Score z et loi normale centrée réduite
+    text: |
+      Un score z dit à combien d'écarts-types une valeur se trouve de la moyenne : z = (x − μ) / σ. On divise par σ, pas par σ².
+      Un z négatif est en dessous de la moyenne, un z positif au-dessus, et z = 0 est la moyenne elle-même.
+      Si X ~ N(μ, σ²), alors Z = (X − μ)/σ ~ N(0, 1), la loi normale centrée réduite : toute question sur une loi normale devient une question sur Z.
+      Une table donne Φ(z) = P(Z ≤ z), l'aire à gauche de z : Φ(1) ≈ 0.84, Φ(1.5) ≈ 0.93, Φ(2) ≈ 0.977.
+      L'aire à droite vaut 1 − Φ(z). Par symétrie, Φ(−z) = 1 − Φ(z).
+      Les scores z comparent des valeurs sur des échelles différentes : 80 à un test de moyenne 70 et σ = 5 (z = 2) est un meilleur résultat que 85 à un test de moyenne 75 et σ = 10 (z = 1).
+  "4.4":
+    title: La moyenne d'échantillon et le théorème central limite
+    text: |
+      On prend n valeurs indépendantes d'une même loi, de moyenne μ et d'écart-type σ. Leur moyenne est la moyenne d'échantillon X̄.
+      E[X̄] = μ : en moyenne, la moyenne d'échantillon tombe juste, quel que soit n.
+      Var(X̄) = σ²/n, donc l'écart-type de X̄ (l'erreur type) vaut σ/√n. Il diminue avec √n : quatre fois plus de données divisent la dispersion par deux.
+      Théorème central limite : pour n grand (souvent n ≥ 30 suffit), X̄ suit approximativement une loi normale, N(μ, σ²/n), quelle que soit la forme de la loi de départ.
+      Le théorème porte sur la moyenne, pas sur les valeurs elles-mêmes : les valeurs gardent leur propre forme, quel que soit leur nombre.
 
 concepts:
   sample_space:
@@ -637,3 +672,208 @@ concepts:
       bi5:
         stem: X ~ B(100, 0.5). Que vaut Var(X) ?
         explain: Var(X) = np(1 − p) = 100 × 0.5 × 0.5 = 25. La moyenne est 50 et l'écart-type est 5.
+
+  continuous:
+    name: Variables aléatoires continues
+    plain: Les probabilités comme des aires sous une courbe de densité
+    aliases: ["variable aléatoire continue", "variables aléatoires continues", "loi continue", "densité", "fonction de densité", "courbe de densité", "loi uniforme", "el densité", "الdensité", "الloi uniforme"]
+    key_ideas:
+      - les probabilités sont des aires sous la courbe de densité
+      - l'aire totale sous la courbe vaut 1
+      - une valeur isolée a une probabilité nulle
+      - la hauteur de la densité n'est pas une probabilité et peut dépasser 1
+    misconceptions:
+      density_as_probability:
+        text: Lire la hauteur de la densité f(x) comme la probabilité P(X = x)
+        fix: Les probabilités sont des aires sous la courbe. La hauteur seule n'est pas une probabilité, et une valeur isolée a une probabilité nulle.
+      point_probability_nonzero:
+        text: Penser qu'une valeur isolée a une probabilité non nulle, donc que P(X ≤ a) et P(X < a) diffèrent
+        fix: Un trait n'a pas d'aire, donc P(X = a) = 0 et les deux sont égales pour une variable continue.
+      density_at_most_one:
+        text: Penser qu'une densité ne peut jamais dépasser 1
+        fix: Seule l'aire doit valoir 1. Un intervalle étroit demande une courbe haute, comme 2 sur [0, 0.5].
+      forgets_total_length:
+        text: Prendre la longueur d'un morceau d'un intervalle uniforme sans la diviser par la longueur totale
+        fix: Pour une loi uniforme, probabilité = longueur du morceau ÷ longueur de tout l'intervalle.
+    questions:
+      ct1:
+        stem: Laquelle de ces grandeurs est le mieux décrite par une variable aléatoire continue ?
+        options:
+          - Le temps avant l'arrivée du prochain bus
+          - Le nombre de piles en 10 lancers de pièce
+          - Le nombre d'étudiants dans une classe
+          - La somme de deux dés
+        explain: Un temps peut prendre n'importe quelle valeur d'un intervalle. Les trois autres sont des comptages, donc discrets.
+      ct2:
+        stem: X suit la loi uniforme sur [0, 10]. Que vaut P(2 ≤ X ≤ 5) ?
+        explain: Le morceau de 2 à 5 a une longueur de 3, sur un intervalle de longueur 10, donc 3/10 = 0.3.
+      ct3:
+        stem: X est une variable aléatoire continue. Que vaut P(X = 4) ?
+        options: ["0", "f(4), la hauteur de la densité en 4", "La moitié de P(X ≤ 4)", "1"]
+        explain: Une valeur isolée est un trait sous la courbe, et un trait n'a pas d'aire, donc sa probabilité est nulle.
+      ct4:
+        stem: X suit la loi uniforme sur [0, 0.5]. Quelle est la hauteur de sa densité ?
+        options: ["2", "1, car une densité ne peut pas dépasser 1", "0.5", "0.25"]
+        explain: L'aire doit valoir 1 et la largeur est 0.5, donc la hauteur est 1 ÷ 0.5 = 2.
+      ct5:
+        stem: X est continue et P(X ≤ 3) = 0.6. Que vaut P(X < 3) ?
+        options: ["0.6", "Un peu moins de 0.6, car on retire P(X = 3)", "0.4", "0.5"]
+        explain: P(X = 3) = 0 pour une variable continue, donc retirer la valeur 3 ne change rien.
+      ct6:
+        stem: X suit la loi uniforme sur [2, 6]. Que vaut P(X > 5) ?
+        explain: Le morceau de 5 à 6 a une longueur de 1, sur un intervalle de longueur 6 − 2 = 4, donc 1/4.
+
+  normal:
+    name: La loi normale
+    plain: La courbe en cloche, sa moyenne, sa dispersion et la règle 68-95-99.7
+    aliases: ["loi normale", "la loi normale", "courbe en cloche", "loi de gauss", "gaussienne", "courbe de gauss", "règle 68-95-99.7", "el normale", "el loi normale", "الloi normale", "التوزيع الطبيعي"]
+    key_ideas:
+      - la courbe normale est symétrique et centrée sur sa moyenne
+      - l'écart-type règle la largeur de la courbe
+      - environ 68 %, 95 % et 99.7 % des valeurs sont à moins de 1, 2 et 3 écarts-types de la moyenne
+      - le reste se partage également entre les deux queues
+    misconceptions:
+      normal_param_confusion:
+        text: Lire le second nombre de N(μ, σ²) comme l'écart-type
+        fix: N(μ, σ²) s'écrit avec la variance. Prends sa racine carrée pour obtenir σ.
+      rule_misremembered:
+        text: Mélanger les pourcentages 68, 95 et 99.7, ou le nombre d'écarts-types qui va avec chacun
+        fix: 1 σ fait 68 %, 2 σ font 95 %, 3 σ font 99.7 %. Dessine la courbe et marque μ ± σ et μ ± 2σ avant de répondre.
+      one_sided_rule:
+        text: Oublier que ce qui est en dehors de μ ± kσ se partage entre les deux queues
+        fix: 5 % est en dehors de μ ± 2σ, donc 2.5 % de chaque côté. Hachure le côté que demande la question.
+      wider_is_taller:
+        text: Penser qu'un écart-type plus grand rend la courbe plus haute ou lui donne plus d'aire
+        fix: L'aire vaut toujours 1. Une courbe plus large doit être plus basse.
+    questions:
+      no1:
+        stem: Les tailles X suivent une loi normale de moyenne 170 cm. Que vaut P(X > 170) ?
+        explain: La courbe normale est symétrique autour de sa moyenne, donc la moitié de l'aire est au-dessus de 170.
+      no2:
+        stem: Les notes d'un examen suivent une loi normale de moyenne 60 et d'écart-type 10. Environ quelle part des notes est entre 50 et 70 ?
+        options: ["Environ 68 %", "Environ 95 %", "Environ 34 %", "Environ 50 %"]
+        explain: De 50 à 70, c'est la moyenne ± 1 écart-type, qui contient environ 68 % des valeurs. 34 %, c'est un seul côté.
+      no3:
+        stem: X ~ N(10, 4). Quel est l'écart-type de X ?
+        explain: Le 4 de N(10, 4) est la variance, donc σ = √4 = 2.
+      no4:
+        stem: Les notes d'un examen suivent une loi normale de moyenne 60 et d'écart-type 10. Environ quelle part des notes est au-dessus de 80 ?
+        options: ["Environ 2.5 %", "Environ 5 %", "Environ 16 %", "Environ 95 %"]
+        explain: 80 est à 2 écarts-types au-dessus de la moyenne. 5 % est en dehors de μ ± 2σ, partagé également, donc 2.5 % au-dessus de 80.
+      no5:
+        stem: Deux courbes normales ont la même moyenne, et B a le plus grand écart-type. Qu'est-ce qui est vrai ?
+        options:
+          - La courbe de B est plus large et plus basse, et les deux ont une aire totale de 1
+          - La courbe de B est plus large et plus haute
+          - La courbe de B a une plus grande aire totale
+          - La courbe de B est centrée plus à droite
+        explain: Étaler la même aire de 1 sur une plage plus large rend la courbe plus basse. C'est la moyenne, pas σ, qui fixe le centre.
+      no6:
+        stem: X suit une loi normale de moyenne 100 et d'écart-type 15. Environ combien vaut P(X < 85) ?
+        options: ["Environ 16 %", "Environ 32 %", "Environ 34 %", "Environ 68 %"]
+        explain: 85 est à 1 écart-type en dessous de la moyenne. 32 % est en dehors de μ ± σ, moitié de chaque côté, donc environ 16 %.
+
+  z_scores:
+    name: Score z et loi normale centrée réduite
+    plain: Mesurer l'écart à la moyenne en écarts-types, et lire Φ(z)
+    aliases: ["score z", "scores z", "z-score", "cote z", "centrer réduire", "centrée réduite", "loi normale centrée réduite", "variable centrée réduite", "table de la loi normale", "el centrée réduite", "الcentrée réduite"]
+    key_ideas:
+      - un score z est l'écart à la moyenne compté en écarts-types
+      - "z = (x − μ) / σ, en divisant par l'écart-type"
+      - Φ(z) est l'aire à gauche de z, et l'aire à droite vaut 1 − Φ(z)
+      - les scores z comparent des valeurs mesurées sur des échelles différentes
+    misconceptions:
+      divides_by_variance:
+        text: Diviser par la variance au lieu de l'écart-type
+        fix: z = (x − μ) / σ. Si on te donne σ², prends d'abord sa racine carrée.
+      left_right_area:
+        text: Lire Φ(z) comme l'aire à droite de z, ou oublier de le retirer de 1
+        fix: Φ(z) est toujours l'aire à gauche. Pour « plus que », prends 1 − Φ(z) ; pour un z négatif, Φ(−z) = 1 − Φ(z).
+      raw_score_compare:
+        text: Comparer des notes brutes venant de tests de moyennes et de dispersions différentes
+        fix: Transforme d'abord chaque note en score z ; le plus grand z est le meilleur résultat par rapport à son propre groupe.
+      z_sign_error:
+        text: Se tromper de signe pour z
+        fix: Calcule toujours x − μ, la valeur moins la moyenne. En dessous de la moyenne, z est négatif.
+    questions:
+      zs1:
+        stem: Des notes ont une moyenne de 50 et un écart-type de 5. Quel est le score z d'une note de 60 ?
+        explain: z = (60 − 50) / 5 = 2. La note est à 2 écarts-types au-dessus de la moyenne.
+      zs2:
+        stem: X ~ N(20, 9). Quel est le score z de x = 14 ?
+        options: ["−2", "Environ −0.67", "2", "−6"]
+        explain: σ = √9 = 3, donc z = (14 − 20) / 3 = −2.
+      zs3:
+        stem: Φ(1) ≈ 0.84. Que vaut P(Z > 1) ?
+        options: ["Environ 0.16", "Environ 0.84", "Environ 0.34", "Environ 0.68"]
+        explain: Φ(1) est l'aire à gauche de 1, donc l'aire à droite vaut 1 − 0.84 = 0.16.
+      zs4:
+        stem: Φ(1) ≈ 0.84. Que vaut P(Z < −1) ?
+        options: ["Environ 0.16", "Environ 0.84", "Environ −0.84", "0"]
+        explain: Par symétrie, l'aire à gauche de −1 est égale à l'aire à droite de 1, soit 1 − 0.84 = 0.16.
+      zs5:
+        stem: Amira obtient 80 à un test de moyenne 70 et d'écart-type 5. Karim obtient 85 à un test de moyenne 75 et d'écart-type 10. Qui a le mieux réussi par rapport à son propre groupe ?
+        options:
+          - Amira, avec z = 2 contre z = 1
+          - Karim, car 85 est plus que 80
+          - Aucun des deux, ils sont tous deux à 10 points au-dessus de leur moyenne
+          - On ne peut pas le dire sans toutes les notes
+        explain: Amira est à (80 − 70) / 5 = 2 écarts-types au-dessus de sa moyenne, Karim à (85 − 75) / 10 = 1.
+      zs6:
+        stem: X suit une loi normale de moyenne 500 et d'écart-type 100, et Φ(1.5) ≈ 0.93. Que vaut P(X > 650) ?
+        options: ["Environ 0.07", "Environ 0.93", "Environ 0.49", "Environ 0.43"]
+        explain: z = (650 − 500) / 100 = 1.5, et l'aire à droite vaut 1 − 0.93 = 0.07.
+
+  sample_mean:
+    name: La moyenne d'échantillon et le théorème central limite
+    plain: Pourquoi une moyenne varie moins qu'une valeur seule, et suit presque une loi normale
+    aliases: ["moyenne d'échantillon", "moyenne empirique", "théorème central limite", "théorème de la limite centrale", "tcl", "erreur type", "erreur standard", "loi de la moyenne", "el tcl", "الthéorème central limite"]
+    key_ideas:
+      - la moyenne d'échantillon a la même moyenne que les valeurs
+      - "son écart-type est σ / √n, donc il diminue quand n grandit"
+      - pour n grand, la moyenne d'échantillon suit approximativement une loi normale
+      - le théorème porte sur la moyenne, pas sur les valeurs elles-mêmes
+    misconceptions:
+      se_divides_by_n:
+        text: Diviser σ par n au lieu de √n
+        fix: C'est la variance qui est divisée par n, donc l'écart-type est divisé par √n.
+      clt_individual:
+        text: Penser que les valeurs elles-mêmes deviennent normales quand n est grand
+        fix: Seule la moyenne devient presque normale. Chaque valeur garde la forme qu'elle avait.
+      sample_mean_spread_same:
+        text: Penser qu'une moyenne de nombreuses valeurs est aussi dispersée qu'une seule valeur
+        fix: Les hauts et les bas se compensent dans une moyenne, donc elle varie moins, d'un facteur √n.
+      mean_changes_with_n:
+        text: Penser que l'espérance de la moyenne d'échantillon dépend de n
+        fix: E[X̄] = μ pour tout n. Seule la dispersion change avec n.
+    questions:
+      sm1:
+        stem: Des valeurs ont une moyenne de 40. Tu fais la moyenne de n = 25 d'entre elles. Que vaut E[X̄] ?
+        explain: La moyenne d'échantillon tombe juste en moyenne, donc E[X̄] = μ = 40 quel que soit n.
+      sm2:
+        stem: Des valeurs ont un écart-type σ = 10, et tu fais la moyenne de n = 25 d'entre elles. Quel est l'écart-type de X̄ ?
+        explain: σ / √n = 10 / 5 = 2. (4 est la variance de X̄, 10² / 25.)
+      sm3:
+        stem: Que dit le théorème central limite sur un grand échantillon ?
+        options:
+          - La moyenne d'échantillon suit approximativement une loi normale
+          - Les valeurs elles-mêmes suivent approximativement une loi normale
+          - La moyenne d'échantillon est exactement égale à μ
+          - Les valeurs arrêtent de varier
+        explain: Le théorème porte sur la moyenne. Les valeurs elles-mêmes gardent leur propre forme.
+      sm4:
+        stem: Pour diviser par deux l'écart-type de X̄, comment doit changer la taille d'échantillon n ?
+        options: ["La multiplier par 4", "La multiplier par 2", "Elle ne peut pas changer, c'est toujours σ", "La diviser par 2"]
+        explain: L'écart-type vaut σ / √n, et √(4n) = 2√n, donc quatre fois plus de données le divisent par deux.
+      sm5:
+        stem: Des temps d'attente sont asymétriques, de moyenne 8 minutes et d'écart-type 6. Que peut-on dire de la moyenne de 36 attentes ?
+        options:
+          - Elle suit à peu près une loi normale de moyenne 8 et d'écart-type 1, donc environ 95 % de ces moyennes tombent entre 6 et 10
+          - Elle est asymétrique comme les attentes elles-mêmes
+          - Elle suit à peu près une loi normale d'écart-type 6
+          - Elle suit à peu près une loi normale d'écart-type 1/6
+        explain: Avec n = 36 le théorème central limite s'applique, et l'écart-type vaut 6 / √36 = 1. La moyenne ± 2 donne 6 à 10.
+      sm6:
+        stem: Des bouteilles contiennent en moyenne 500 mL, avec un écart-type de 20 mL. Φ(2) ≈ 0.977. Pour un carton de 16 bouteilles, que vaut P(moyenne < 490 mL) ?
+        options: ["Environ 0.023", "Environ 0.31", "Presque 0", "Environ 0.977"]
+        explain: La moyenne a un écart-type de 20 / √16 = 5, donc z = (490 − 500) / 5 = −2 et l'aire à gauche vaut 1 − 0.977 = 0.023.

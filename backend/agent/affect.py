@@ -4,8 +4,8 @@
 What it can do: ease difficulty, switch to a lighter game, suggest a break, soften the coach's
 tone. What it can't do: change the profile or appear in any score (AGENTS.md rule 3).
 
-Optional camera and voice cues (WP3.5, WP3.9) are fused at weight 0.3 at most:
-affect = 0.7 x behaviour + 0.3 x mean(cues). They only add a break suggestion and soften the
+An optional voice cue (WP3.9) is fused at weight 0.3 at most:
+affect = 0.7 x behaviour + 0.3 x cue. They only add a break suggestion and soften the
 coach's tone; easing and stopping follow behaviour alone (monitor in backend/agent/nodes/play.py).
 """
 
@@ -91,7 +91,7 @@ async def recent_cues(
     since: datetime,
     consent: frozenset[str],
 ) -> list[tuple[AffectSource, float]]:
-    """The latest camera and voice cue of this session since `since`, for switches still on."""
+    """The latest voice cue of this session since `since`, if its switch is still on."""
     rows = await conn.execute(
         select(t.events.c.payload)
         .where(
@@ -105,4 +105,8 @@ async def recent_cues(
     latest: dict[str, float] = {}
     for (payload,) in rows:
         latest.update({k: v for k, v in payload.items() if v is not None})
-    return [(CUE_SOURCES[k], float(v)) for k, v in latest.items() if CUE_SWITCHES[k] in consent]
+    return [
+        (CUE_SOURCES[k], float(v))
+        for k, v in latest.items()
+        if k in CUE_SWITCHES and CUE_SWITCHES[k] in consent  # old camera cues are skipped
+    ]

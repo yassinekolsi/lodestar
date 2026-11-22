@@ -52,6 +52,7 @@ TAUGHT = {
     "sample_space": 0, "counting": 3, "equally_likely": 6, "addition_rule": 9,
     "conditional": 12, "independence": 16, "total_probability": 19, "bayes": 22,
     "random_variables": 26, "expectation": 29, "variance": 33, "binomial": 99,
+    "continuous": 99, "normal": 99, "z_scores": 99, "sample_mean": 99,
 }  # fmt: skip
 
 # Alex's true level per concept (logit scale) at the start and at the end of the five weeks.
@@ -60,6 +61,8 @@ ALEX_TRUE = {
     "addition_rule": (0.3, 1.0), "conditional": (-0.45, -0.45), "independence": (0.0, 0.5),
     "total_probability": (-0.1, 0.3), "bayes": (-1.5, -1.5), "random_variables": (0.6, 0.9),
     "expectation": (0.3, 0.6), "variance": (0.0, 0.0), "binomial": (0.0, 0.0),
+    "continuous": (0.0, 0.0), "normal": (0.0, 0.0), "z_scores": (0.0, 0.0),
+    "sample_mean": (0.0, 0.0),
 }  # fmt: skip
 # The wrong answers Alex tends to pick when one of them is on offer.
 ALEX_HABITS = {"inverse_conditional": 0.85, "base_rate_neglect": 0.7, "conditional_as_joint": 0.6,
@@ -71,6 +74,7 @@ LIFE = [("short nights", -20, 3), ("cold", -9, 3), ("exam week", EXAM_IN_DAYS, 6
 HARD_TIMES = {"short nights", "cold"}
 
 # Classmates: the class finds the same things hard (chapter 2), each with their own habits.
+# Chapter 4 is not taught yet in the five weeks seeded, so it has no class level.
 CLASS_MISCONCEPTIONS = ["inverse_conditional", "base_rate_neglect", "double_count_union",
                         "gamblers_fallacy", "order_confusion", "exclusive_independent",
                         "average_unweighted", "variance_linear"]  # fmt: skip
@@ -289,8 +293,8 @@ def _simulate(
 
 def _consent(conn: Connection, registry: Registry, user_id: UUID, at: datetime) -> None:
     switches = [
-        ("core", True), ("cloud_ai", False), ("microphone", True), ("camera", False),
-        ("voice_tone", False), ("deliberate_mistakes", True), ("research_export", False),
+        ("core", True), ("cloud_ai", False), ("microphone", True), ("voice_tone", False),
+        ("research_export", False),
     ]  # fmt: skip
     conn.execute(insert(t.consent), [dict(
                 user_id=user_id, switch=switch, granted=granted,

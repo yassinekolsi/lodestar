@@ -67,6 +67,7 @@ const INDIRECT = [
   'Chapter 1 · Counting and events',
   'Chapter 2 · Conditional probability',
   'Chapter 3 · Random variables',
+  'Chapter 4 · Continuous distributions',
   'A calm mentor',
   'An energetic trainer',
   'A factual analyst',
@@ -74,7 +75,6 @@ const INDIRECT = [
   'Core practice data',
   'Cloud AI',
   'Microphone',
-  'Camera',
   'Voice tone',
   'Research export',
 ]

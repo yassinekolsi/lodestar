@@ -19,6 +19,10 @@ PLAN_DIMENSIONS = {
     "bayes",
     "random_variables",
     "expectation",
+    "continuous",
+    "normal",
+    "z_scores",
+    "sample_mean",
 }
 
 # docs/plan/06, "Core set".

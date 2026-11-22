@@ -15,7 +15,7 @@ id: probability
 name: Probability 1
 audience: First-year university
 source:
-  title: Written by the team, following the order of OpenStax Introductory Statistics 2e, chapters 3 and 4
+  title: Written by the team, following the order of OpenStax Introductory Statistics 2e, chapters 3 to 7
   url: https://openstax.org/details/books/introductory-statistics-2e
   license: CC BY 4.0 (OpenStax); notes and questions are the team's own
 
@@ -116,6 +116,41 @@ sections:
       E[X] = np and Var(X) = np(1 − p).
       Draws without replacement are not independent, so they are not binomial.
       Example: 3 fair flips, P(exactly 2 heads) = C(3, 2) (1/2)² (1/2) = 3/8 (HHT, HTH, THH).
+  - id: "4.1"
+    title: Continuous random variables
+    text: |
+      A continuous random variable can take any value in an interval: a waiting time, a height, a temperature.
+      Its distribution is a density curve f(x). Probabilities are areas under the curve: P(a ≤ X ≤ b) is the area between a and b.
+      The curve is never below 0, and the total area under it is 1.
+      A single value has probability 0, because a line has no area: P(X = a) = 0, so P(X ≤ a) = P(X < a).
+      The height f(x) is not a probability, and it can be above 1. If X is uniform on [0, 0.5], f(x) = 2 on that interval, and the area is still 0.5 × 2 = 1.
+      Uniform on [a, b]: f(x) = 1/(b − a), so P(c ≤ X ≤ d) = (d − c)/(b − a), the length of the piece divided by the whole length.
+  - id: "4.2"
+    title: The normal distribution
+    text: |
+      The normal distribution N(μ, σ²) has a symmetric, bell-shaped density centred on its mean μ. The standard deviation σ sets its width.
+      The mean, the median and the peak are all at μ, so half of the area is on each side of μ.
+      The 68-95-99.7 rule: about 68% of values lie within 1 σ of μ, about 95% within 2 σ, and about 99.7% within 3 σ. What is left over is split evenly between the two tails: about 16% lies above μ + σ, and about 2.5% above μ + 2σ.
+      Changing μ slides the curve along. A larger σ makes it wider and lower: the total area stays 1.
+      N(μ, σ²) is written with the variance. N(10, 4) has variance 4 and standard deviation 2.
+      Not every quantity is normal: incomes and waiting times are usually skewed.
+  - id: "4.3"
+    title: z-scores and the standard normal
+    text: |
+      A z-score says how many standard deviations a value is from the mean: z = (x − μ) / σ. Divide by σ, not by σ².
+      A negative z is below the mean, a positive z above it, and z = 0 is the mean itself.
+      If X ~ N(μ, σ²), then Z = (X − μ)/σ ~ N(0, 1), the standard normal, so every normal question becomes a question about Z.
+      A table gives Φ(z) = P(Z ≤ z), the area to the left of z: Φ(1) ≈ 0.84, Φ(1.5) ≈ 0.93, Φ(2) ≈ 0.977.
+      The area to the right is 1 − Φ(z). By symmetry, Φ(−z) = 1 − Φ(z).
+      z-scores compare values on different scales: 80 on a test with mean 70 and σ = 5 (z = 2) is a better result than 85 on a test with mean 75 and σ = 10 (z = 1).
+  - id: "4.4"
+    title: The sample mean and the central limit theorem
+    text: |
+      Take n independent values from the same distribution, with mean μ and standard deviation σ. Their average is the sample mean X̄.
+      E[X̄] = μ: on average the sample mean is right, whatever n is.
+      Var(X̄) = σ²/n, so the standard deviation of X̄ (the standard error) is σ/√n. It shrinks with √n: four times as much data halves the spread.
+      Central limit theorem: for large n (often n ≥ 30 is enough), X̄ is approximately normal, N(μ, σ²/n), whatever the shape of the original distribution.
+      The theorem is about the average, not the individual values: the values keep their own shape however many you collect.
 
 concepts:
   - id: sample_space
@@ -1193,3 +1228,384 @@ concepts:
             misconception: variance_sd_confusion
           - text: "0.25"
         explain: Var(X) = np(1 − p) = 100 × 0.5 × 0.5 = 25. The mean is 50 and the standard deviation is 5.
+
+  - id: continuous
+    name: Continuous random variables
+    plain: Probabilities as areas under a density curve
+    aliases: ["continuous random variable", "continuous random variables", "continuous", "density", "density curve", "uniform distribution", "uniform"]
+    section: "4.1"
+    requires: [random_variables]
+    key_ideas:
+      - probabilities are areas under the density curve
+      - the total area under the curve is 1
+      - a single value has probability 0
+      - the height of the density is not a probability and can be above 1
+    misconceptions:
+      - id: density_as_probability
+        text: Reading the height of the density f(x) as the probability P(X = x)
+        fix: Probabilities are areas under the curve. The height alone is not a probability, and one value has probability 0.
+      - id: point_probability_nonzero
+        text: Thinking a single value has a probability above 0, so that P(X ≤ a) and P(X < a) differ
+        fix: A line has no area, so P(X = a) = 0 and the two are equal for a continuous variable.
+      - id: density_at_most_one
+        text: Thinking a density can never be above 1
+        fix: Only the area must be 1. A narrow interval needs a tall curve, like 2 on [0, 0.5].
+      - id: forgets_total_length
+        text: Using the length of a piece of a uniform interval without dividing by the whole length
+        fix: For a uniform variable, probability = length of the piece ÷ length of the whole interval.
+    questions:
+      - id: ct1
+        level: 0.2
+        stem: Which of these is best described by a continuous random variable?
+        options:
+          - text: The time until the next bus arrives
+            correct: true
+          - text: The number of heads in 10 coin flips
+          - text: The number of students in a class
+          - text: The total of two dice
+        explain: A time can take any value in an interval. The other three are counts, so they are discrete.
+      - id: ct2
+        level: 0.35
+        stem: X is uniform on [0, 10]. What is P(2 ≤ X ≤ 5)?
+        options:
+          - text: "0.3"
+            correct: true
+          - text: "3"
+            misconception: forgets_total_length
+          - text: "0.5"
+          - text: "0.2"
+        explain: The piece from 2 to 5 has length 3, out of a whole interval of length 10, so 3/10 = 0.3.
+      - id: ct3
+        level: 0.45
+        stem: X is a continuous random variable. What is P(X = 4)?
+        options:
+          - text: "0"
+            correct: true
+          - text: f(4), the height of the density at 4
+            misconception: density_as_probability
+          - text: Half of P(X ≤ 4)
+          - text: "1"
+        explain: A single value is a line under the curve, and a line has no area, so its probability is 0.
+      - id: ct4
+        level: 0.55
+        stem: X is uniform on [0, 0.5]. What is the height of its density?
+        options:
+          - text: "2"
+            correct: true
+          - text: 1, because a density can't be above 1
+            misconception: density_at_most_one
+          - text: "0.5"
+          - text: "0.25"
+        explain: The area must be 1 and the width is 0.5, so the height is 1 ÷ 0.5 = 2.
+      - id: ct5
+        level: 0.7
+        stem: X is continuous and P(X ≤ 3) = 0.6. What is P(X < 3)?
+        options:
+          - text: "0.6"
+            correct: true
+          - text: A little less than 0.6, because P(X = 3) is taken away
+            misconception: point_probability_nonzero
+          - text: "0.4"
+          - text: "0.5"
+        explain: P(X = 3) = 0 for a continuous variable, so leaving out the value 3 changes nothing.
+      - id: ct6
+        level: 0.85
+        stem: X is uniform on [2, 6]. What is P(X > 5)?
+        options:
+          - text: "0.25"
+            correct: true
+          - text: "1"
+            misconception: forgets_total_length
+          - text: "1/6"
+          - text: "0.75"
+        explain: The piece from 5 to 6 has length 1, out of a whole interval of length 6 − 2 = 4, so 1/4.
+
+  - id: normal
+    name: The normal distribution
+    plain: The bell curve, its mean and spread, and the 68-95-99.7 rule
+    aliases: ["normal distribution", "the normal distribution", "normal curve", "bell curve", "gaussian", "68-95-99.7", "empirical rule"]
+    section: "4.2"
+    requires: [continuous, variance]
+    key_ideas:
+      - the normal curve is symmetric and centred on its mean
+      - the standard deviation sets how wide the curve is
+      - about 68%, 95% and 99.7% of values lie within 1, 2 and 3 standard deviations of the mean
+      - what is left over is split evenly between the two tails
+    misconceptions:
+      - id: normal_param_confusion
+        text: Reading the second number in N(μ, σ²) as the standard deviation
+        fix: N(μ, σ²) is written with the variance. Take its square root to get σ.
+      - id: rule_misremembered
+        text: Mixing up the 68, 95 and 99.7 percentages, or how many standard deviations each one goes with
+        fix: 1 σ is 68%, 2 σ is 95%, 3 σ is 99.7%. Draw the curve and mark μ ± σ and μ ± 2σ before answering.
+      - id: one_sided_rule
+        text: Forgetting that what lies outside μ ± kσ is split between the two tails
+        fix: 5% lies outside μ ± 2σ, so 2.5% on each side. Shade the side the question asks about.
+      - id: wider_is_taller
+        text: Thinking a larger standard deviation makes the curve taller or gives it more area
+        fix: The area is always 1. A wider curve has to be lower.
+    questions:
+      - id: no1
+        level: 0.2
+        stem: Heights X are normal with mean 170 cm. What is P(X > 170)?
+        options:
+          - text: "0.5"
+            correct: true
+          - text: "0.68"
+            misconception: rule_misremembered
+          - text: "0"
+          - text: "1"
+        explain: The normal curve is symmetric around its mean, so half of the area is above 170.
+      - id: no2
+        level: 0.35
+        stem: Exam marks are normal with mean 60 and standard deviation 10. About what share of marks are between 50 and 70?
+        options:
+          - text: About 68%
+            correct: true
+          - text: About 95%
+            misconception: rule_misremembered
+          - text: About 34%
+            misconception: one_sided_rule
+          - text: About 50%
+        explain: 50 to 70 is the mean ± 1 standard deviation, which holds about 68% of the values. 34% is only one side.
+      - id: no3
+        level: 0.5
+        stem: X ~ N(10, 4). What is the standard deviation of X?
+        options:
+          - text: "2"
+            correct: true
+          - text: "4"
+            misconception: normal_param_confusion
+          - text: "16"
+          - text: "10"
+        explain: The 4 in N(10, 4) is the variance, so σ = √4 = 2.
+      - id: no4
+        level: 0.6
+        stem: Exam marks are normal with mean 60 and standard deviation 10. About what share of marks are above 80?
+        options:
+          - text: About 2.5%
+            correct: true
+          - text: About 5%
+            misconception: one_sided_rule
+          - text: About 16%
+            misconception: rule_misremembered
+          - text: About 95%
+        explain: 80 is 2 standard deviations above the mean. 5% lies outside μ ± 2σ, split evenly, so 2.5% is above 80.
+      - id: no5
+        level: 0.75
+        stem: Two normal curves have the same mean, and B has the larger standard deviation. Which is true?
+        options:
+          - text: B's curve is wider and lower, and both have total area 1
+            correct: true
+          - text: B's curve is wider and taller
+            misconception: wider_is_taller
+          - text: B's curve has more total area
+            misconception: wider_is_taller
+          - text: B's curve is centred further to the right
+        explain: Spreading the same area of 1 over a wider range makes the curve lower. The mean, not σ, sets the centre.
+      - id: no6
+        level: 0.85
+        stem: X is normal with mean 100 and standard deviation 15. About what is P(X < 85)?
+        options:
+          - text: About 16%
+            correct: true
+          - text: About 32%
+            misconception: one_sided_rule
+          - text: About 34%
+          - text: About 68%
+            misconception: rule_misremembered
+        explain: 85 is 1 standard deviation below the mean. 32% lies outside μ ± σ, half of it on each side, so about 16%.
+
+  - id: z_scores
+    name: z-scores and the standard normal
+    plain: Measuring distance from the mean in standard deviations, and reading Φ(z)
+    aliases: ["z-score", "z-scores", "z score", "z scores", "standard normal", "standardizing", "standardising", "phi(z)"]
+    section: "4.3"
+    requires: [normal]
+    key_ideas:
+      - a z-score is the distance from the mean in standard deviations
+      - "z = (x − μ) / σ, dividing by the standard deviation"
+      - Φ(z) is the area to the left of z, and the area to the right is 1 − Φ(z)
+      - z-scores compare values measured on different scales
+    misconceptions:
+      - id: divides_by_variance
+        text: Dividing by the variance instead of the standard deviation
+        fix: z = (x − μ) / σ. If you are given σ², take its square root first.
+      - id: left_right_area
+        text: Reading Φ(z) as the area to the right of z, or forgetting to take it from 1
+        fix: Φ(z) is always the area to the left. For "more than", use 1 − Φ(z); for a negative z, Φ(−z) = 1 − Φ(z).
+      - id: raw_score_compare
+        text: Comparing raw scores from tests with different means and spreads
+        fix: Turn each score into a z-score first; the larger z is the better result compared with its own group.
+      - id: z_sign_error
+        text: Getting the sign of z the wrong way round
+        fix: Always compute x − μ, value minus mean. Below the mean gives a negative z.
+    questions:
+      - id: zs1
+        level: 0.2
+        stem: Marks have mean 50 and standard deviation 5. What is the z-score of a mark of 60?
+        options:
+          - text: "2"
+            correct: true
+          - text: "−2"
+            misconception: z_sign_error
+          - text: "0.4"
+            misconception: divides_by_variance
+          - text: "10"
+        explain: z = (60 − 50) / 5 = 2. The mark is 2 standard deviations above the mean.
+      - id: zs2
+        level: 0.35
+        stem: X ~ N(20, 9). What is the z-score of x = 14?
+        options:
+          - text: "−2"
+            correct: true
+          - text: About −0.67
+            misconception: divides_by_variance
+          - text: "2"
+            misconception: z_sign_error
+          - text: "−6"
+        explain: σ = √9 = 3, so z = (14 − 20) / 3 = −2.
+      - id: zs3
+        level: 0.5
+        stem: Φ(1) ≈ 0.84. What is P(Z > 1)?
+        options:
+          - text: About 0.16
+            correct: true
+          - text: About 0.84
+            misconception: left_right_area
+          - text: About 0.34
+          - text: About 0.68
+        explain: Φ(1) is the area to the left of 1, so the area to the right is 1 − 0.84 = 0.16.
+      - id: zs4
+        level: 0.6
+        stem: Φ(1) ≈ 0.84. What is P(Z < −1)?
+        options:
+          - text: About 0.16
+            correct: true
+          - text: About 0.84
+            misconception: left_right_area
+          - text: About −0.84
+          - text: "0"
+        explain: By symmetry, the area to the left of −1 equals the area to the right of 1, which is 1 − 0.84 = 0.16.
+      - id: zs5
+        level: 0.75
+        stem: Amira scores 80 on a test with mean 70 and standard deviation 5. Karim scores 85 on a test with mean 75 and standard deviation 10. Who did better compared with their own group?
+        options:
+          - text: Amira, with z = 2 against z = 1
+            correct: true
+          - text: Karim, because 85 is more than 80
+            misconception: raw_score_compare
+          - text: Neither, both are 10 points above their mean
+            misconception: raw_score_compare
+          - text: It can't be told without every mark
+        explain: Amira is (80 − 70) / 5 = 2 standard deviations above her mean, Karim (85 − 75) / 10 = 1.
+      - id: zs6
+        level: 0.85
+        stem: X is normal with mean 500 and standard deviation 100, and Φ(1.5) ≈ 0.93. What is P(X > 650)?
+        options:
+          - text: About 0.07
+            correct: true
+          - text: About 0.93
+            misconception: left_right_area
+          - text: About 0.49
+            misconception: divides_by_variance
+          - text: About 0.43
+        explain: z = (650 − 500) / 100 = 1.5, and the area to the right is 1 − 0.93 = 0.07.
+
+  - id: sample_mean
+    name: The sample mean and the central limit theorem
+    plain: Why averages are less spread out than single values, and nearly normal
+    aliases: ["sample mean", "the sample mean", "central limit theorem", "clt", "standard error", "average of a sample", "sampling distribution"]
+    section: "4.4"
+    requires: [expectation, variance, z_scores]
+    key_ideas:
+      - the sample mean has the same mean as the values
+      - "its standard deviation is σ / √n, so it shrinks as n grows"
+      - for large n the sample mean is approximately normal
+      - the theorem is about the average, not the individual values
+    misconceptions:
+      - id: se_divides_by_n
+        text: Dividing σ by n instead of by √n
+        fix: The variance is divided by n, so the standard deviation is divided by √n.
+      - id: clt_individual
+        text: Thinking the individual values become normal when n is large
+        fix: Only the average becomes nearly normal. Each value keeps the shape it had.
+      - id: sample_mean_spread_same
+        text: Thinking an average of many values is as spread out as a single value
+        fix: Highs and lows cancel out in an average, so it varies less, by a factor of √n.
+      - id: mean_changes_with_n
+        text: Thinking the expected value of the sample mean depends on n
+        fix: E[X̄] = μ for every n. Only the spread changes with n.
+    questions:
+      - id: sm1
+        level: 0.25
+        stem: Values have mean 40. You average n = 25 of them. What is E[X̄]?
+        options:
+          - text: "40"
+            correct: true
+          - text: "1.6"
+            misconception: mean_changes_with_n
+          - text: "8"
+            misconception: mean_changes_with_n
+          - text: "1,000"
+        explain: The sample mean is right on average, so E[X̄] = μ = 40 whatever n is.
+      - id: sm2
+        level: 0.4
+        stem: Values have standard deviation σ = 10, and you average n = 25 of them. What is the standard deviation of X̄?
+        options:
+          - text: "2"
+            correct: true
+          - text: "0.4"
+            misconception: se_divides_by_n
+          - text: "10"
+            misconception: sample_mean_spread_same
+          - text: "4"
+        explain: σ / √n = 10 / 5 = 2. (4 is the variance of X̄, 10² / 25.)
+      - id: sm3
+        level: 0.5
+        stem: What does the central limit theorem say about a large sample?
+        options:
+          - text: The sample mean is approximately normal
+            correct: true
+          - text: The individual values become approximately normal
+            misconception: clt_individual
+          - text: The sample mean is exactly equal to μ
+          - text: The values stop varying
+        explain: The theorem is about the average. The values themselves keep their own shape.
+      - id: sm4
+        level: 0.6
+        stem: To halve the standard deviation of X̄, how must the sample size n change?
+        options:
+          - text: Multiply it by 4
+            correct: true
+          - text: Multiply it by 2
+            misconception: se_divides_by_n
+          - text: It can't change, it is always σ
+            misconception: sample_mean_spread_same
+          - text: Divide it by 2
+        explain: The standard deviation is σ / √n, and √(4n) = 2√n, so four times the data halves it.
+      - id: sm5
+        level: 0.75
+        stem: Waiting times are skewed, with mean 8 minutes and standard deviation 6. What can be said about the average of 36 waits?
+        options:
+          - text: It is roughly normal with mean 8 and standard deviation 1, so about 95% of such averages fall between 6 and 10
+            correct: true
+          - text: It is skewed like the waits themselves
+            misconception: clt_individual
+          - text: It is roughly normal with standard deviation 6
+            misconception: sample_mean_spread_same
+          - text: It is roughly normal with standard deviation 1/6
+            misconception: se_divides_by_n
+        explain: With n = 36 the central limit theorem applies, and the standard deviation is 6 / √36 = 1. The mean ± 2 gives 6 to 10.
+      - id: sm6
+        level: 0.85
+        stem: Bottles hold on average 500 mL, with standard deviation 20 mL. Φ(2) ≈ 0.977. For a box of 16 bottles, what is P(average < 490 mL)?
+        options:
+          - text: About 0.023
+            correct: true
+          - text: About 0.31
+            misconception: sample_mean_spread_same
+          - text: Almost 0
+            misconception: se_divides_by_n
+          - text: About 0.977
+        explain: The average has standard deviation 20 / √16 = 5, so z = (490 − 500) / 5 = −2 and the area to the left is 1 − 0.977 = 0.023.

@@ -221,6 +221,7 @@ export const FR: Record<string, string> = {
   'Chapter 1 · Counting and events': 'Chapitre 1 · Dénombrement et événements',
   'Chapter 2 · Conditional probability': 'Chapitre 2 · Probabilité conditionnelle',
   'Chapter 3 · Random variables': 'Chapitre 3 · Variables aléatoires',
+  'Chapter 4 · Continuous distributions': 'Chapitre 4 · Lois continues',
   Other: 'Autre',
 
   // Coach cards
@@ -386,19 +387,10 @@ export const FR: Record<string, string> = {
   'Talk to Lodestar instead of typing.': 'Parler à Lodestar au lieu d’écrire.',
   "Voice commands. Your browser's speech recognition may send the audio to its maker (for Chrome, Google). Audio is not kept.":
     'Commandes vocales. La reconnaissance vocale de ton navigateur peut envoyer l’audio à son éditeur (pour Chrome, Google). L’audio n’est pas conservé.',
-  Camera: 'Caméra',
-  'Spot strain on this device. No images kept.':
-    'Repérer la fatigue sur cet appareil. Aucune image gardée.',
-  'Coarse "looks strained" cues worked out on this device only. No images leave it or are stored, and they never change your profile or scores.':
-    'Des indices grossiers de « fatigue » calculés uniquement sur cet appareil. Aucune image n’en sort ni n’est stockée, et ils ne changent jamais ton profil ni tes scores.',
   'Voice tone': 'Ton de la voix',
   'Hear when you might need a break.': 'Entendre quand tu as peut-être besoin d’une pause.',
   'Speaking speed and pauses, worked out on this device, to suggest a break. Never changes your profile or scores.':
     'La vitesse de parole et les pauses, calculées sur cet appareil, pour proposer une pause. Ne change jamais ton profil ni tes scores.',
-  'Games with planted mistakes': 'Exercices avec erreurs volontaires',
-  'Some games hide a mistake for you to find.': 'Certains exercices cachent une erreur à trouver.',
-  "In Spot the AI's Mistake, Lodestar's worked answers sometimes contain a mistake on purpose, so you can practise checking AI. You're always told when a game does this.":
-    'Dans « Trouve l’erreur de l’IA », les corrigés de Lodestar contiennent parfois une erreur exprès, pour que tu t’entraînes à vérifier l’IA. On te prévient toujours quand un exercice fait ça.',
   'Research export': 'Export pour la recherche',
   'Share anonymised results with the team.': 'Partager des résultats anonymisés avec l’équipe.',
   'Lets the team include your anonymised results in its evaluation of Lodestar.':

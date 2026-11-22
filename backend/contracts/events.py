@@ -17,6 +17,7 @@ from backend.contracts.common import (
     DimensionId,
     Persona,
     ProviderId,
+    RetiredConsentSwitch,
     SuccessMode,
     Trigger,
 )
@@ -80,7 +81,7 @@ class ExperimentPayload(Contract):
 
 
 class ConsentPayload(Contract):
-    switch: ConsentSwitch
+    switch: ConsentSwitch | RetiredConsentSwitch
     granted: bool
     notice_version: str
 
@@ -207,7 +208,7 @@ class AffectLabelled(_Envelope):
 
 
 class AffectBiometricCue(_Envelope):
-    """A coarse camera or voice cue (WP3.5, WP3.9). Event log only: AGENTS.md rule 3."""
+    """A coarse voice cue (WP3.9). Event log only: AGENTS.md rule 3."""
 
     type: Literal["affect.biometric.cue"] = "affect.biometric.cue"
     payload: BiometricCues
