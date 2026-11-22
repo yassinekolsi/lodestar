@@ -24,7 +24,13 @@ BANNED: tuple[tuple[str, str], ...] = (
     (r"iq", "skill estimate"),
     (r"brain\s+age|mental\s+age", "skill estimate"),
     (r"abnormal\w*", "outside the typical range"),
-    (r"normal", "typical range"),
+    # The statistics term is fine ("the normal distribution", "approximately normal with mean 5");
+    # "normal" about a person or a score is not.
+    (
+        r"(?<!approximately )(?<!roughly )(?<!nearly )(?<!standard )normal"
+        r"(?!\s+(?:distributions?|curves?|approximation|table|density|law|with\s+mean)|\.md)",
+        "typical range",
+    ),
     (r"your\s+brain\s+is", "your results show"),
     (
         r"(attention|memory|focus|learning|concentration)\s+(problems?|issues?|difficult(y|ies))",

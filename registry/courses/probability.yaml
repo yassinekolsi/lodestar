@@ -133,7 +133,7 @@ sections:
       The 68-95-99.7 rule: about 68% of values lie within 1 σ of μ, about 95% within 2 σ, and about 99.7% within 3 σ. What is left over is split evenly between the two tails: about 16% lies above μ + σ, and about 2.5% above μ + 2σ.
       Changing μ slides the curve along. A larger σ makes it wider and lower: the total area stays 1.
       N(μ, σ²) is written with the variance. N(10, 4) has variance 4 and standard deviation 2.
-      Not every quantity is normal: incomes and waiting times are usually skewed.
+      Not every quantity follows a normal distribution: incomes and waiting times are usually skewed.
   - id: "4.3"
     title: z-scores and the standard normal
     text: |
