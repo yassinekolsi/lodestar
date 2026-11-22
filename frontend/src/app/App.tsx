@@ -299,11 +299,6 @@ export function App() {
   if (needsSubject) {
     return (
       <SubjectSetup
-        onAsk={(message) => {
-          setNeedsSubject(false)
-          dash.refresh()
-          askFromPanel(message)
-        }}
         onDone={() => {
           setNeedsSubject(false)
           dash.refresh()

@@ -1,5 +1,17 @@
 ﻿/** Student library copy, shared by the French and Derja dictionaries. */
 const COPY = [
+  ['How do you want to start?', 'Comment veux-tu commencer ?', 'كيفاش تحبّ تبدا؟'],
+  [
+    'Study from your own course chapters, or look around with a demo person first.',
+    'Révise à partir de tes propres chapitres, ou découvre d’abord avec une personne de démo.',
+    'راجع من الـchapitres متاعك، ولا اكتشف في الأول مع personne متاع démo.',
+  ],
+  ['Import documents', 'Importer des documents', 'زيد documents'],
+  ['Explore as a guest', 'Explorer en invité', 'اكتشف كـinvité'],
+  ['Where do these files go?', 'Où ranger ces fichiers ?', 'وين نحطّو الملفات هاذم؟'],
+  ['Upload and start', 'Envoyer et commencer', 'ابعث وابدا'],
+  ['Uploading…', 'Envoi…', 'قاعد يتبعث…'],
+  ['Back', 'Retour', 'ارجع'],
   [
     'The demo is still being prepared. Please try again shortly.',
     'La démo est en préparation. Réessaie dans un instant.',
