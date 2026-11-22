@@ -1,10 +1,10 @@
 <div align="center">
 
-# 🧭 Lodestar
+<img src="docs/logo.svg" alt="Lodestar" width="300">
 
 ### The study coach that finds *why* a concept won't stick
 
-**[▶ Try it live: lodestar-2bej.onrender.com](https://lodestar-2bej.onrender.com/)**
+**[Try it live: lodestar-2bej.onrender.com](https://lodestar-2bej.onrender.com/)**
 
 Press **Demo person** to explore as Alex, five weeks into Probability 1.
 

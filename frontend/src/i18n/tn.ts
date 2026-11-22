@@ -218,6 +218,9 @@ export const TN: Record<string, string> = {
   'Chapter 2 · Conditional probability': 'Chapitre 2 · Probabilité conditionnelle',
   'Chapter 3 · Random variables': 'Chapitre 3 · Variables aléatoires',
   'Chapter 4 · Continuous distributions': 'Chapitre 4 · Lois continues',
+  'Import a chapter of your course to study from it, or explore Lodestar as a demo person.':
+    'زيد chapitre من الcours متاعك باش تقرا منو، ولا اكتشف Lodestar مع personne متاع démo.',
+  'Import a chapter first, or explore the demo.': 'زيد chapitre في الأول، ولا اكتشف الdémo.',
   Other: 'أخرى',
 
   // Coach cards

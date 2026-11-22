@@ -191,14 +191,15 @@ export function App() {
     firstLocale.current = locale
     if (registered) refreshDashboard()
   }, [locale, registered, refreshDashboard])
-  /** A new account starts by naming a subject and importing its course files (docs/plan/20). */
+  /** A new account imports its course files first, or opens the demo (docs/plan/20): without a
+   * document there is nothing of its own to study. */
   const [needsSubject, setNeedsSubject] = useState(false)
   useEffect(() => {
     if (!registered || inDemo()) return
     let active = true
-    api.subjects().then(
-      (s) => {
-        if (active) setNeedsSubject(s.length === 0)
+    api.documents().then(
+      (d) => {
+        if (active) setNeedsSubject(d.length === 0)
       },
       () => undefined,
     )

@@ -222,6 +222,10 @@ export const FR: Record<string, string> = {
   'Chapter 2 · Conditional probability': 'Chapitre 2 · Probabilité conditionnelle',
   'Chapter 3 · Random variables': 'Chapitre 3 · Variables aléatoires',
   'Chapter 4 · Continuous distributions': 'Chapitre 4 · Lois continues',
+  'Import a chapter of your course to study from it, or explore Lodestar as a demo person.':
+    'Importe un chapitre de ton cours pour étudier à partir de lui, ou découvre Lodestar avec une personne de démo.',
+  'Import a chapter first, or explore the demo.':
+    'Importe d’abord un chapitre, ou découvre la démo.',
   Other: 'Autre',
 
   // Coach cards

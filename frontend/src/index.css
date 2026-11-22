@@ -5011,6 +5011,19 @@ button.primary.pick__go {
 }
 .library-setup__heading {
   justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+.library-setup__heading .brand {
+  margin: 0;
+}
+.library-setup__choice {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+}
+.library-setup > [role='alert'] {
+  color: var(--color-danger, #b42318);
+}
+.library-setup > .ghost {
   margin-bottom: 2rem;
 }
 .document-review__pages {
